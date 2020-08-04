@@ -1,4 +1,7 @@
-from typing import List, Optional
+from __future__ import annotations
+
+import threading
+from typing import Dict, List, Optional
 
 
 def pagify(
@@ -38,3 +41,20 @@ def only_once(f):
                 has_called = True
 
     return wrapped
+
+
+class MainThreadSingletonMeta(type):
+
+    _instances: Dict[type, object] = {}
+
+    def __call__(cls, *args, **kwargs):
+
+        if threading.current_thread() is not threading.main_thread():
+            raise RuntimeError(
+                "This class may only be instantiated from the main thread"
+            )
+
+        if cls not in cls._instances:
+            instance = super().__call__(*args, **kwargs)
+            cls._instances[cls] = instance
+        return cls._instances[cls]

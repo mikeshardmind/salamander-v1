@@ -10,11 +10,14 @@ from typing import Awaitable, Optional, Type, TypeVar
 
 import discord
 from discord.ext import commands
-from discord.utils import SnowflakeList
 
+from .config import BasicConfig, Prefixes
 from .utils import only_once, pagify
 
 log = logging.getLogger("salamander")
+
+
+__all__ = ["setup_logging", "Salamander", "SalamanderContext"]
 
 
 @only_once
@@ -22,9 +25,7 @@ def setup_logging():
     log = logging.getLogger("salamander")
     handler = logging.StreamHandler(sys.stdout)
     rotating_file_handler = logging.handlers.RotatingFileHandler(
-        "salamander.log",
-        maxBytes=10000000,
-        backupCount=5,
+        "salamander.log", maxBytes=10000000, backupCount=5,
     )
     # Log appliance use in future with aiologger.
     formatter = logging.Formatter(
@@ -104,15 +105,16 @@ class SalamanderContext(commands.Context):
             return await self.send(content, **kwargs)
 
 
-_CT = TypeVar("_CT", SalamanderContext)
+_CT = TypeVar("_CT", bound=SalamanderContext)
 
 
 class Salamander(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__close_queue: asyncio.Queue()  # type: asyncio.Queue[Awaitable]
+        self.__close_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[...]]
         self.__background_loop: Optional[asyncio.Task] = None
-        self.__combined_blacklist = SnowflakeList()
+        self.__conf = BasicConfig()
+        self.__prefixes = Prefixes()
 
     def submit_for_finalizing_await(self, f: Awaitable):
         """
@@ -139,8 +141,11 @@ class Salamander(commands.Bot):
                 self.__close_queue.task_done()
 
     async def __aenter__(self):
-        self.__background_loop = asyncio.create_task(self.__closing_loop())
+        await self.__prepare()
         return self
+
+    async def __prepare(self):
+        self.__background_loop = asyncio.create_task(self.__closing_loop())
 
     async def aclose(self):
         if self.__background_loop is not None:
@@ -169,15 +174,15 @@ class Salamander(commands.Bot):
         await self.process_commands(message)
 
     async def process_commands(self, message: discord.Message):
-        ctx = await self.get_context(message)
+        ctx = await self.get_context(message, cls=SalamanderContext)
 
         if ctx.command is None:
             return
 
-        if self.__combined_blacklist.has(ctx.author.id):
+        if self.__conf.user_is_blocked(ctx.author.id):
             return
 
-        if ctx.guild and self.__combined_blacklist.has(ctx.guild.id):
+        if ctx.guild and self.__conf.guild_is_blocked(ctx.guild.id):
             return
 
         # TODO: Spam prevention goes here.
