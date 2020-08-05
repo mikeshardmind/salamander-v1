@@ -5,8 +5,9 @@ import io
 import logging
 import re
 import sys
+from collections import Counter
 from types import TracebackType
-from typing import Awaitable, Optional, Type, TypeVar
+from typing import Awaitable, Optional, Type, TypeVar, Callable, List
 
 import discord
 from discord.ext import commands
@@ -108,13 +109,27 @@ class SalamanderContext(commands.Context):
 _CT = TypeVar("_CT", bound=SalamanderContext)
 
 
+def _prefix(
+    bot: "Salamander", msg: discord.Message
+) -> Callable[["Salamander", discord.Message], List[str]]:
+    base = bot.__prefixes.data.get(msg.guild.id, ()) if msg.guild else ()
+    return commands.when_mentioned_or(*base)
+
+
 class Salamander(commands.Bot):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        self.__prefixes = Prefixes()
         self.__close_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[...]]
         self.__background_loop: Optional[asyncio.Task] = None
         self.__conf = BasicConfig()
-        self.__prefixes = Prefixes()
+        super().__init__(*args, command_prefix=_prefix)
+        # spam handling
+
+        # DEP-WARN: commands.CooldownMapping.from_cooldown
+        self.__global_cooldown = commands.CooldownMapping.from_cooldown(
+            8, 20, commands.BucketType.user
+        )
+        self.__spam_counter = Counter()
 
     def submit_for_finalizing_await(self, f: Awaitable):
         """
@@ -185,7 +200,22 @@ class Salamander(commands.Bot):
         if ctx.guild and self.__conf.guild_is_blocked(ctx.guild.id):
             return
 
-        # TODO: Spam prevention goes here.
+        if not await self.is_owner(ctx.author):
+            author_id = ctx.author.id
+            # DEP-WARN: commands.CooldownMapping.update_rate_limit
+            retry = self.__global_cooldown.update_rate_limit(ctx.message)
+            if retry:
+                self.__spam_counter[author_id] += 1
+                if self.__spam_counter[author_id] > 3:
+                    await self.__conf.block_user(author_id)
+                    log.info(
+                        "User: {user_id} has been blocked temporarily for "
+                        "hitting the global ratelimit a lot.",
+                        user_id=author_id,
+                    )
+                return
+            else:
+                self.__spam_counter.pop(author_id, None)
 
         async with ctx:
             await ctx.invoke()

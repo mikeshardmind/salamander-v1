@@ -104,6 +104,7 @@ class Prefixes(_ConfigBase, metaclass=MainThreadSingletonMeta):
             if len(guild_prefixes) >= 5:
                 raise OverflowError("May only have 5 prefixes")
             guild_prefixes.append(prefix)
+            guild_prefixes.sort(reverse=True)
             await self._save()
 
     async def reset_prefixes_for_guild(self, guild_id: int):
