@@ -29,16 +29,21 @@ def pagify(
 
 
 def only_once(f):
+    """
+    This isn't threadsafe, might need some guards on this later, but
+    it's currently only for use in setting up logging,
+    which is also not threadsafe.
+
+    Don't use on other things without accounting for this.
+    """
     has_called = False
 
     def wrapped(*args, **kwargs):
         nonlocal has_called
 
         if not has_called:
-            try:
-                f(*args, **kwargs)
-            finally:
-                has_called = True
+            has_called = True
+            f(*args, **kwargs)
 
     return wrapped
 
