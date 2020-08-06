@@ -121,46 +121,26 @@ class Prefixes(_ConfigBase, metaclass=MainThreadSingletonMeta):
             await self._save()
 
 
-if hasattr(os, "O_DIRECTORY"):
+def _save_pack(path: Path, data: Dict[str, Any]) -> None:
+    """
+    Directory fsync is needed with temp file atomic writes
+    https://lwn.net/Articles/457667/
+    http://man7.org/linux/man-pages/man2/open.2.html#NOTES (synchronous I/O section)
+    """
+    filename = path.stem
+    tmp_file = "{}-{}.tmp".format(filename, uuid.uuid4().fields[0])
+    tmp_path = path.parent / tmp_file
+    with tmp_path.open(mode="wb") as file_:
+        file_.write(msgpack.packb(data))
+        file_.flush()
+        os.fsync(file_.fileno())
 
-    def _save_pack(path: Path, data: Dict[str, Any]) -> None:
-        """
-        Directory fsync is needed with temp file atomic writes
-        https://lwn.net/Articles/457667/
-        http://man7.org/linux/man-pages/man2/open.2.html#NOTES (synchronous I/O section)
-        """
-        filename = path.stem
-        tmp_file = "{}-{}.tmp".format(filename, uuid.uuid4().fields[0])
-        tmp_path = path.parent / tmp_file
-        with tmp_path.open(mode="wb") as file_:
-            file_.write(msgpack.packb(data))
-            file_.flush()
-            os.fsync(file_.fileno())
-
-        tmp_path.replace(path)
-        parent_directory_fd: Optional[int] = None
-        try:
-            parent_directory_fd = os.open(path.parent, os.O_DIRECTORY)
-            if parent_directory_fd:
-                os.fsync(parent_directory_fd)
-        finally:
-            if parent_directory_fd:
-                os.close(parent_directory_fd)
-
-
-else:
-
-    def _save_pack(path: Path, data: Dict[str, Any]) -> None:
-        """
-        A significantly worse version on windows
-        allowing people to dev from windows
-        """
-        filename = path.stem
-        tmp_file = "{}-{}.tmp".format(filename, uuid.uuid4().fields[0])
-        tmp_path = path.parent / tmp_file
-        with tmp_path.open(mode="wb") as file_:
-            file_.write(msgpack.packb(data))
-            file_.flush()
-            os.fsync(file_.fileno())
-
-        tmp_path.replace(path)
+    tmp_path.replace(path)
+    parent_directory_fd: Optional[int] = None
+    try:
+        parent_directory_fd = os.open(path.parent, os.O_DIRECTORY)
+        if parent_directory_fd:
+            os.fsync(parent_directory_fd)
+    finally:
+        if parent_directory_fd:
+            os.close(parent_directory_fd)
