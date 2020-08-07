@@ -7,7 +7,7 @@ import re
 import sys
 from collections import Counter
 from types import TracebackType
-from typing import Awaitable, Optional, Type, TypeVar, Callable, List
+from typing import Awaitable, Callable, List, Optional, Type, TypeVar
 
 import discord
 from discord.ext import commands

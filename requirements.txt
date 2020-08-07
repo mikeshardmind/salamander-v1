@@ -1,7 +1,7 @@
-discord.py>=1.3.4
-msgpack~=1
+discord.py
+msgpack
 numpy
-numba
+#numba  # uncomment when handling this later
 pyzmq
 asyncpg
-uvloop
+#uvloop  # uncomment when handling this later
