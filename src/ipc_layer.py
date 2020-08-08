@@ -24,24 +24,28 @@ def chunked(it, size):
 
 
 def serializer(msg):
-    # Can change chunk size later
+    # Can change chunk size later for performance tuning if needed, however
+    # anything between 64b and 8kb is fine on the target system in
+    # terms of sockets and minimizing blocking.
     return chunked(msgpack.packb(msg), 4000)
 
 
 class ZMQHandler:
     def __init__(self):
         self.ctx = zmq.asyncio.Context()
-        # This can't be unbounded or we will have backpressure issues
-        # 50 message backlog is probably too many, but we'll tune this later.
+        # This could be entirely unbounded using zmq's highwater mark,
+        # but moving this out of zmq partially allows the event loop
+        # to play catchup in bursty situations, especially since we don't
+        # always handle every event we listen for
+        # (situational depending on discord state)
         self.recieved_queue = asyncio.Queue(maxsize=50)
         # This however can
         self.push_queue = asyncio.Queue()
         self.sub_socket = self.ctx.socket(zmq.SUB)
         self.push_socket = self.ctx.socket(zmq.PUSH)
-        self.sub_socket.connect(MULTICAST_SUBSCRIBE_ADDR)
-        for topic in ("salamander", "broadcast", "cache", "filter_response"):
-            self.sub_socket.setsockopt(zmq.SUBSCRIBE, topic)
-        self.push_socket.connect(PULL_REMOTE_ADDR)
+        self._push_task = None
+        self._recv_task = None
+        self._started = asyncio.Event()
 
     async def push(self, topic, msg):
         return await self.push_queue.put((topic, msg))
@@ -50,24 +54,34 @@ class ZMQHandler:
         return await self.recieved_queue.get()
 
     async def __aenter__(self):
+        self.sub_socket.connect(MULTICAST_SUBSCRIBE_ADDR)
+        for topic in ("salamander", "broadcast", "cache", "basalisk.gaze"):
+            self.sub_socket.setsockopt(zmq.SUBSCRIBE, topic)
+        self.push_socket.connect(PULL_REMOTE_ADDR)
+
+        self._push_task = asyncio.create_task(self.push_loop())
+        self._recv_task = asyncio.create_task(self.recv_loop())
+
         return self
 
     async def __aexit__(self, *args):
-        ...
+        self.sub_socket.close()
+        self.push_socket.close()
+        self._push_task.cancel()
+        self._recv_task.cancel()
+        await asyncio.gather(self._push_task, self._recv_task, return_exceptions=True)
 
     def start(self):
-        ...
+        self._started.set()
 
-    async def run_zmq(self):
-        ...
-
-    async def subscriber_task(self):
+    async def recv_loop(self):
+        await self._started.wait()
         while True:
             topic, message = await self.sub_socket.recv_multipart()
-            await self
+            await self.recieved_queue.put((topic, message))
 
-    async def push_task(self):
-
+    async def push_loop(self):
+        await self._started.wait()
         while True:
             topic, msg = await self.push_queue.get()
             await self.push_socket.send_multipart([topic, *serializer(msg)])
