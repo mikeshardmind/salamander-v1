@@ -26,7 +26,7 @@ def setup_logging():
     log = logging.getLogger("salamander")
     handler = logging.StreamHandler(sys.stdout)
     rotating_file_handler = logging.handlers.RotatingFileHandler(
-        "salamander.log", maxBytes=10000000, backupCount=5,
+        "salamander.log", maxBytes=10000000, backupCount=5
     )
     # Log appliance use in future with aiologger.
     formatter = logging.Formatter(
@@ -87,7 +87,7 @@ class SalamanderContext(commands.Context):
     ):
         """ Send something paged out """
 
-        for i, page in enumerate(pagify(content, page_size=page_size,)):
+        for i, page in enumerate(pagify(content, page_size=page_size)):
             if box:
                 page = f"```\n{page}\n```"
             if i == 0 and prepend:
@@ -178,7 +178,7 @@ class Salamander(commands.Bot):
         await self.aclose()
 
     async def get_context(
-        self, message: discord.Message, *, cls: Type[_CT] = SalamanderContext,
+        self, message: discord.Message, *, cls: Type[_CT] = SalamanderContext
     ) -> _CT:
         return await super().get_context(message, cls=cls)
 

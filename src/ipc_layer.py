@@ -14,6 +14,9 @@ import msgpack  # TODO: consider protobuf or blosc instead
 import zmq
 import zmq.asyncio
 
+MULTICAST_SUBSCRIBE_ADDR = "epgm://localhost:5555"
+PULL_REMOTE_ADDR = "tcp://localhost:5556"
+
 
 def chunked(it, size):
     it = iter(it)
@@ -35,13 +38,13 @@ class ZMQHandler:
         self.push_queue = asyncio.Queue()
         self.sub_socket = self.ctx.socket(zmq.SUB)
         self.push_socket = self.ctx.socket(zmq.PUSH)
-        self.sub_socket.connect("tcp://localhost:5555")
-        for topic in ("salamander", "broadcast", "cache", "filter"):
+        self.sub_socket.connect(MULTICAST_SUBSCRIBE_ADDR)
+        for topic in ("salamander", "broadcast", "cache", "filter_response"):
             self.sub_socket.setsockopt(zmq.SUBSCRIBE, topic)
-        self.push_socket.connect("tcp://localhost:5556")
+        self.push_socket.connect(PULL_REMOTE_ADDR)
 
-    async def push(self, msg):
-        return await self.push_queue.put(msg)
+    async def push(self, topic, msg):
+        return await self.push_queue.put((topic, msg))
 
     async def get(self):
         return await self.recieved_queue.get()
@@ -66,6 +69,6 @@ class ZMQHandler:
     async def push_task(self):
 
         while True:
-            msg = await self.push_queue.get()
-            await self.push_socket.send_serialized(msg, serializer, copy=False)
+            topic, msg = await self.push_queue.get()
+            await self.push_socket.send_multipart([topic, *serializer(msg)])
             self.push_queue.task_done()
