@@ -8,7 +8,7 @@ Discord's API won't be as stable as our internals,
 so we'll prefer binds in other portions of the architecture.
 """
 import asyncio
-from itertools import islice
+from typing import Iterator, Sequence
 
 import msgpack  # TODO: consider protobuf or blosc instead
 import zmq
@@ -18,12 +18,11 @@ MULTICAST_SUBSCRIBE_ADDR = "epgm://localhost:5555"
 PULL_REMOTE_ADDR = "tcp://localhost:5556"
 
 
-def chunked(it, size):
-    it = iter(it)
-    return iter(lambda: tuple(islice(it, size)), ())
+def chunked(data: Sequence[bytes], size: int) -> Iterator[Sequence[bytes]]:
+    return (data[i : i + size] for i in range(0, len(data), size))
 
 
-def serializer(msg):
+def serializer(msg: Sequence[bytes]) -> Iterator[Sequence[bytes]]:
     # Can change chunk size later for performance tuning if needed, however
     # anything between 64b and 8kb is fine on the target system in
     # terms of sockets and minimizing blocking.
