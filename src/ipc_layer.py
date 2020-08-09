@@ -45,6 +45,7 @@ class ZMQHandler:
         self._push_task = None
         self._recv_task = None
         self._started = asyncio.Event()
+        self.topics = ("salamander", "broadcast", "basalisk.gaze", "notice.cache")
 
     async def push(self, topic, msg):
         return await self.push_queue.put((topic, msg))
@@ -53,9 +54,8 @@ class ZMQHandler:
         return await self.recieved_queue.get()
 
     async def __aenter__(self):
+        self.sub_socket.setsockopt(zmq.SUBSCRIBE, b"")
         self.sub_socket.connect(MULTICAST_SUBSCRIBE_ADDR)
-        for topic in ("salamander", "broadcast", "cache", "basalisk.gaze"):
-            self.sub_socket.setsockopt(zmq.SUBSCRIBE, topic)
         self.push_socket.connect(PULL_REMOTE_ADDR)
 
         self._push_task = asyncio.create_task(self.push_loop())
@@ -70,18 +70,17 @@ class ZMQHandler:
         self._recv_task.cancel()
         await asyncio.gather(self._push_task, self._recv_task, return_exceptions=True)
 
-    def start(self):
-        self._started.set()
-
     async def recv_loop(self):
-        await self._started.wait()
         while True:
-            topic, message = await self.sub_socket.recv_multipart()
-            await self.recieved_queue.put((topic, message))
+            payload = await self.sub_socket.recv()
+            topic, message = msgpack.unpackb(
+                payload, strict_map_key=False, use_list=False
+            )
+            if topic in self.topics:
+                await self.recieved_queue.put((topic, message))
 
     async def push_loop(self):
-        await self._started.wait()
         while True:
             topic, msg = await self.push_queue.get()
-            await self.push_socket.send_multipart([topic, *serializer(msg)])
+            await self.push_socket.send(msgpack.packb((topic, msg)))
             self.push_queue.task_done()
