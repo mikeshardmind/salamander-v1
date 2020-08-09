@@ -14,8 +14,8 @@ import msgpack  # TODO: consider protobuf or blosc instead
 import zmq
 import zmq.asyncio
 
-MULTICAST_SUBSCRIBE_ADDR = "epgm://localhost:5555"
-PULL_REMOTE_ADDR = "tcp://localhost:5556"
+MULTICAST_SUBSCRIBE_ADDR = "tcp://127.0.0.1:5555"
+PULL_REMOTE_ADDR = "tcp://127.0.0.1:5556"
 
 
 def chunked(data: Sequence[bytes], size: int) -> Iterator[Sequence[bytes]]:
