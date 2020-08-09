@@ -34,9 +34,12 @@ class ZMQHandler:
         self._recv_task = None
         # I can handle subscribing "properly" to these later
         # Example of subscribe topic isn't simple though
-        # "salamander" => b'\x92\xaasalamander
-        # This should be consistent, but I want to check the actual msgpack spec
-        # first as well as confirm if there's not a better way before doing this.
+        # "salamander" => b"\x92\xaasalamander"
+        # However, this only works as the first element of a 2-tuple
+        # (3-tuple would be prefixed b"\x93\xae") and so on,
+        # since msgpack can be streamed, it pre-informs of elements rather than
+        # pairing start and end.
+        # This can be considered more once the payloads are more set in stone.
         self.topics = ("salamander", "broadcast", "basalisk.gaze", "notice.cache")
 
     async def push(self, topic, msg):
