@@ -8,7 +8,6 @@ Discord's API won't be as stable as our internals,
 so we'll prefer binds in other portions of the architecture.
 """
 import asyncio
-from typing import Iterator, Sequence
 
 import msgpack  # TODO: consider protobuf or blosc instead
 import zmq
@@ -16,17 +15,6 @@ import zmq.asyncio
 
 MULTICAST_SUBSCRIBE_ADDR = "tcp://127.0.0.1:5555"
 PULL_REMOTE_ADDR = "tcp://127.0.0.1:5556"
-
-
-def chunked(data: Sequence[bytes], size: int) -> Iterator[Sequence[bytes]]:
-    return (data[i : i + size] for i in range(0, len(data), size))
-
-
-def serializer(msg: Sequence[bytes]) -> Iterator[Sequence[bytes]]:
-    # Can change chunk size later for performance tuning if needed, however
-    # anything between 64b and 8kb is fine on the target system in
-    # terms of sockets and minimizing blocking.
-    return chunked(msgpack.packb(msg), 4000)
 
 
 class ZMQHandler:
@@ -44,7 +32,11 @@ class ZMQHandler:
         self.push_socket = self.ctx.socket(zmq.PUSH)
         self._push_task = None
         self._recv_task = None
-        self._started = asyncio.Event()
+        # I can handle subscribing "properly" to these later
+        # Example of subscribe topic isn't simple though
+        # "salamander" => b'\x92\xaasalamander
+        # This should be consistent, but I want to check the actual msgpack spec
+        # first as well as confirm if there's not a better way before doing this.
         self.topics = ("salamander", "broadcast", "basalisk.gaze", "notice.cache")
 
     async def push(self, topic, msg):
