@@ -9,7 +9,7 @@ so we'll prefer binds in other portions of the architecture.
 """
 import asyncio
 
-import msgpack  # TODO: consider protobuf or blosc instead
+import msgpack
 import zmq
 import zmq.asyncio
 
@@ -28,8 +28,8 @@ class ZMQHandler:
         self.recieved_queue = asyncio.Queue(maxsize=50)
         # This however can
         self.push_queue = asyncio.Queue()
-        self.sub_socket = self.ctx.socket(zmq.SUB)
-        self.push_socket = self.ctx.socket(zmq.PUSH)
+        self.sub_socket = self.ctx.socket(zmq.SUB)  # pylint: disable=no-member
+        self.push_socket = self.ctx.socket(zmq.PUSH)  # pylint: disable=no-member
         self._push_task = None
         self._recv_task = None
         # I can handle subscribing "properly" to these later
@@ -49,7 +49,7 @@ class ZMQHandler:
         return await self.recieved_queue.get()
 
     async def __aenter__(self):
-        self.sub_socket.setsockopt(zmq.SUBSCRIBE, b"")
+        self.sub_socket.setsockopt(zmq.SUBSCRIBE, b"")  # pylint: disable=no-member
         self.sub_socket.connect(MULTICAST_SUBSCRIBE_ADDR)
         self.push_socket.connect(PULL_REMOTE_ADDR)
 

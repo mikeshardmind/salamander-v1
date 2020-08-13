@@ -8,14 +8,19 @@ import sys
 from collections import Counter
 from types import TracebackType
 from typing import Awaitable, Callable, List, Optional, Type, TypeVar
+from uuid import uuid4
 
 import discord
 from discord.ext import commands
 
 from .config import BasicConfig, Prefixes
+from .ipc_layer import ZMQHandler
 from .utils import only_once, pagify
 
 log = logging.getLogger("salamander")
+
+BASALISK_GAZE = "basalisk.gaze"
+BASALISK_OFFER = "basalisk.offer"
 
 
 __all__ = ["setup_logging", "Salamander", "SalamanderContext"]
@@ -130,6 +135,52 @@ class Salamander(commands.Bot):
             8, 20, commands.BucketType.user
         )
         self.__spam_counter = Counter()
+        self.__zmq: ZMQHandler()
+        self.__zmq_task: Optional[asyncio.Task] = None
+
+    async def check_basalisk(self, string: str) -> bool:
+        """
+        Check whether or not something should be filtered
+
+        This offloads work to the shared filtering process.
+        The default is no response, it's assumed to be fine.
+        This prevents other features specific to this
+        component from failing over if basalisk is not in use or in a failed state.
+        Status checks of other components will be handled later on.
+        """
+
+        this_uuid = uuid4().int
+
+        def matches(*args) -> bool:
+            topic, (recv_uuid, *_data) = args
+            return topic == BASALISK_GAZE and recv_uuid == this_uuid
+
+        # This is an intentionally genererous timeout, won't be an issue.
+        fut = self.wait_for("ipc_recv", check=matches, timeout=5)
+        self.ipc_send(BASALISK_OFFER, ((this_uuid, None), string))
+        try:
+            await fut
+        except asyncio.TimeoutError:
+            return False
+        else:
+            return True
+
+    def ipc_send(self, topic, payload):
+        self.__zmq.push(topic, payload)
+
+    def start_zmq(self, zmq):
+
+        if self.__zmq_task is not None:
+            return
+
+        async def zmq_injest_task():
+            await self.wait_until_ready()
+            async with self.__zmq as zmq_handler:
+                while True:
+                    topic, payload = await zmq_handler.get()
+                    self.dispatch("ipc_recv", topic, payload)
+
+        self.__zmq_task = asyncio.create_task(zmq_injest_task())
 
     def submit_for_finalizing_await(self, f: Awaitable):
         """
@@ -166,6 +217,10 @@ class Salamander(commands.Bot):
         if self.__background_loop is not None:
             self.__background_loop.cancel()
             await self.__background_loop
+
+        if self.__zmq_task is not None:
+            self.__zmq_task.cancel()
+            await self.__zmq_task
 
         await self.__close_queue.join()
 
