@@ -147,6 +147,10 @@ class Salamander(commands.Bot):
         This prevents other features specific to this
         component from failing over if basalisk is not in use or in a failed state.
         Status checks of other components will be handled later on.
+
+        If anything blocks the loop for longer than the timeout,
+        it's possible that false negatives can occur,
+        but if anything blocks the loop for that long, there are larger issues.
         """
 
         this_uuid = uuid4().int
