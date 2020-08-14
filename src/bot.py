@@ -315,10 +315,10 @@ class Salamander(commands.Bot):
 
             if os.name != "nt":
                 signals = (
-                    signal.SIGHUP,
+                    signal.SIGHUP,   # pylint: disable=no-member
                     signal.SIGTERM,
                     signal.SIGINT,
-                )  # pylint: disable=no-member
+                )
                 for s in signals:
                     loop.add_signal_handler(
                         s, lambda s=s: asyncio.create_task(instantiated.logout())
@@ -332,8 +332,11 @@ class Salamander(commands.Bot):
 
             loop.run_forever()
         finally:
-            fut.remove_done_callback(stop_when_done)
-            cancel_all_tasks(loop)
-
-            if not fut.cancelled():  # normal exit
-                return fut.result()
+            try:
+                fut.remove_done_callback(stop_when_done)
+                cancel_all_tasks(loop)
+                loop.run_until_complete(loop.shutdown_asyncgens())
+                loop.run_until_complete(asyncio.sleep(1))
+            finally:
+                if not fut.cancelled():  # normal exit
+                    return fut.result()
