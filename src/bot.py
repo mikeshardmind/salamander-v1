@@ -3,19 +3,26 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
+import os
 import re
+import signal
 import sys
 from collections import Counter
 from types import TracebackType
 from typing import Awaitable, Callable, List, Optional, Type, TypeVar
 from uuid import uuid4
 
+try:
+    import uvloop
+except ImportError:
+    uvloop = None
+
 import discord
 from discord.ext import commands
 
 from .config import BasicConfig, Prefixes
 from .ipc_layer import ZMQHandler
-from .utils import only_once, pagify
+from .utils import cancel_all_tasks, only_once, pagify
 
 log = logging.getLogger("salamander")
 
@@ -172,7 +179,7 @@ class Salamander(commands.Bot):
     def ipc_send(self, topic, payload):
         self.__zmq.push(topic, payload)
 
-    def start_zmq(self, zmq):
+    def start_zmq(self):
 
         if self.__zmq_task is not None:
             return
@@ -215,6 +222,7 @@ class Salamander(commands.Bot):
         return self
 
     async def __prepare(self):
+        self.start_zmq()
         self.__background_loop = asyncio.create_task(self.__closing_loop())
 
     async def aclose(self):
@@ -278,3 +286,54 @@ class Salamander(commands.Bot):
 
         async with ctx:
             await ctx.invoke()
+
+    @classmethod
+    def run_with_wrapping(cls, *args, **kwargs):
+        """
+        This wraps all asyncio behavior
+
+        Don't use this with manual control of the loop as a requirement.
+        """
+
+        setup_logging()
+
+        if uvloop is not None:
+            uvloop.install()
+
+        instantiated = cls(*args, **kwargs)
+
+        async def runner():
+            async with instantiated as bot_object:
+                try:
+                    await bot_object.start()
+                finally:
+                    await bot_object.logout()
+
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            if os.name != "nt":
+                signals = (
+                    signal.SIGHUP,
+                    signal.SIGTERM,
+                    signal.SIGINT,
+                )  # pylint: disable=no-member
+                for s in signals:
+                    loop.add_signal_handler(
+                        s, lambda s=s: asyncio.create_task(instantiated.logout())
+                    )
+
+            def stop_when_done(f: asyncio.Future):
+                loop.stop()
+
+            fut = loop.create_task(runner())
+            fut.add_done_callback(stop_when_done)
+
+            loop.run_forever()
+        finally:
+            fut.remove_done_callback(stop_when_done)
+            cancel_all_tasks(loop)
+
+            if not fut.cancelled():  # normal exit
+                return fut.result()
