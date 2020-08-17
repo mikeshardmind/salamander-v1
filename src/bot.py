@@ -8,6 +8,7 @@ import re
 import signal
 import sys
 from collections import Counter
+from logging.handlers import RotatingFileHandler
 from types import TracebackType
 from typing import Awaitable, Callable, List, Optional, Type, TypeVar
 from uuid import uuid4
@@ -37,7 +38,7 @@ __all__ = ["setup_logging", "Salamander", "SalamanderContext"]
 def setup_logging():
     log = logging.getLogger("salamander")
     handler = logging.StreamHandler(sys.stdout)
-    rotating_file_handler = logging.handlers.RotatingFileHandler(
+    rotating_file_handler = RotatingFileHandler(
         "salamander.log", maxBytes=10000000, backupCount=5
     )
     # Log appliance use in future with aiologger.
