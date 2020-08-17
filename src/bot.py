@@ -128,7 +128,7 @@ def _prefix(
     bot: "Salamander", msg: discord.Message
 ) -> Callable[["Salamander", discord.Message], List[str]]:
     base = bot._prefixes.data.get(msg.guild.id, ()) if msg.guild else ()
-    return commands.when_mentioned_or(*base)
+    return commands.when_mentioned_or(*base)(bot, msg)
 
 
 class Salamander(commands.Bot):

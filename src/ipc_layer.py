@@ -42,8 +42,8 @@ class ZMQHandler:
         # This can be considered more once the payloads are more set in stone.
         self.topics = ("salamander", "broadcast", "basalisk.gaze", "notice.cache")
 
-    async def push(self, topic, msg):
-        return await self.push_queue.put((topic, msg))
+    def push(self, topic, msg):
+        return self.push_queue.put_nowait((topic, msg))
 
     async def get(self):
         return await self.recieved_queue.get()
