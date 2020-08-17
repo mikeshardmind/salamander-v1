@@ -127,16 +127,16 @@ _CT = TypeVar("_CT", bound=SalamanderContext)
 def _prefix(
     bot: "Salamander", msg: discord.Message
 ) -> Callable[["Salamander", discord.Message], List[str]]:
-    base = bot.__prefixes.data.get(msg.guild.id, ()) if msg.guild else ()
+    base = bot._prefixes.data.get(msg.guild.id, ()) if msg.guild else ()
     return commands.when_mentioned_or(*base)
 
 
 class Salamander(commands.Bot):
     def __init__(self, *args, **kwargs):
-        self.__prefixes = Prefixes()
-        self.__close_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[...]]
-        self.__background_loop: Optional[asyncio.Task] = None
-        self.__conf = BasicConfig()
+        self._prefixes = Prefixes()
+        self._close_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[...]]
+        self._background_loop: Optional[asyncio.Task] = None
+        self._conf = BasicConfig()
         super().__init__(*args, command_prefix=_prefix, **kwargs)
         # spam handling
 
@@ -144,9 +144,9 @@ class Salamander(commands.Bot):
         self.__global_cooldown = commands.CooldownMapping.from_cooldown(
             8, 20, commands.BucketType.user
         )
-        self.__spam_counter = Counter()
-        self.__zmq: ZMQHandler()
-        self.__zmq_task: Optional[asyncio.Task] = None
+        self._spam_counter = Counter()
+        self._zmq = ZMQHandler()
+        self._zmq_task: Optional[asyncio.Task] = None
 
         self.add_cog(FilterDemo(self))
 
@@ -182,16 +182,16 @@ class Salamander(commands.Bot):
             return True
 
     def ipc_send(self, topic, payload):
-        self.__zmq.push(topic, payload)
+        self._zmq.push(topic, payload)
 
     def start_zmq(self):
 
-        if self.__zmq_task is not None:
+        if self._zmq_task is not None:
             return
 
         async def zmq_injest_task():
             await self.wait_until_ready()
-            async with self.__zmq as zmq_handler:
+            async with self._zmq as zmq_handler:
                 while True:
                     topic, payload = await zmq_handler.get()
                     self.dispatch("ipc_recv", topic, payload)
@@ -206,13 +206,13 @@ class Salamander(commands.Bot):
 
         >>> submit_for_finalizing_await(aiohttp_clientsession.close())
         """
-        self.__close_queue.put_nowait(f)
+        self._close_queue.put_nowait(f)
 
     async def __closing_loop(self):
         """ Handle things get put in queue to be async closed from sync contexts """
 
         while True:
-            awaitable = await self.__close_queue.get()
+            awaitable = await self._close_queue.get()
             try:
                 await awaitable
             except Exception as exc:
@@ -220,7 +220,7 @@ class Salamander(commands.Bot):
                     "Unhandled exception while closing resource", exc_info=exc
                 )
             finally:
-                self.__close_queue.task_done()
+                self._close_queue.task_done()
 
     async def __aenter__(self):
         await self.__prepare()
@@ -228,8 +228,8 @@ class Salamander(commands.Bot):
 
     async def __prepare(self):
         self.start_zmq()
-        if self.__background_loop is None:
-            self.__background_loop = asyncio.create_task(self.__closing_loop())
+        if self._background_loop is None:
+            self._background_loop = asyncio.create_task(self.__closing_loop())
 
     async def start(self, *args, **kwargs):
         await self.__prepare()
@@ -240,15 +240,15 @@ class Salamander(commands.Bot):
         await super().close()
 
     async def aclose(self):
-        if self.__background_loop is not None:
-            self.__background_loop.cancel()
-            await self.__background_loop
+        if self._background_loop is not None:
+            self._background_loop.cancel()
+            await self._background_loop
 
-        if self.__zmq_task is not None:
-            self.__zmq_task.cancel()
-            await self.__zmq_task
+        if self._zmq_task is not None:
+            self._zmq_task.cancel()
+            await self._zmq_task
 
-        await self.__close_queue.join()
+        await self._close_queue.join()
 
     async def __aexit__(
         self,
@@ -275,10 +275,10 @@ class Salamander(commands.Bot):
         if ctx.command is None:
             return
 
-        if self.__conf.user_is_blocked(ctx.author.id):
+        if self._conf.user_is_blocked(ctx.author.id):
             return
 
-        if ctx.guild and self.__conf.guild_is_blocked(ctx.guild.id):
+        if ctx.guild and self._conf.guild_is_blocked(ctx.guild.id):
             return
 
         if not await self.is_owner(ctx.author):
@@ -286,9 +286,9 @@ class Salamander(commands.Bot):
             # DEP-WARN: commands.CooldownMapping.update_rate_limit
             retry = self.__global_cooldown.update_rate_limit(ctx.message)
             if retry:
-                self.__spam_counter[author_id] += 1
-                if self.__spam_counter[author_id] > 3:
-                    await self.__conf.block_user(author_id)
+                self._spam_counter[author_id] += 1
+                if self._spam_counter[author_id] > 3:
+                    await self._conf.block_user(author_id)
                     log.info(
                         "User: {user_id} has been blocked temporarily for "
                         "hitting the global ratelimit a lot.",
@@ -296,7 +296,7 @@ class Salamander(commands.Bot):
                     )
                 return
             else:
-                self.__spam_counter.pop(author_id, None)
+                self._spam_counter.pop(author_id, None)
 
         async with ctx:
             await ctx.invoke()
