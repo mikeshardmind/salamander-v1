@@ -25,6 +25,8 @@ from .config import BasicConfig, Prefixes
 from .ipc_layer import ZMQHandler
 from .utils import cancel_all_tasks, only_once, pagify
 
+from .cogs import FilterDemo
+
 log = logging.getLogger("salamander")
 
 BASALISK_GAZE = "basalisk.gaze"
@@ -58,7 +60,7 @@ class SalamanderContext(commands.Context):
     bot: "Salamander"
 
     def __init__(self, **kwargs):
-        super.__init__(**kwargs)
+        super().__init__(**kwargs)
         self.pool = None
         self.conn = None
 
@@ -145,6 +147,8 @@ class Salamander(commands.Bot):
         self.__spam_counter = Counter()
         self.__zmq: ZMQHandler()
         self.__zmq_task: Optional[asyncio.Task] = None
+
+        self.add_cog(FilterDemo(bot))
 
     async def check_basalisk(self, string: str) -> bool:
         """
