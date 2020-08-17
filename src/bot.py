@@ -173,7 +173,7 @@ class Salamander(commands.Bot):
 
         # This is an intentionally genererous timeout, won't be an issue.
         fut = self.wait_for("ipc_recv", check=matches, timeout=5)
-        self.ipc_send(BASALISK_OFFER, ((this_uuid, None), string))
+        self.ipc_put(BASALISK_OFFER, ((this_uuid, None), string))
         try:
             await fut
         except asyncio.TimeoutError:
@@ -181,8 +181,11 @@ class Salamander(commands.Bot):
         else:
             return True
 
-    def ipc_send(self, topic, payload):
-        self._zmq.push(topic, payload)
+    def ipc_put(self, topic, payload):
+        """
+        Put something in a queue to be sent via IPC
+        """
+        self._zmq.put(topic, payload)
 
     def start_zmq(self):
 
@@ -208,7 +211,7 @@ class Salamander(commands.Bot):
         """
         self._close_queue.put_nowait(f)
 
-    async def __closing_loop(self):
+    async def _closing_loop(self):
         """ Handle things get put in queue to be async closed from sync contexts """
 
         while True:
@@ -229,7 +232,7 @@ class Salamander(commands.Bot):
     async def __prepare(self):
         self.start_zmq()
         if self._background_loop is None:
-            self._background_loop = asyncio.create_task(self.__closing_loop())
+            self._background_loop = asyncio.create_task(self._closing_loop())
 
     async def start(self, *args, **kwargs):
         await self.__prepare()
@@ -243,10 +246,12 @@ class Salamander(commands.Bot):
         if self._background_loop is not None:
             self._background_loop.cancel()
             await self._background_loop
+            self._background_loop = None
 
         if self._zmq_task is not None:
             self._zmq_task.cancel()
             await self._zmq_task
+            self._zmq_task = None
 
         await self._close_queue.join()
 
