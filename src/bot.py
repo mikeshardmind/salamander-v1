@@ -134,7 +134,7 @@ class Salamander(commands.Bot):
         self.__close_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[...]]
         self.__background_loop: Optional[asyncio.Task] = None
         self.__conf = BasicConfig()
-        super().__init__(*args, command_prefix=_prefix)
+        super().__init__(*args, command_prefix=_prefix, **kwargs)
         # spam handling
 
         # DEP-WARN: commands.CooldownMapping.from_cooldown
@@ -223,7 +223,16 @@ class Salamander(commands.Bot):
 
     async def __prepare(self):
         self.start_zmq()
-        self.__background_loop = asyncio.create_task(self.__closing_loop())
+        if self.__background_loop is None:
+            self.__background_loop = asyncio.create_task(self.__closing_loop())
+
+    async def start(self, *args, **kwargs):
+        await self.__prepare()
+        await super().start(*args, **kwargs)
+
+    async def close(self):
+        await self.aclose()
+        await super().close()
 
     async def aclose(self):
         if self.__background_loop is not None:
@@ -288,7 +297,7 @@ class Salamander(commands.Bot):
             await ctx.invoke()
 
     @classmethod
-    def run_with_wrapping(cls, *args, **kwargs):
+    def run_with_wrapping(cls, token, *args, **kwargs):
         """
         This wraps all asyncio behavior
 
@@ -300,18 +309,18 @@ class Salamander(commands.Bot):
         if uvloop is not None:
             uvloop.install()
 
-        instantiated = cls(*args, **kwargs)
-
-        async def runner():
-            async with instantiated as bot_object:
-                try:
-                    await bot_object.start()
-                finally:
-                    await bot_object.logout()
-
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
+
+            instantiated = cls(*args, **kwargs)
+
+            async def runner():
+                async with instantiated as bot_object:
+                    try:
+                        await bot_object.start(token)
+                    finally:
+                        await bot_object.logout()
 
             if os.name != "nt":
                 signals = (
