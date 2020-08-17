@@ -148,7 +148,7 @@ class Salamander(commands.Bot):
         self.__zmq: ZMQHandler()
         self.__zmq_task: Optional[asyncio.Task] = None
 
-        self.add_cog(FilterDemo(bot))
+        self.add_cog(FilterDemo(self))
 
     async def check_basalisk(self, string: str) -> bool:
         """
