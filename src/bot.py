@@ -165,7 +165,7 @@ class Salamander(commands.Bot):
         but if anything blocks the loop for that long, there are larger issues.
         """
 
-        this_uuid = uuid4().int
+        this_uuid = uuid4().hex
 
         def matches(*args) -> bool:
             topic, (recv_uuid, *_data) = args
