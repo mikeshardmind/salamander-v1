@@ -21,11 +21,10 @@ except ImportError:
 import discord
 from discord.ext import commands
 
+from .cogs import FilterDemo
 from .config import BasicConfig, Prefixes
 from .ipc_layer import ZMQHandler
 from .utils import cancel_all_tasks, only_once, pagify
-
-from .cogs import FilterDemo
 
 log = logging.getLogger("salamander")
 
@@ -334,7 +333,7 @@ class Salamander(commands.Bot):
 
             if os.name != "nt":
                 signals = (
-                    signal.SIGHUP,   # pylint: disable=no-member
+                    signal.SIGHUP,  # pylint: disable=no-member
                     signal.SIGTERM,
                     signal.SIGINT,
                 )
