@@ -58,11 +58,6 @@ class SalamanderContext(commands.Context):
 
     bot: "Salamander"
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.pool = None
-        self.conn = None
-
     async def __aenter__(self):
         return self
 
