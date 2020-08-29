@@ -303,7 +303,7 @@ class Salamander(commands.Bot):
                 self._spam_counter.pop(author_id, None)
 
         async with ctx:
-            await ctx.invoke()
+            await self.invoke(ctx)
 
     @classmethod
     def run_with_wrapping(cls, token, *args, **kwargs):
