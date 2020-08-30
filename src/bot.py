@@ -344,6 +344,9 @@ class Salamander(commands.Bot):
             fut.add_done_callback(stop_when_done)
 
             loop.run_forever()
+        except KeyboardInterrupt:
+            log.warning("Exiting from keyboard interrupt")
+            loop.run_until_complete(instantiated.logout())
         finally:
             try:
                 fut.remove_done_callback(stop_when_done)

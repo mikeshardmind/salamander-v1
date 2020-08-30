@@ -40,7 +40,14 @@ class ZMQHandler:
         # since msgpack can be streamed, it pre-informs of elements rather than
         # pairing start and end.
         # This can be considered more once the payloads are more set in stone.
-        self.topics = ("salamander", "broadcast", "basalisk.gaze", "notice.cache")
+        self.topics = (
+            "salamander",
+            "broadcast",
+            "basalisk.gaze",
+            "notice.cache",
+            "status.response",
+            "status.check",
+        )
 
     def put(self, topic, msg):
         return self.push_queue.put_nowait((topic, msg))
