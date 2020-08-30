@@ -280,6 +280,14 @@ class Salamander(commands.Bot):
         if ctx.guild and self._conf.guild_is_blocked(ctx.guild.id):
             return
 
+        if ctx.guild:
+            if not ctx.channel.permissions_for(ctx.me).send_messages:
+                if await self.is_owner(ctx.author):
+                    await ctx.author.send(
+                        "Hey, I don't even have send perms in that channel."
+                    )
+                return
+
         if not await self.is_owner(ctx.author):
             author_id = ctx.author.id
             # DEP-WARN: commands.CooldownMapping.update_rate_limit
