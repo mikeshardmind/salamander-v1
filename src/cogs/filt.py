@@ -37,14 +37,14 @@ class FilterDemo(commands.Cog):
 
     @commands.is_owner()
     @commands.command()
-    async def addpattern(self, ctx: SalamanderContext, pattern):
+    async def addpattern(self, ctx: SalamanderContext, *, pattern):
         """ Add a pattern to the scanner """
         self.bot.ipc_put(REFOCUS, ((pattern,), ()))
         await ctx.send("Pattern added.")
 
     @commands.is_owner()
     @commands.command()
-    async def removepattern(self, ctx: SalamanderContext, pattern):
+    async def removepattern(self, ctx: SalamanderContext, *, pattern):
         """ Remove a pattern from the scanner """
         self.bot.ipc_put(REFOCUS, ((), (pattern,)))
         await ctx.send("Pattern removed.")
