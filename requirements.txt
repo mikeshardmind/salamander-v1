@@ -5,3 +5,4 @@ numpy
 pyzmq
 asyncpg
 #uvloop  # uncomment when handling this later
+jishaku

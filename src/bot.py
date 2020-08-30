@@ -18,10 +18,15 @@ try:
 except ImportError:
     uvloop = None
 
+try:
+    import jishaku
+except ImportError:
+    jishaku = None
+
 import discord
 from discord.ext import commands
 
-from .cogs import FilterDemo
+from .cogs import FilterDemo, Meta
 from .config import BasicConfig, Prefixes
 from .ipc_layer import ZMQHandler
 from .utils import cancel_all_tasks, only_once, pagify
@@ -143,6 +148,9 @@ class Salamander(commands.Bot):
         self._zmq_task: Optional[asyncio.Task] = None
 
         self.add_cog(FilterDemo(self))
+        self.add_cog(Meta(self))
+        if jishaku is not None:
+            self.load_extension("jishaku")
 
     async def check_basalisk(self, string: str) -> bool:
         """
