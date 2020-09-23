@@ -59,6 +59,37 @@ def setup_logging():
     log.addHandler(rotating_file_handler)
 
 
+class SalamanderException(Exception):
+    """ Base Exception for custom Exceptions """
+
+
+class IncompleteInputError(SalamanderException):
+    """ To be used when a command did not recieve all the inputs """
+
+    def __init__(
+        self, *args, reset_cooldown: bool = False, custom_message: Optional[str] = None
+    ):
+        super().__init__(*args)
+        self.reset_cooldown: bool = reset_cooldown
+        self.custom_message: Optional[str] = custom_message
+
+
+class HierarchyException(SalamanderException):
+    """ For cases where invalid targetting due to hierarchy occurs """
+
+    def __init__(self, *args, custom_message: Optional[str] = None):
+        super().__init__(*args)
+        self.custom_message: Optional[str] = custom_message
+
+
+class UserFeedbackError(SalamanderException):
+    """ Generic error which propogates a message to the user """
+
+    def __init__(self, *args, custom_message: str):
+        super().__init__(self, *args)
+        self.custom_message = custom_message
+
+
 class SalamanderContext(commands.Context):
 
     bot: "Salamander"
