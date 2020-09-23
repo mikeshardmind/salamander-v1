@@ -26,7 +26,7 @@ except ImportError:
 import discord
 from discord.ext import commands
 
-from .cogs import Dice, FilterDemo, Meta
+from .cogs import FilterDemo, Meta
 from .config import BasicConfig, Prefixes
 from .ipc_layer import ZMQHandler
 from .utils import cancel_all_tasks, only_once, pagify
@@ -149,9 +149,9 @@ class Salamander(commands.Bot):
 
         self.add_cog(FilterDemo(self))
         self.add_cog(Meta(self))
-        self.add_cog(Dice())
 
         self.load_extension("jishaku")
+        self.load_extension("src.extensions.dice")
 
     async def check_basalisk(self, string: str) -> bool:
         """

@@ -7,7 +7,7 @@ from discord.ext import commands
 from .dicemath import DiceError, Expression
 
 if TYPE_CHECKING:
-    from ..bot import SalamanderContext
+    from ...bot import SalamanderContext
 else:
     SalamanderContext = commands.Context
 
