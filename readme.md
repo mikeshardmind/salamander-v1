@@ -52,11 +52,17 @@ Development will happen sporadically based on discussions with invested parties.
 If you'd like to learn more, contact links will be added when we are ready to take questions and input from a wider audience. Stay tuned.
 
 
+## Want to help?
+
+If you'd like to join us in making spaces of the internet a bit easier to manage,
+please discuss (open an issue or discuss in project spaces) prior to opening any pull request to coordinate.
+
+
 ## Current environemnt
 
 python3.8 (cpython)
 ubuntu server 20.04
-(intended, but not in use yet) PostgreSQL 12.3
 
-These environmental dependencies are subject to change still, with intent for
-the final product to be deployable with your choice of ansible, docker, or terraform
+This reflects the environment it will be tested on early in development, however
+the final product should be deployable on any posix compatible OS,
+including through docker, terraform, ansible and others.
