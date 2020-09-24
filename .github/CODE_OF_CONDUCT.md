@@ -22,6 +22,6 @@ With those values in mind, the guidelines which contributors should follow:
 
 Those who violate the guidelines as written, as well as those who intentionally tow the line to violate the values expressed which these guidelines protect will be removed.
 
-The curent point of contact for any issues arising with this is projectsalamander-conduct@michaelhall.tech
+The curent point of contact for any issues arising with this is unifiedmoderation-conduct@michaelhall.tech
 This address will be monitored for so long as it is included as the point of contact.
 Should it change at a later date, the new address will be reflected in this document.
