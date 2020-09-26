@@ -18,9 +18,7 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
-import os
 import re
-import signal
 import sys
 from collections import Counter
 from logging.handlers import RotatingFileHandler
@@ -33,18 +31,14 @@ try:
 except ImportError:
     uvloop = None
 
-try:
-    import jishaku
-except ImportError:
-    jishaku = None
-
+import apsw
 import discord
 from discord.ext import commands
 
 from .cogs import FilterDemo, Meta
-from .config import BasicConfig, Prefixes
 from .ipc_layer import ZMQHandler
-from .utils import cancel_all_tasks, only_once, pagify
+from .modlog import ModlogHandler
+from .utils import only_once, pagify
 
 log = logging.getLogger("salamander")
 
@@ -172,16 +166,14 @@ _CT = TypeVar("_CT", bound=SalamanderContext)
 def _prefix(
     bot: "Salamander", msg: discord.Message
 ) -> Callable[["Salamander", discord.Message], List[str]]:
-    base = bot._prefixes.data.get(msg.guild.id, ()) if msg.guild else ()
+    base = ()  # TODO
     return commands.when_mentioned_or(*base)(bot, msg)
 
 
 class Salamander(commands.Bot):
     def __init__(self, *args, **kwargs):
-        self._prefixes = Prefixes()
         self._close_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[...]]
         self._background_loop: Optional[asyncio.Task] = None
-        self._conf = BasicConfig()
         super().__init__(*args, command_prefix=_prefix, **kwargs)
         # spam handling
 
@@ -193,18 +185,23 @@ class Salamander(commands.Bot):
         self._zmq = ZMQHandler()
         self._zmq_task: Optional[asyncio.Task] = None
 
+        self._conn = apsw.Connection("salamander.sqlite")
+
         self.add_cog(FilterDemo(self))
         self.add_cog(Meta(self))
 
         self.load_extension("jishaku")
         self.load_extension("src.extensions.dice")
+        self.modlog: ModlogHandler = ModlogHandler(self._conn)
 
     async def check_basalisk(self, string: str) -> bool:
         """
         Check whether or not something should be filtered
 
         This offloads work to the shared filtering process.
+
         The default is no response, it's assumed to be fine.
+
         This prevents other features specific to this
         component from failing over if basalisk is not in use or in a failed state.
         Status checks of other components will be handled later on.
@@ -290,6 +287,7 @@ class Salamander(commands.Bot):
     async def close(self):
         await self.aclose()
         await super().close()
+        sys.exit()
 
     async def aclose(self):
         if self._background_loop is not None:
@@ -329,11 +327,7 @@ class Salamander(commands.Bot):
         if ctx.command is None:
             return
 
-        if self._conf.user_is_blocked(ctx.author.id):
-            return
-
-        if ctx.guild and self._conf.guild_is_blocked(ctx.guild.id):
-            return
+        # TODO: blocked user checking
 
         if ctx.guild:
             if not ctx.channel.permissions_for(ctx.me).send_messages:
@@ -343,22 +337,23 @@ class Salamander(commands.Bot):
                     )
                 return
 
-        if not await self.is_owner(ctx.author):
-            author_id = ctx.author.id
-            # DEP-WARN: commands.CooldownMapping.update_rate_limit
-            retry = self.__global_cooldown.update_rate_limit(ctx.message)
-            if retry:
-                self._spam_counter[author_id] += 1
-                if self._spam_counter[author_id] > 3:
-                    await self._conf.block_user(author_id)
-                    log.info(
-                        "User: {user_id} has been blocked temporarily for "
-                        "hitting the global ratelimit a lot.",
-                        user_id=author_id,
-                    )
-                return
-            else:
-                self._spam_counter.pop(author_id, None)
+        #  TODO: block users
+        #  if not await self.is_owner(ctx.author):
+        #      author_id = ctx.author.id
+        #      # DEP-WARN: commands.CooldownMapping.update_rate_limit
+        #      retry = self.__global_cooldown.update_rate_limit(ctx.message)
+        #      if retry:
+        #          self._spam_counter[author_id] += 1
+        #          if self._spam_counter[author_id] > 3:
+        #              TODO: block users here
+        #              log.info(
+        #                  "User: {user_id} has been blocked temporarily for "
+        #                  "hitting the global ratelimit a lot.",
+        #                  user_id=author_id,
+        #              )
+        #          return
+        #      else:
+        #          self._spam_counter.pop(author_id, None)
 
         async with ctx:
             await self.invoke(ctx)
@@ -376,46 +371,12 @@ class Salamander(commands.Bot):
         if uvloop is not None:
             uvloop.install()
 
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
+        async def runner():
             instantiated = cls(*args, **kwargs)
+            async with instantiated as bot_object:
+                try:
+                    await bot_object.start(token)
+                finally:
+                    await bot_object.logout()
 
-            async def runner():
-                async with instantiated as bot_object:
-                    try:
-                        await bot_object.start(token)
-                    finally:
-                        await bot_object.logout()
-
-            if os.name != "nt":
-                signals = (
-                    signal.SIGHUP,  # pylint: disable=no-member
-                    signal.SIGTERM,
-                    signal.SIGINT,
-                )
-                for s in signals:
-                    loop.add_signal_handler(
-                        s, lambda s=s: asyncio.create_task(instantiated.logout())
-                    )
-
-            def stop_when_done(f: asyncio.Future):
-                loop.stop()
-
-            fut = loop.create_task(runner())
-            fut.add_done_callback(stop_when_done)
-
-            loop.run_forever()
-        except KeyboardInterrupt:
-            log.warning("Exiting from keyboard interrupt")
-            loop.run_until_complete(instantiated.logout())
-        finally:
-            try:
-                fut.remove_done_callback(stop_when_done)
-                cancel_all_tasks(loop)
-                loop.run_until_complete(loop.shutdown_asyncgens())
-                loop.run_until_complete(asyncio.sleep(1))
-            finally:
-                if not fut.cancelled():  # normal exit
-                    return fut.result()
+        asyncio.run(runner())

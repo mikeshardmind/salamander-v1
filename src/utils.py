@@ -17,7 +17,8 @@ from __future__ import annotations
 
 import asyncio
 import threading
-from typing import Dict, List, Optional
+import time
+from typing import Dict, List, Optional, Generic, TypeVar, Callable, Awaitable, Sequence
 
 
 def pagify(
@@ -81,26 +82,58 @@ class MainThreadSingletonMeta(type):
         return cls._instances[cls]
 
 
-def cancel_all_tasks(loop: asyncio.AbstractEventLoop):
-    to_cancel = asyncio.all_tasks(loop)
-    if not to_cancel:
-        return
+_T = TypeVar("_T")
 
-    for task in to_cancel:
-        task.cancel()
 
-    loop.run_until_complete(
-        asyncio.gather(*to_cancel, loop=loop, return_exceptions=True)
-    )
+class Waterfall(Generic[_T]):
+    def __init__(
+        self,
+        max_wait: float,
+        max_quantity: int,
+        async_callback: Callable[[Sequence[_T]], Awaitable],
+    ):
+        asyncio.get_running_loop()
+        self.queue = asyncio.Queue()  # type: asyncio.Queue[_T]
+        self.max_wait: float = max_wait
+        self.max_quantity: int = max_quantity
+        self.callback: Callable[[Sequence[_T]], Awaitable] = async_callback
+        self.task: Optional[asyncio.Task] = None
+        self._alive: bool = False
 
-    for task in to_cancel:
-        if task.cancelled():
-            continue
-        if task.exception() is not None:
-            loop.call_exception_handler(
-                {
-                    "task": task,
-                    "exception": task.exception(),
-                    "message": "Unhandled exception during event loop finalization.",
-                }
-            )
+    def start(self):
+        if self.task is not None:
+            raise RuntimeError("Already Running")
+
+        self._alive = True
+        self.task = asyncio.create_task(self._loop)
+
+    def stop(self):
+        self._alive = False
+
+    def put(self, item: _T):
+        if not self._alive:
+            raise RuntimeError("Can't put something in a non-running Waterfall.")
+        self.queue.put_nowait(item)
+
+    async def _loop(self):
+        while self._alive:
+            queue_items: Sequence[_T] = []
+            iter_start = time.monotonic()
+
+            while (this_max_wait := (time.monotonic() - iter_start)) < self.max_wait:
+                try:
+                    n = await asyncio.wait_for(self.event_queue.get(), this_max_wait)
+                except asyncio.TimeoutError:
+                    continue
+                else:
+                    queue_items.append(n)
+                if len(queue_items) >= self.max_quantity:
+                    break
+
+                if not queue_items:
+                    continue
+
+            asyncio.create_task(self.callback(queue_items))
+
+            for item in queue_items:
+                self.queue.task_done()
