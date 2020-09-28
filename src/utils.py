@@ -18,7 +18,18 @@ from __future__ import annotations
 import asyncio
 import threading
 import time
-from typing import Dict, List, Optional, Generic, TypeVar, Callable, Awaitable, Sequence
+from typing import (
+    Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    TypeVar,
+    overload,
+)
 
 
 def pagify(
@@ -107,8 +118,22 @@ class Waterfall(Generic[_T]):
         self._alive = True
         self.task = asyncio.create_task(self._loop)
 
-    def stop(self):
+    @overload
+    def stop(self, wait: Literal[True]) -> Awaitable:
+        ...
+
+    @overload
+    def stop(self, wait: Literal[False]):
+        ...
+
+    @overload
+    def stop(self, wait: bool = False) -> Optional[Awaitable]:
+        ...
+
+    def stop(self, wait: bool = False):
         self._alive = False
+        if wait:
+            return self.queue.join()
 
     def put(self, item: _T):
         if not self._alive:
@@ -133,7 +158,32 @@ class Waterfall(Generic[_T]):
                 if not queue_items:
                     continue
 
+            num_items = len(queue_items)
+
             asyncio.create_task(self.callback(queue_items))
 
-            for item in queue_items:
+            for _ in range(num_items):
                 self.queue.task_done()
+
+        # Don't stop entirely until we clear the remainder of the queue
+
+        remaining_items: Sequence[_T] = []
+
+        while not self.queue.empty():
+            try:
+                ev = self.queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+
+            remaining_items.append(ev)
+
+        num_remaining = len(remaining_items)
+
+        for chunk in (
+            remaining_items[p : p + 10]
+            for p in range(0, num_remaining, self.max_quantity)
+        ):
+            asyncio.create_task(self.callback(chunk))
+
+        for _ in range(num_remaining):
+            self.queue.task_done()
