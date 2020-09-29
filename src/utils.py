@@ -180,7 +180,7 @@ class Waterfall(Generic[_T]):
         num_remaining = len(remaining_items)
 
         for chunk in (
-            remaining_items[p : p + 10]
+            remaining_items[p : p + self.max_quantity]
             for p in range(0, num_remaining, self.max_quantity)
         ):
             asyncio.create_task(self.callback(chunk))
