@@ -359,7 +359,7 @@ class Salamander(commands.Bot):
             await self.invoke(ctx)
 
     @classmethod
-    def run_with_wrapping(cls, token, *args, **kwargs):
+    def run_with_wrapping(cls, token):
         """
         This wraps all asyncio behavior
 
@@ -371,8 +371,27 @@ class Salamander(commands.Bot):
         if uvloop is not None:
             uvloop.install()
 
+        intents = discord.Intents(
+            guilds=True,
+            # below might be settable to False if we require mentioning users in moderation actions.
+            # This then means the bot can scale with fewer barriers
+            # (mentioned users contain roles in message objects allowing proper hierarchy checks)
+            members=True,
+            # This is only needed for live bansync, consider if that's something we want and either uncomment or remove
+            # Known downside: still requires fetch based sync due to no guarantee of event delivery.
+            #  bans=True,
+            voice_states=True,
+            guild_messages=True,
+            guild_reactions=True,
+            dm_messages=True,
+            dm_reactions=True,
+        )
+
         async def runner():
-            instantiated = cls(*args, **kwargs)
+            instantiated = cls(
+                intents=intents,
+                allowed_mentions=discord.AllowedMentions(everyone=False),
+            )
             async with instantiated as bot_object:
                 try:
                     await bot_object.start(token)
