@@ -1,8 +1,7 @@
-discord.py
-msgpack
+discord.py>=1.5,<2
+msgpack==1.0.0
 numpy
 numba
 pyzmq
-asyncpg
 uvloop
 jishaku
