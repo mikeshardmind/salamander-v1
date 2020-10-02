@@ -11,3 +11,9 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+
+from .core import Mod
+
+
+def setup(bot):
+    bot.add_cog(Mod(bot))
