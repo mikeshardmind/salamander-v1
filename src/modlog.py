@@ -20,6 +20,7 @@ from typing import Generator
 
 import apsw
 import discord
+import msgpack
 
 from .utils import MainThreadSingletonMeta as Singleton
 
@@ -223,6 +224,107 @@ class ModlogHandler(metaclass=Singleton):
                     discrim=target.discriminator,
                     nick=target.nick,
                     payload=EMPTY_MAP,
+                ),
+            )
+
+    def member_muted(self, mod: discord.Member, target: discord.Member, reason: str):
+        with auto_transaction(self._conn) as cursor:
+            guild_id = mod.guild.id
+
+            cursor.executemany(
+                INSERT_OR_UPDATE_USER,
+                (
+                    (target.id, target.name, target.discriminator),
+                    (mod.id, mod.name, mod.discriminator),
+                ),
+            )
+            cursor.execute(
+                INSERT_OR_IGNORE_GUILD, (guild_id,),
+            )
+            cursor.executemany(
+                INSERT_OR_UPDATE_MEMBER,
+                ((target.id, guild_id, target.nick), (mod.id, guild_id, mod.nick)),
+            )
+            cursor.execute(
+                BASIC_MODLOG_INSERT,
+                dict(
+                    action_name="MUTE",
+                    mod_id=mod.id,
+                    guild_id=guild_id,
+                    target_id=target.id,
+                    reason=reason,
+                    username=target.name,
+                    discrim=target.discriminator,
+                    nick=target.nick,
+                    payload=EMPTY_MAP,
+                ),
+            )
+
+    def member_unmuted(self, mod: discord.Member, target: discord.Member, reason: str):
+        with auto_transaction(self._conn) as cursor:
+            guild_id = mod.guild.id
+
+            cursor.executemany(
+                INSERT_OR_UPDATE_USER,
+                (
+                    (target.id, target.name, target.discriminator),
+                    (mod.id, mod.name, mod.discriminator),
+                ),
+            )
+            cursor.execute(
+                INSERT_OR_IGNORE_GUILD, (guild_id,),
+            )
+            cursor.executemany(
+                INSERT_OR_UPDATE_MEMBER,
+                ((target.id, guild_id, target.nick), (mod.id, guild_id, mod.nick)),
+            )
+            cursor.execute(
+                BASIC_MODLOG_INSERT,
+                dict(
+                    action_name="UNMUTE",
+                    mod_id=mod.id,
+                    guild_id=guild_id,
+                    target_id=target.id,
+                    reason=reason,
+                    username=target.name,
+                    discrim=target.discriminator,
+                    nick=target.nick,
+                    payload=EMPTY_MAP,
+                ),
+            )
+
+    def member_tempmuted(
+        self, mod: discord.Member, target: discord.Member, reason: str, duration: float
+    ):
+        with auto_transaction(self._conn) as cursor:
+            guild_id = mod.guild.id
+
+            cursor.executemany(
+                INSERT_OR_UPDATE_USER,
+                (
+                    (target.id, target.name, target.discriminator),
+                    (mod.id, mod.name, mod.discriminator),
+                ),
+            )
+            cursor.execute(
+                INSERT_OR_IGNORE_GUILD, (guild_id,),
+            )
+            cursor.executemany(
+                INSERT_OR_UPDATE_MEMBER,
+                ((target.id, guild_id, target.nick), (mod.id, guild_id, mod.nick)),
+            )
+            cursor.execute(
+                BASIC_MODLOG_INSERT,
+                dict(
+                    action_name="TEMPMUTE",
+                    mod_id=mod.id,
+                    guild_id=guild_id,
+                    target_id=target.id,
+                    reason=reason,
+                    username=target.name,
+                    discrim=target.discriminator,
+                    nick=target.nick,
+                    payload=msgpack.packb({"duration": duration}),
                 ),
             )
 
