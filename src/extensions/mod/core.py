@@ -139,7 +139,7 @@ class Mod(commands.Cog):
 
         kick_sanity_check(bot_user=ctx.me, mod=ctx.author, target=who)
         await who.kick(
-            reacon=f"User kicked by command. (Authorizing mod: {who}({who.id})"
+            reacon=f"User kicked by command. (Authorizing mod: {ctx.author}({ctx.author.id})"
         )
         self.bot.modlog.member_kick(mod=ctx.author, target=who, reason=reason)
 
@@ -159,7 +159,7 @@ class Mod(commands.Cog):
         if isinstance(who, discord.Member):
             ban_sanity_check(bot_user=ctx.me, mod=ctx.author, target=who)
             await who.ban(
-                reason=f"User banned by command. (Authorizing mod: {who}({who.id})"
+                reason=f"User banned by command. (Authorizing mod: {ctx.author}({ctx.author.id})"
             )
             self.bot.modlog.member_ban(mod=ctx.author, target=who, reason=reason)
         else:
