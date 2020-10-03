@@ -15,9 +15,12 @@
 
 from __future__ import annotations
 
-from typing import Union
+import asyncio
+import contextlib
+from typing import Optional, Union
 
 import discord
+import msgpack
 from discord.ext import commands
 
 from ...bot import HierarchyException, Salamander, SalamanderContext, UserFeedbackError
@@ -36,14 +39,29 @@ VALUES (
     :mute_role_used,
     :removed_roles
 )
+ON CONFLICT (guild_id, user_id) DO UPDATE SET
+    expires_at=excluded.expires_at,
+    mute_role_used=excluded.mute_role_used,
+    removed_roles=excluded.removed_roles,
+    expires_at=excluded.expires_at,
 """
 
 GET_DETAILS_FOR_UNMUTE = """
 SELECT removed_roles FROM guild_mutes WHERE guild_id = ? AND user_id = ?
 """
 
+GET_MUTE_EXPIRATION = """
+SELECT expires_at FROM guild_mutes WHERE guild_id = ? AND user_id = ?
+"""
+
 GET_MUTE_ROLE = """
 SELECT mute_role FROM guild_settings WHERE guild_id = ?
+"""
+
+SET_MUTE_ROLE = """
+INSERT INTO guild_settings (guild_id, mute_role) VALUES (?,?)
+ON CONFLICT (guild_id) DO UPDATE SET
+    mute_role=excluded.mute_role
 """
 
 REMOVE_MUTE = """
@@ -239,6 +257,59 @@ class Mod(commands.Cog):
 
     # TODO: more commands / ban options
 
+    async def mute_user_logic(
+        self,
+        *,
+        mod: discord.Member,
+        target: discord.Member,
+        reason: str,
+        audit_reason: str,
+        expiration: Optional[str] = None,
+    ):
+
+        guild = mod.guild
+        cursor = self.bot._conn.cursor()
+        params = (guild.id,)
+        cursor.execute(INSERT_OR_IGNORE_GUILD, params)
+        (mute_role_id,) = cursor.execute(GET_MUTE_ROLE, params)
+
+        if mute_role_id is None:
+            raise UserFeedbackError(custom_message="No mute role has been configured.")
+
+        mute_role = guild.get_role(mute_role_id)
+        if mute_role is None:
+            raise UserFeedbackError(
+                custom_message="The mute role for this server appears to have been deleted."
+            )
+
+        if mute_role in target.roles:
+            raise UserFeedbackError(custom_message="User is already muted.")
+
+        mute_sanity_check(bot_user=guild.me, mod=mod, target=target)
+
+        removed_role_ids = []
+        intended_state = [mute_role]
+        for r in target.roles:
+            if r.managed or r.is_default():
+                intended_state.append(r)
+            else:
+                removed_role_ids.append(r.id)
+
+        await target.edit(roles=intended_state, reason=audit_reason)
+
+        self.bot.modlog.mute_member(mod=mod, target=target, reason=reason)
+
+        cursor.execute(
+            CREATE_MUTE,
+            dict(
+                guild_id=guild.id,
+                user_id=target.id,
+                mute_role_used=mute_role_id,
+                removed_roles=msgpack.packb(removed_role_ids),
+                expires_at=expiration,
+            ),
+        )
+
     @commands.max_concurrency(1, commands.BucketType.guild, wait=True)
     @owner_or_perms(manage_members=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -249,49 +320,12 @@ class Mod(commands.Cog):
     ):
         """ Mute a user using the configure mute role """
 
-        cursor = ctx.bot._conn.cursor()
-        params = (ctx.guild.id,)
-        cursor.execute(INSERT_OR_IGNORE_GUILD, params)
-        (mute_role_id,) = cursor.execute(GET_MUTE_ROLE, params)
+        audit_reason = f"User muted by command. (Mod: {ctx.author}({ctx.author.id})"
 
-        if mute_role_id is None:
-            raise UserFeedbackError("No mute role has been configured.")
-
-        mute_role = ctx.guild.get_role(mute_role_id)
-        if mute_role is None:
-            raise UserFeedbackError(
-                "The mute role for this server appears to have been deleted."
-            )
-
-        if mute_role in who.roles:
-            raise UserFeedbackError("User is already muted.")
-
-        mute_sanity_check(bot_user=ctx.me, mod=ctx.author, target=who)
-
-        removed_role_ids = []
-        intended_state = [mute_role]
-        for r in who.roles:
-            if r.managed or r.is_default():
-                intended_state.append(r)
-            else:
-                removed_role_ids.append(r.id)
-
-        await who.edit(
-            roles=intended_state,
-            reason=f"User muted by command. (Authorizing mod: {ctx.author}({ctx.author.id})",
+        await self.mute_user_logic(
+            mod=ctx.author, target=who, reason=reason, audit_reason=audit_reason
         )
-
-        self.bot.modlog.mute_member(mod=ctx.author, target=who, reason=reason)
-
-        cursor.execute(
-            CREATE_MUTE,
-            dict(
-                guild_id=ctx.guild.id,
-                user_id=who.id,
-                mute_role_used=mute_role_id,
-                removed_roles=msgpack.packb(removed_role_ids),
-            ),
-        )
+        await ctx.send("User Muted")
 
     @commands.max_concurrency(1, commands.BucketType.guild, wait=True)
     @owner_or_perms(manage_members=True)
@@ -309,22 +343,24 @@ class Mod(commands.Cog):
         (mute_role_id,) = cursor.execute(GET_MUTE_ROLE, params)
 
         if mute_role_id is None:
-            raise UserFeedbackError("No mute role has been configured.")
+            raise UserFeedbackError(custom_message="No mute role has been configured.")
 
         mute_role = ctx.guild.get_role(mute_role_id)
         if mute_role is None:
             raise UserFeedbackError(
-                "The mute role for this server appears to have been deleted."
+                custom_message="The mute role for this server appears to have been deleted."
             )
 
         if mute_role not in who.roles:
-            raise UserFeedbackError("User does not appear to be muted")
+            raise UserFeedbackError(custom_message="User does not appear to be muted")
 
         params = (ctx.guild.id, who.id)
-        data = next(cursor.execute(GET_DETAILS_FOR_UNMUTE, params), None,)
+        data = next(cursor.execute(GET_DETAILS_FOR_UNMUTE, params), None)
 
         if data is None:
-            raise UserFeedbackError("User was not muted using this bot (not unmuting).")
+            raise UserFeedbackError(
+                custom_message="User was not muted using this bot (not unmuting)."
+            )
 
         role_ids = msgpack.unpackb(data, use_list=False)
 
@@ -333,8 +369,8 @@ class Mod(commands.Cog):
         for role_id in role_ids:
             role = ctx.guild.get_role(role_id)
             if role:
-                if r.managed or r >= ctx.guild.me.top_role:
-                    cant_add.append(r)
+                if role.managed or role >= ctx.guild.me.top_role:
+                    cant_add.append(role)
                 else:
                     intended_state.append(role)
 
@@ -349,6 +385,84 @@ class Mod(commands.Cog):
 
         if cant_add:
             r_s = ", ".join(r.name for r in cant_add)
-            await ctx.send(f"User unmuted, but I could not restore these roles: {rs}")
+            await ctx.send(f"User unmuted, but I could not restore these roles: {r_s}")
         else:
             await ctx.send(f"User unmuted.")
+
+    @commands.max_concurrency(1, commands.BucketType.guild, wait=True)
+    @owner_or_perms(manage_members=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.guild_only()
+    @commands.command(name="setmuterole")
+    async def set_muterole_command(self, ctx: SalamanderContext, role: discord.Role):
+        """ Set the mute role for the server """
+
+        if role >= ctx.me.top_role and ctx.guild.owner != ctx.me:
+            raise UserFeedbackError(
+                custom_message="I won't be able to use that mute role. "
+                "Try placing the mute role as the lowest role and ensure it has no permissions"
+            )
+
+        if role >= ctx.author.top_role and ctx.guild.owner != ctx.author:
+            raise UserFeedbackError(
+                custom_message="I can't let you set a mute role above your own role."
+            )
+
+        if role.permissions > ctx.author.guild_permissions:
+            raise UserFeedbackError(
+                custom_message="I can't let you set a mute role with permissions you don't have."
+            )
+
+        if role.managed:
+            raise UserFeedbackError(
+                custom_message="This is a role which is managed by an integration. I cannot use it for mutes."
+            )
+
+        if role.permissions.value != 0:
+            await ctx.send(
+                "We recommend mute roles have no permissions. "
+                "This one has at least one permission value set."
+                "\nDo you want to use this role anyway? (yes/no)"
+            )
+            try:
+                confirm_message = await ctx.bot.wait_for(
+                    "message",
+                    check=lambda m: m.author.id == ctx.author.id
+                    and m.channel.id == ctx.channel.id,
+                    timeout=30,
+                )
+            except asyncio.TimeoutError:
+                raise UserFeedbackError(
+                    custom_message="You took too long. I'm not setting the role as a mute role."
+                )
+            else:
+                if confirm_message.content.casefold() == "no":
+                    return await ctx.send("Okay, not setting the role.")
+                elif confirm_message.content.casefold() != "yes":
+                    raise UserFeedbackError(
+                        custom_message="That wasn't a yes or no response."
+                    )
+
+        cursor = self.bot._conn.cursor()
+        cursor.execute(SET_MUTE_ROLE, (ctx.guild.id, role.id))
+        await ctx.send("Mute role set.")
+
+    @commands.Cog.listener("on_member_join")
+    async def mute_dodge_check(self, member: discord.Member):
+
+        with contextlib.suppress(StopIteration, UserFeedbackError):
+            cursor = self.bot._conn.cursor()
+            (expiration,) = next(
+                cursor.execute(GET_MUTE_EXPIRATION, (member.guild.id, member.id))
+            )
+
+            # TODO: don't remute if it's a timed mute that's expired (No timed mute support yet)
+
+            rsn = "Detected mute dodging."
+            await self.mute_user_logic(
+                mod=member.guild.me,
+                target=member,
+                reason=rsn,
+                audit_reason=rsn,
+                expiration=expiration,
+            )
