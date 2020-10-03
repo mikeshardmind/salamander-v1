@@ -32,6 +32,20 @@ from typing import (
 )
 
 
+def format_list(to_format: Sequence[str]) -> str:
+    """ Intentionally raises on empty sequence, opinionated choices on formatting below. Single item sequences return their only item"""
+
+    length = len(to_format)
+
+    if length == 2:
+        return " and ".join(to_format)
+    if length > 2:
+        *most, last = to_format
+        # I really wanna leave out that oxford comma
+        return f'{", ".join(most)} and {last}'
+    return next(iter(to_format))
+
+
 def pagify(
     text: str,
     *,

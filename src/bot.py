@@ -23,7 +23,7 @@ import sys
 from collections import Counter
 from logging.handlers import RotatingFileHandler
 from types import TracebackType
-from typing import Awaitable, Callable, List, Optional, Type, TypeVar
+from typing import Awaitable, Callable, List, Optional, Sequence, Type, TypeVar
 from uuid import uuid4
 
 try:
@@ -38,7 +38,7 @@ from discord.ext import commands
 from .cogs import FilterDemo, Meta
 from .ipc_layer import ZMQHandler
 from .modlog import ModlogHandler
-from .utils import only_once, pagify
+from .utils import format_list, only_once, pagify
 
 log = logging.getLogger("salamander")
 
@@ -99,6 +99,21 @@ class UserFeedbackError(SalamanderException):
         self.custom_message = custom_message
 
 
+_PT = TypeVar("_PT", bound=str)
+
+UNTIMELY_RESPONSE_ERROR_STR = "I'm not waiting forever for a response (exiting)."
+
+NON_TEXT_RESPONSE_ERROR_STR = (
+    "There doesn't appear to be any text in your response, "
+    "please try this command again."
+)
+
+INVALID_OPTION_ERROR_FMT = (
+    "That wasn't a valid option, please try this command again."
+    "\n(Valid options are: {})"
+)
+
+
 class SalamanderContext(commands.Context):
 
     bot: "Salamander"
@@ -130,6 +145,53 @@ class SalamanderContext(commands.Context):
         """
         command = command or self.command
         await super().send_help(command)
+
+    async def prompt(
+        self,
+        prompt: str,
+        *,
+        options: Sequence[_PT],
+        timeout: float,
+        case_sensitive: bool = False,
+        reset_cooldown_on_failure: bool = False,
+    ) -> _PT:
+        """
+        Prompt for a choice, raising an error if not matching
+        """
+
+        def check(m: discord.Message) -> bool:
+            return m.author.id == self.author.id and m.channel.id == self.channel.id
+
+        #  bot.wait_for adds to internal listeners, returning an awaitable
+        #  This ordering is desirable as we can ensure we are listening
+        #  before asking, but have the timeout apply after we've sent
+        #  (avoiding a (user perspective) inconsistent timeout)
+        fut = self.bot.wait_for("message", check=check, timeout=timeout)
+        await self.send(prompt)
+        try:
+            response = await fut
+        except asyncio.TimeoutError:
+            raise IncompleteInputError(
+                custom_message=UNTIMELY_RESPONSE_ERROR_STR,
+                reset_cooldown=reset_cooldown_on_failure,
+            )
+
+        if response.content is None:
+            # did they upload an image as a response?
+            raise IncompleteInputError(
+                custom_message=NON_TEXT_RESPONSE_ERROR_STR,
+                reset_cooldown=reset_cooldown_on_failure,
+            )
+
+        content = response.content if case_sensitive else response.content.casefold()
+
+        if content not in options:
+            raise IncompleteInputError(
+                custom_message=INVALID_OPTION_ERROR_FMT.format(format_list(options)),
+                reset_cooldown=reset_cooldown_on_failure,
+            )
+
+        return content
 
     async def send_paged(
         self,

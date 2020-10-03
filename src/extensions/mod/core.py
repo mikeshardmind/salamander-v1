@@ -15,7 +15,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import contextlib
 from typing import Optional, Union
 
@@ -24,6 +23,7 @@ import msgpack
 from discord.ext import commands
 
 from ...bot import HierarchyException, Salamander, SalamanderContext, UserFeedbackError
+from ...utils import format_list
 
 INSERT_OR_IGNORE_GUILD = """
 INSERT INTO guild_settings (guild_id) VALUES (?)
@@ -297,7 +297,7 @@ class Mod(commands.Cog):
 
         await target.edit(roles=intended_state, reason=audit_reason)
 
-        self.bot.modlog.mute_member(mod=mod, target=target, reason=reason)
+        self.bot.modlog.member_muted(mod=mod, target=target, reason=reason)
 
         cursor.execute(
             CREATE_MUTE,
@@ -354,8 +354,9 @@ class Mod(commands.Cog):
         if mute_role not in who.roles:
             raise UserFeedbackError(custom_message="User does not appear to be muted")
 
-        params = (ctx.guild.id, who.id)
-        data = next(cursor.execute(GET_DETAILS_FOR_UNMUTE, params), None)
+        data = next(
+            cursor.execute(GET_DETAILS_FOR_UNMUTE, (ctx.guild.id, who.id)), None
+        )
 
         if data is None:
             raise UserFeedbackError(
@@ -374,20 +375,18 @@ class Mod(commands.Cog):
                 else:
                     intended_state.append(role)
 
-        await who.edit(
-            roles=intended_state,
-            reason=f"User unmuted by command. (Authorizing mod: {ctx.author}({ctx.author.id})",
-        )
+        audit_reason = f"User unmuted by command. (Mod: {ctx.author}({ctx.author.id})"
 
-        self.bot.modlog.unmute_member(mod=ctx.author, target=who, reason=reason)
+        await who.edit(roles=intended_state, reason=audit_reason)
 
+        self.bot.modlog.member_unmuted(mod=ctx.author, target=who, reason=reason)
         cursor.execute(REMOVE_MUTE, params)
 
         if cant_add:
-            r_s = ", ".join(r.name for r in cant_add)
-            await ctx.send(f"User unmuted, but I could not restore these roles: {r_s}")
+            r_s = format_list([r.name for r in cant_add])
+            await ctx.send(f"User unmuted. A few roles could not be restored: {r_s}")
         else:
-            await ctx.send(f"User unmuted.")
+            await ctx.send("User unmuted.")
 
     @commands.max_concurrency(1, commands.BucketType.guild, wait=True)
     @owner_or_perms(manage_members=True)
@@ -419,29 +418,16 @@ class Mod(commands.Cog):
             )
 
         if role.permissions.value != 0:
-            await ctx.send(
+            prompt = (
                 "We recommend mute roles have no permissions. "
                 "This one has at least one permission value set."
                 "\nDo you want to use this role anyway? (yes/no)"
             )
-            try:
-                confirm_message = await ctx.bot.wait_for(
-                    "message",
-                    check=lambda m: m.author.id == ctx.author.id
-                    and m.channel.id == ctx.channel.id,
-                    timeout=30,
-                )
-            except asyncio.TimeoutError:
-                raise UserFeedbackError(
-                    custom_message="You took too long. I'm not setting the role as a mute role."
-                )
-            else:
-                if confirm_message.content.casefold() == "no":
-                    return await ctx.send("Okay, not setting the role.")
-                elif confirm_message.content.casefold() != "yes":
-                    raise UserFeedbackError(
-                        custom_message="That wasn't a yes or no response."
-                    )
+
+            response = await ctx.prompt(prompt, options=("yes", "no"), timeout=30)
+            if response == "no":
+                await ctx.send("Okay, not setting the role.")
+                return
 
         cursor = self.bot._conn.cursor()
         cursor.execute(SET_MUTE_ROLE, (ctx.guild.id, role.id))
