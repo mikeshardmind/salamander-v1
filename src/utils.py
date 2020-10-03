@@ -147,7 +147,7 @@ class Waterfall(Generic[_T]):
 
             while (this_max_wait := (time.monotonic() - iter_start)) < self.max_wait:
                 try:
-                    n = await asyncio.wait_for(self.event_queue.get(), this_max_wait)
+                    n = await asyncio.wait_for(self.queue.get(), this_max_wait)
                 except asyncio.TimeoutError:
                     continue
                 else:
