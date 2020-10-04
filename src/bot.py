@@ -232,10 +232,23 @@ def _prefix(
     return commands.when_mentioned_or(*base)(bot, msg)
 
 
+class BehaviorFlags:
+    """
+    Class for setting extra behavior
+    mostly when relating to IPC services which may not be running.
+
+    This isn't exposed to construction of the bot yet. (TODO)
+    """
+    def __init__(self, *, no_basalisk: bool = False, no_serpent: bool = False):
+        self.no_basalisk: bool = no_basalisk
+        self.no_serpent: bool = no_serpent
+
+
 class Salamander(commands.Bot):
     def __init__(self, *args, **kwargs):
         self._close_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[...]]
         self._background_loop: Optional[asyncio.Task] = None
+        self._behavior_flags: BehaviorFlags = BehaviorFlags()
         super().__init__(*args, command_prefix=_prefix, **kwargs)
         # spam handling
 
@@ -272,6 +285,9 @@ class Salamander(commands.Bot):
         it's possible that false negatives can occur,
         but if anything blocks the loop for that long, there are larger issues.
         """
+
+        if self._behavior_flags.no_basalisk:
+            return False
 
         this_uuid = uuid4().bytes
 
@@ -438,6 +454,7 @@ class Salamander(commands.Bot):
             # below might be settable to False if we require mentioning users in moderation actions.
             # This then means the bot can scale with fewer barriers
             # (mentioned users contain roles in message objects allowing proper hierarchy checks)
+            # It's also needed if we allow reaction removals to trigger actions...
             members=True,
             # This is only needed for live bansync, consider if that's something we want and either uncomment or remove
             # Known downside: still requires fetch based sync due to no guarantee of event delivery.

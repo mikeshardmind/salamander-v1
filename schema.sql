@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS mod_log (
 	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id)
 		ON UPDATE CASCADE ON DELETE CASCADE,
 	target_id INTEGER NOT NULL,
-	created_at DEFAULT CURRENT_TIMESTAMP,
+	created_at TEXT DEFAULT CURRENT_TIMESTAMP,
 	reason TEXT,
 	payload,
 	username_at_action TEXT,
@@ -118,8 +118,8 @@ CREATE TABLE IF NOT EXISTS guild_mutes (
 	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id)
 		ON UPDATE CASCADE ON DELETE CASCADE,
 	user_id INTEGER NOT NULL,
-	muted_at DEFAULT CURRENT_TIMESTAMP,
-	expires_at DEFAULT NULL,
+	muted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+	expires_at TEXT DEFAULT NULL,
     mute_role_used INTEGER, 
     removed_roles,
 	FOREIGN KEY (user_id, guild_id) REFERENCES member_settings(user_id, guild_id)
