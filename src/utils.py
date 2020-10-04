@@ -16,20 +16,78 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import threading
 import time
+from datetime import timedelta
 from typing import (
     Awaitable,
     Callable,
     Dict,
+    Final,
     Generic,
     List,
     Literal,
     Optional,
     Sequence,
+    Tuple,
     TypeVar,
     overload,
 )
+
+from dateutil.relativedelta import relativedelta
+
+TIMEDELTA_RE_STRING: Final[str] = r"\s?".join(
+    [
+        r"((?P<weeks>\d+?)\s?(weeks?|w))?",
+        r"((?P<days>\d+?)\s?(days?|d))?",
+        r"((?P<hours>\d+?)\s?(hours?|hrs|hr?))?",
+        r"((?P<minutes>\d+?)\s?(minutes?|mins?|m(?!o)))?",  # prevent matching "months"
+        r"((?P<seconds>\d+?)\s?(seconds?|secs?|s))?",
+    ]
+)
+
+RELATIVEDELTA_RE_STRING: Final[str] = r"\s?".join(
+    [
+        r"((?P<years>\d+?)\s?(years?|y))?"
+        r"((?P<months>\d+?)\s?(months?|mo))?"
+        r"((?P<weeks>\d+?)\s?(weeks?|w))?",
+        r"((?P<days>\d+?)\s?(days?|d))?",
+        r"((?P<hours>\d+?)\s?(hours?|hrs|hr?))?",
+        r"((?P<minutes>\d+?)\s?(minutes?|mins?|m(?!o)))?",  # prevent matching "months"
+        r"((?P<seconds>\d+?)\s?(seconds?|secs?|s))?",
+    ]
+)
+
+TIMEDELTA_RE = re.compile(TIMEDELTA_RE_STRING, re.I)
+RELATIVEDELTA_RE = re.compile(RELATIVEDELTA_RE_STRING, re.I)
+
+PERIODS: Final[Sequence[Tuple[str, str, int]]] = (
+    ("year", "years", 60 * 60 * 24 * 365),
+    ("month", "months", 60 * 60 * 24 * 30),
+    ("day", "days", 60 * 60 * 24),
+    ("hour", "hours", 60 * 60),
+    ("minute", "minutes", 60),
+    ("second", "seconds", 1),
+)
+
+
+def parse_timedelta(argument: str) -> Optional[timedelta]:
+    matches = TIMEDELTA_RE.match(argument)
+    if matches:
+        params = {k: int(v) for k, v in matches.groupdict().items() if v}
+        if params:
+            return timedelta(**params)
+    return None
+
+
+def parse_relativedelta(argument: str) -> Optional[relativedelta]:
+    matches = RELATIVEDELTA_RE.match(argument)
+    if matches:
+        params = {k: int(v) for k, v in matches.groupdict().items() if v}
+        if params:
+            return relativedelta(None, None, **params)  # The Nones are to satisfy mypy
+    return None
 
 
 def format_list(to_format: Sequence[str]) -> str:
@@ -201,3 +259,22 @@ class Waterfall(Generic[_T]):
 
         for _ in range(num_remaining):
             self.queue.task_done()
+
+
+def humanize_seconds(seconds: float) -> str:
+
+    seconds = int(seconds)
+    strings = []
+    for period_name, plural_period_name, period_seconds in PERIODS:
+        if seconds >= period_seconds:
+            period_value, seconds = divmod(seconds, period_seconds)
+            if period_value == 0:
+                continue
+            unit = plural_period_name if period_value > 1 else period_name
+            strings.append(f"{period_value} {unit}")
+
+    return format_list(strings)
+
+
+def humanize_timedelta(delta: timedelta) -> str:
+    return humanize_seconds(delta.total_seconds())

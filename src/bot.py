@@ -239,6 +239,7 @@ class BehaviorFlags:
 
     This isn't exposed to construction of the bot yet. (TODO)
     """
+
     def __init__(self, *, no_basalisk: bool = False, no_serpent: bool = False):
         self.no_basalisk: bool = no_basalisk
         self.no_serpent: bool = no_serpent

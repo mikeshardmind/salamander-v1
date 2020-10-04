@@ -5,3 +5,4 @@ numba
 pyzmq
 uvloop
 jishaku
+python-dateutil
