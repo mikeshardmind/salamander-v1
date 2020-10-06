@@ -47,7 +47,7 @@ is designed to be hooked up to such a network.
 
 This is a relatively new project based on a mix of old ideas and newer motivations.
 
-Development will happen sporadically based on discussions with invested parties. 
+Development will happen based on discussions with invested parties. 
 
 If you'd like to learn more, contact links will be added when we are ready to take questions and input from a wider audience. Stay tuned.
 
