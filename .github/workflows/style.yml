@@ -18,3 +18,5 @@ jobs:
         name: Format checking with black
       - run: "isort --profile=black runner.py src"
         name: import sorting
+      - run: find . ! -path "./.git/*" -not -type d -exec file "{}" ";" |& grep -c " CRLF "
+        name: no CLRF
