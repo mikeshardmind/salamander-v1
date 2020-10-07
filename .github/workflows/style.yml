@@ -4,19 +4,20 @@ on: [push, pull_request]
 
 
 jobs:
-  mypy:
-    name: Style Check with Black & isort
+  formatting:
+    name: Consistent Formatting Checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-python@v1
         with:
           python-version: "3.8"
-      - run: "python -m pip install black==19.10b0 isort==5.4.1"
+      - run: "python -m pip install -r dev-requirements.txt"
         name: Install deps
       - run: "black --check --target-version py38 runner.py src"
-        name: Format checking with black
+        name: Format checking with Black
       - run: "isort --profile=black runner.py src"
-        name: import sorting
-      - run: find . ! -path "./.git/*" -not -type d -exec file "{}" ";" |& grep -c " CRLF "
-        name: no CLRF
+        name: Import sorting
+      - run: >
+          find . ! -path "./.git/*" -not -type d -exec file "{}" ";" |& grep -c " CRLF "
+        name: Verify No CLRF line endings.
