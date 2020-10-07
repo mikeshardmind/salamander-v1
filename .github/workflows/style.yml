@@ -19,5 +19,5 @@ jobs:
       - run: "isort --profile=black runner.py src"
         name: Import sorting
       - run: >
-          find . ! -path "./.git/*" -not -type d -exec file "{}" ";" |& grep -c " CRLF "
+          ! $(find . ! -path "./.git/*" -not -type d -exec file "{}" ";" |& grep -q " CRLF ")
         name: Verify No CLRF line endings.
