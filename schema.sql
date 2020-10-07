@@ -244,10 +244,11 @@ CREATE INDEX IF NOT EXISTS modnote_moderators ON mod_user_notes (mod_id, guild_i
 -- 	message_id INTEGER NOT NULL,
 -- 	channel_id INTEGER NOT NULL,
 -- 	reaction TEXT NOT NULL,
+--  reaction_removal_can_act BOOLEAN DEFAULT false,
 -- 	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id)
 -- 		ON DELETE CASCADE ON UPDATE CASCADE,
 -- 	role_id INTEGER REFERENCES role_settings(role_id)
--- 		ON DELETE CASCADE ON UPDATE ,
+-- 		ON DELETE CASCADE ON UPDATE,
 -- 	PRIMARY KEY (message_id, reaction)
 -- );
 -- 
@@ -255,6 +256,8 @@ CREATE INDEX IF NOT EXISTS modnote_moderators ON mod_user_notes (mod_id, guild_i
 -- -- Useful for things such requiring selecting a team from a number of teams
 -- -- max_allowed is defaulted at above the number of roles a discord guild can have, by a significant margin
 -- -- Use case is for signing up for a limited number of activites at once via role
+-- --
+--
 -- CREATE TABLE IF NOT EXISTS role_groups (
 -- 	group_name TEXT NOT NULL,
 -- 	guild_id INTEGER REFERENCES guild_settings(guild_id)
@@ -275,8 +278,6 @@ CREATE INDEX IF NOT EXISTS modnote_moderators ON mod_user_notes (mod_id, guild_i
 -- 		ON DELETE CASCADE ON UPDATE CASCADE
 -- );
 -- 
--- -- Below tables are used instead of a msgpack list of IDs, should sqlite add array type support
--- -- at a later date, this may be changed to just be part of the above tables
 -- 
 -- CREATE TABLE IF NOT EXISTS role_assign_requirements (
 -- 	role_id INTEGER REFERENCES role_settings(role_id)
@@ -284,38 +285,7 @@ CREATE INDEX IF NOT EXISTS modnote_moderators ON mod_user_notes (mod_id, guild_i
 -- 	required_role_id INTEGER REFERENCES role_settings(role_id)
 -- 		ON DELETE CASCADE ON UPDATE CASCADE
 -- 	is_required BOOLEAN DEFAULT false
--- );
--- 
--- 
--- CREATE TABLE IF NOT EXISTS role_assign_ignored_roles (
--- 	role_id INTEGER REFERENCES role_settings(role_id)
--- 		ON DELETE CASCADE ON UPDATE CASCADE,
--- 	required_role_id INTEGER REFERENCES role_settings(role_id)
--- 		ON DELETE CASCADE ON UPDATE CASCADE,
--- 	is_ignored BOOLEAN DEFAULT false
--- );
--- 
--- 
--- CREATE TABLE IF NOT EXISTS role_group_assign_requirements (
--- 	group_name TEXT,
--- 	guild_id INTEGER,
--- 	is_required BOOLEAN false,
--- 	required_role_id INTEGER REFERENCES role_settings(role_id)
--- 		ON DELETE CASCADE ON UPDATE CASCADE,
--- 	FOREIGN KEY (group_name, guild_id) REFERENCES role_groups(group_name, guild_id)
--- 		ON DELETE CASCADE ON UPDATE CASCADE 
--- );
--- 
--- 
--- CREATE TABLE IF NOT EXISTS role_group_assign_ignored_roles (
--- 	group_name TEXT,
--- 	guild_id INTEGER,
--- 	is_ignored BOOLEAN false,
--- 	required_role_id INTEGER REFERENCES role_settings(role_id)
--- 		ON DELETE CASCADE ON UPDATE CASCADE,
--- 	FOREIGN KEY (group_name, guild_id) REFERENCES role_groups(group_name, guild_id)
--- 		ON DELETE CASCADE ON UPDATE CASCADE
--- );
+-- ); 
 -- 
 -- -- END REGION
 
