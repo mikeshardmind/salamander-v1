@@ -37,9 +37,32 @@ PERIODS: Final[Sequence[Tuple[str, str, int]]] = (
 
 
 def format_list(to_format: Sequence[str]) -> str:
-    """ Intentionally raises on empty sequence, opinionated choices on formatting below. Single item sequences return their only item"""
+    """
+    Formats a sequence of strings for display.
+
+    Opinionated choices on formatting below.
+
+    Single item sequences return their only item
+    Two items return the items seperated by and,
+    Three or more returns a comma seperated list
+    with the last values having "and",
+    but without an oxford comma.
+
+
+    Raises
+    ------
+    ValueError
+        empty sequence
+
+    Returns
+    -------
+    str
+    """
 
     length = len(to_format)
+
+    if length == 0:
+        raise ValueError("Must provide at least one item")
 
     if length == 2:
         return " and ".join(to_format)

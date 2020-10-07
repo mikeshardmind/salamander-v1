@@ -16,7 +16,6 @@
 from __future__ import annotations
 
 import contextlib
-from typing import Generator
 
 import apsw
 import discord
@@ -138,21 +137,6 @@ VALUES (
 """
 
 
-@contextlib.contextmanager
-def auto_transaction(connection: apsw.Connection) -> Generator[apsw.Cursor, None, None]:
-    c = connection.cursor()
-    try:
-        c.execute("BEGIN TRANSACTION")
-        yield c
-    except Exception:
-        c.execute("ROLLBACK TRANSACTION")
-        raise
-    else:
-        c.execute("COMMIT TRANSACTION")
-    finally:
-        c.close()
-
-
 class ModlogHandler(metaclass=Singleton):
     def __init__(self, connection: apsw.Connection):
         self._conn: apsw.Connection = connection
@@ -161,7 +145,7 @@ class ModlogHandler(metaclass=Singleton):
 
     def member_kick(self, mod: discord.Member, target: discord.Member, reason: str):
 
-        with auto_transaction(self._conn) as cursor:
+        with contextlib.closing(self._conn.cursor()) as cursor, self._conn:
             guild_id = mod.guild.id
 
             cursor.executemany(
@@ -195,7 +179,7 @@ class ModlogHandler(metaclass=Singleton):
 
     def member_ban(self, mod: discord.Member, target: discord.Member, reason: str):
 
-        with auto_transaction(self._conn) as cursor:
+        with contextlib.closing(self._conn.cursor()) as cursor, self._conn:
             guild_id = mod.guild.id
 
             cursor.executemany(
@@ -228,7 +212,7 @@ class ModlogHandler(metaclass=Singleton):
             )
 
     def member_muted(self, mod: discord.Member, target: discord.Member, reason: str):
-        with auto_transaction(self._conn) as cursor:
+        with contextlib.closing(self._conn.cursor()) as cursor, self._conn:
             guild_id = mod.guild.id
 
             cursor.executemany(
@@ -261,7 +245,7 @@ class ModlogHandler(metaclass=Singleton):
             )
 
     def member_unmuted(self, mod: discord.Member, target: discord.Member, reason: str):
-        with auto_transaction(self._conn) as cursor:
+        with contextlib.closing(self._conn.cursor()) as cursor, self._conn:
             guild_id = mod.guild.id
 
             cursor.executemany(
@@ -296,7 +280,7 @@ class ModlogHandler(metaclass=Singleton):
     def member_tempmuted(
         self, mod: discord.Member, target: discord.Member, reason: str, duration: float
     ):
-        with auto_transaction(self._conn) as cursor:
+        with contextlib.closing(self._conn.cursor()) as cursor, self._conn:
             guild_id = mod.guild.id
 
             cursor.executemany(
@@ -330,7 +314,7 @@ class ModlogHandler(metaclass=Singleton):
 
     def user_ban(self, mod: discord.Member, target_id: int, reason: str):
 
-        with auto_transaction(self._conn) as cursor:
+        with contextlib.closing(self._conn.cursor()) as cursor, self._conn:
             guild_id = mod.guild.id
             cursor.execute(INSERT_USER_ID, (target_id,))
             cursor.execute(
