@@ -270,7 +270,7 @@ class Salamander(commands.Bot):
         self.modlog: ModlogHandler = ModlogHandler(self._conn)
 
         self.load_extension("jishaku")
-        self.load_extension("src.extensions.dice")
+        self.load_extension("src.contrib_extensions.dice")
         self.load_extension("src.extensions.mod")
 
     async def on_command_error(self, ctx, exc):
