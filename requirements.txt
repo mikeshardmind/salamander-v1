@@ -6,3 +6,4 @@ pyzmq
 uvloop
 jishaku
 python-dateutil
+lru-dict

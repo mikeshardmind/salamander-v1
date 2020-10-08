@@ -34,11 +34,12 @@ except ImportError:
 import apsw
 import discord
 from discord.ext import commands
+from lru import LRU
 
 from .cogs import FilterDemo, Meta
 from .ipc_layer import ZMQHandler
 from .modlog import ModlogHandler
-from .utils import format_list, only_once, pagify
+from .utils import MainThreadSingletonMeta, format_list, only_once, pagify
 
 log = logging.getLogger("salamander")
 
@@ -232,7 +233,8 @@ _CT = TypeVar("_CT", bound=SalamanderContext)
 def _prefix(
     bot: "Salamander", msg: discord.Message
 ) -> Callable[["Salamander", discord.Message], List[str]]:
-    base = ()  # TODO
+    guild = msg.guild
+    base = bot.prefix_manager.get_guild_prefixes(guild.id) if guild else ()
     return commands.when_mentioned_or(*base)(bot, msg)
 
 
@@ -247,6 +249,82 @@ class BehaviorFlags:
     def __init__(self, *, no_basalisk: bool = False, no_serpent: bool = False):
         self.no_basalisk: bool = no_basalisk
         self.no_serpent: bool = no_serpent
+
+
+class PrefixManager(MainThreadSingletonMeta):
+    def __init__(self, bot: "Salamander"):
+        self._bot: "Salamander"
+        self._cache = LRU(128)
+
+    def get_guild_prefixes(self, guild_id: int) -> Sequence[str]:
+        base = self._cache.get(guild_id, ())
+        if base:
+            return base
+
+        cursor = self._bot._conn.cursor()
+        res = tuple(
+            pfx
+            for (pfx,) in cursor.execute(
+                """
+                SELECT prefix FROM guild_prefixes
+                WHERE guild_id=?
+                ORDER BY prefix DESC
+                """,
+                (guild_id,),
+            )
+        )
+        self._cache[guild_id] = res
+        return res
+
+    def add_guild_prefixes(self, guild_id: int, *prefixes: str):
+        cursor = self._bot._conn.cursor()
+        with self._bot._conn:
+
+            cursor.execute(
+                """
+                INSERT INTO guild_settings (guild_id) VALUES ?
+                ON CONFLICT (guild_id) DO NOTHING
+                """
+            )
+
+            cursor.executemany(
+                """
+                INSERT INTO guild_prefixes (guild_id, prefix)
+                VALUES (?, ?)
+                ON CONFLICT (guild_id) DO NOTHING
+                """,
+                tuple((guild_id, pfx) for pfx in prefixes),
+            )
+
+        # Extremely likely to be cached already
+        try:
+            del self._cache[guild_id]
+        except KeyError:
+            pass
+
+    def remove_guild_prefixes(self, guild_id: int, *prefixes: str):
+        cursor = self._bot._conn.cursor()
+        with self._bot._conn:
+
+            cursor.execute(
+                """
+                INSERT INTO guild_settings (guild_id) VALUES ?
+                ON CONFLICT (guild_id) DO NOTHING
+                """
+            )
+
+            cursor.executemany(
+                """
+                DELETE FROM guild_prefixes WHERE guild_id=? AND prefix=?
+                """,
+                tuple((guild_id, pfx) for pfx in prefixes),
+            )
+
+        # Extremely likely to be cached already
+        try:
+            del self._cache[guild_id]
+        except KeyError:
+            pass
 
 
 class Salamander(commands.Bot):
@@ -271,6 +349,7 @@ class Salamander(commands.Bot):
         self.add_cog(Meta(self))
 
         self.modlog: ModlogHandler = ModlogHandler(self._conn)
+        self.prefix_manager: PrefixManager = PrefixManager(self)
 
         self.load_extension("jishaku")
         self.load_extension("src.contrib_extensions.dice")
@@ -489,7 +568,8 @@ class Salamander(commands.Bot):
         )
 
         instance = cls(
-            intents=intents, allowed_mentions=discord.AllowedMentions(everyone=False),
+            intents=intents,
+            allowed_mentions=discord.AllowedMentions(everyone=False, roles=False),
         )
 
-        instance.run(token)
+        instance.run(token, reconnect=True)

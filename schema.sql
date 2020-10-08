@@ -23,13 +23,11 @@ PRAGMA foreign_keys=ON;
 
 -- BEGIN REGION: Core bot settings
 
--- prefixes is a tuple, stored in sqlite as a blob after serializing using msgpack
 -- feature flags is a bitfield reserved for some future plans for enabling specific features per guild
 CREATE TABLE IF NOT EXISTS guild_settings (
 	guild_id INTEGER PRIMARY KEY NOT NULL,
 	is_blacklisted BOOLEAN DEFAULT false,
 	mute_role INTEGER DEFAULT NULL,
-	prefixes DEFAULT NULL,
 	locale TEXT DEFAULT "en-US",
 	timezone TEXT DEFAULT "America/New_York",
 	mod_log_channel INTEGER DEFAULT 0,
@@ -37,6 +35,15 @@ CREATE TABLE IF NOT EXISTS guild_settings (
 	telemetry_opt_in BOOLEAN DEFAULT false,
 	bot_color INTEGER DEFAULT NULL,
 	feature_flags INTEGER DEFAULT 0
+);
+
+
+-- Primary key here is a cute way of getting both a 
+-- covering index and a unique constraint for (guild_id, prefix) as a two in one.
+CREATE TABLE IF NOT EXISTS guild_prefixes (
+	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id),
+	prefix TEXT NOT NULL,
+	PRIMARY KEY (guild_id, prefix)
 );
 
 
