@@ -31,7 +31,7 @@ ON CONFLICT (guild_id) DO NOTHING
 """
 
 CREATE_MUTE = """
-INSERT_INTO guild_mutes (guild_id, user_id, expires_at, mute_role_used, removed_roles)
+INSERT INTO guild_mutes (guild_id, user_id, expires_at, mute_role_used, removed_roles)
 VALUES (
     :guild_id,
     :user_id,
@@ -40,10 +40,9 @@ VALUES (
     :removed_roles
 )
 ON CONFLICT (guild_id, user_id) DO UPDATE SET
-    expires_at=excluded.expires_at,
     mute_role_used=excluded.mute_role_used,
     removed_roles=excluded.removed_roles,
-    expires_at=excluded.expires_at,
+    expires_at=excluded.expires_at
 """
 
 GET_DETAILS_FOR_UNMUTE = """
@@ -271,7 +270,10 @@ class Mod(commands.Cog):
         cursor = self.bot._conn.cursor()
         params = (guild.id,)
         cursor.execute(INSERT_OR_IGNORE_GUILD, params)
-        (mute_role_id,) = cursor.execute(GET_MUTE_ROLE, params)
+
+        row = cursor.execute(GET_MUTE_ROLE, params).fetchone()
+
+        mute_role_id = next(iter(row), None) if row is not None else None
 
         if mute_role_id is None:
             raise UserFeedbackError(custom_message="No mute role has been configured.")
@@ -311,7 +313,7 @@ class Mod(commands.Cog):
         )
 
     @commands.max_concurrency(1, commands.BucketType.guild, wait=True)
-    @owner_or_perms(manage_members=True)
+    @owner_or_perms(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @commands.guild_only()
     @commands.command(name="mute")
@@ -328,7 +330,7 @@ class Mod(commands.Cog):
         await ctx.send("User Muted")
 
     @commands.max_concurrency(1, commands.BucketType.guild, wait=True)
-    @owner_or_perms(manage_members=True)
+    @owner_or_perms(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @commands.guild_only()
     @commands.command(name="unmute")
@@ -340,7 +342,9 @@ class Mod(commands.Cog):
         cursor = ctx.bot._conn.cursor()
         params = (ctx.guild.id,)
         cursor.execute(INSERT_OR_IGNORE_GUILD, params)
-        (mute_role_id,) = cursor.execute(GET_MUTE_ROLE, params)
+
+        row = cursor.execute(GET_MUTE_ROLE, params).fetchone()
+        mute_role_id = next(iter(row), None) if row is not None else None
 
         if mute_role_id is None:
             raise UserFeedbackError(custom_message="No mute role has been configured.")
@@ -354,15 +358,14 @@ class Mod(commands.Cog):
         if mute_role not in who.roles:
             raise UserFeedbackError(custom_message="User does not appear to be muted")
 
-        data = next(
-            cursor.execute(GET_DETAILS_FOR_UNMUTE, (ctx.guild.id, who.id)), None
-        )
+        row = cursor.execute(GET_DETAILS_FOR_UNMUTE, (ctx.guild.id, who.id)).fetchone()
 
-        if data is None:
+        if row is None:
             raise UserFeedbackError(
                 custom_message="User was not muted using this bot (not unmuting)."
             )
 
+        (data,) = row
         role_ids = msgpack.unpackb(data, use_list=False)
 
         intended_state = [r for r in who.roles if r.id != mute_role_id]
@@ -380,7 +383,7 @@ class Mod(commands.Cog):
         await who.edit(roles=intended_state, reason=audit_reason)
 
         self.bot.modlog.member_unmuted(mod=ctx.author, target=who, reason=reason)
-        cursor.execute(REMOVE_MUTE, params)
+        cursor.execute(REMOVE_MUTE, (ctx.guild.id, who.id))
 
         if cant_add:
             r_s = format_list([r.name for r in cant_add])
@@ -389,7 +392,7 @@ class Mod(commands.Cog):
             await ctx.send("User unmuted.")
 
     @commands.max_concurrency(1, commands.BucketType.guild, wait=True)
-    @owner_or_perms(manage_members=True)
+    @owner_or_perms(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @commands.guild_only()
     @commands.command(name="setmuterole")

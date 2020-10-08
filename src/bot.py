@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import io
 import logging
 import re
@@ -78,7 +79,7 @@ class IncompleteInputError(SalamanderException):
     def __init__(
         self, *args, reset_cooldown: bool = False, custom_message: Optional[str] = None
     ):
-        super().__init__(*args)
+        super().__init__("Incomplete user input")
         self.reset_cooldown: bool = reset_cooldown
         self.custom_message: Optional[str] = custom_message
 
@@ -87,7 +88,7 @@ class HierarchyException(SalamanderException):
     """ For cases where invalid targetting due to hierarchy occurs """
 
     def __init__(self, *args, custom_message: Optional[str] = None):
-        super().__init__(*args)
+        super().__init__("Hierarchy memes")
         self.custom_message: Optional[str] = custom_message
 
 
@@ -95,7 +96,7 @@ class UserFeedbackError(SalamanderException):
     """ Generic error which propogates a message to the user """
 
     def __init__(self, *args, custom_message: str):
-        super().__init__(self, *args)
+        super().__init__(self, custom_message)
         self.custom_message = custom_message
 
 
@@ -266,9 +267,21 @@ class Salamander(commands.Bot):
         self.add_cog(FilterDemo(self))
         self.add_cog(Meta(self))
 
+        self.modlog: ModlogHandler = ModlogHandler(self._conn)
+
         self.load_extension("jishaku")
         self.load_extension("src.extensions.dice")
-        self.modlog: ModlogHandler = ModlogHandler(self._conn)
+        self.load_extension("src.extensions.mod")
+
+    async def on_command_error(self, ctx, exc):
+        if isinstance(exc.original, SalamanderException):
+            if getattr(exc.original, "reset_cooldown", False):
+                ctx.reset_cooldown()
+            if msg := getattr(exc.original, "custom_message", None):
+                with contextlib.suppress(Exception):
+                    await ctx.send_paged(msg)
+        else:
+            await super().on_command_error(ctx, exc)
 
     async def check_basalisk(self, string: str) -> bool:
         """
@@ -456,6 +469,7 @@ class Salamander(commands.Bot):
             # This then means the bot can scale with fewer barriers
             # (mentioned users contain roles in message objects allowing proper hierarchy checks)
             # It's also needed if we allow reaction removals to trigger actions...
+            # Or if we want to resolve permissions accurately per channel....
             members=True,
             # This is only needed for live bansync, consider if that's something we want and either uncomment or remove
             # Known downside: still requires fetch based sync due to no guarantee of event delivery.

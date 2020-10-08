@@ -132,7 +132,7 @@ VALUES (
     :username,
     :discrim,
     :nick,
-    :payload,
+    :payload
 )
 """
 
