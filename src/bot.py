@@ -16,7 +16,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import io
 import logging
 import re
@@ -72,24 +71,28 @@ def setup_logging():
 class SalamanderException(Exception):
     """ Base Exception for custom Exceptions """
 
+    custom_message: str
+
+    @property
+    def reset_cooldown(self) -> bool:
+        return False
+
 
 class IncompleteInputError(SalamanderException):
     """ To be used when a command did not recieve all the inputs """
 
-    def __init__(
-        self, *args, reset_cooldown: bool = False, custom_message: Optional[str] = None
-    ):
+    def __init__(self, *args, reset_cooldown: bool = False, custom_message: str = ""):
         super().__init__("Incomplete user input")
         self.reset_cooldown: bool = reset_cooldown
-        self.custom_message: Optional[str] = custom_message
+        self.custom_message: str = custom_message
 
 
 class HierarchyException(SalamanderException):
     """ For cases where invalid targetting due to hierarchy occurs """
 
-    def __init__(self, *args, custom_message: Optional[str] = None):
+    def __init__(self, *args, custom_message: str = ""):
         super().__init__("Hierarchy memes")
-        self.custom_message: Optional[str] = custom_message
+        self.custom_message: str = custom_message
 
 
 class UserFeedbackError(SalamanderException):
@@ -273,15 +276,20 @@ class Salamander(commands.Bot):
         self.load_extension("src.contrib_extensions.dice")
         self.load_extension("src.extensions.mod")
 
-    async def on_command_error(self, ctx, exc):
-        if isinstance(exc.original, SalamanderException):
-            if getattr(exc.original, "reset_cooldown", False):
-                ctx.reset_cooldown()
-            if msg := getattr(exc.original, "custom_message", None):
-                with contextlib.suppress(Exception):
-                    await ctx.send_paged(msg)
-        else:
-            await super().on_command_error(ctx, exc)
+    async def on_command_error(self, ctx: SalamanderContext, exc: Exception):
+        if isinstance(exc, commands.NoPrivateMessage):
+            await ctx.author.send("This command cannot be used in private messages.")
+        elif isinstance(exc, commands.CommandInvokeError):
+            original = exc.original
+            if isinstance(original, SalamanderException):
+                if original.reset_cooldown:
+                    ctx.command.reset_cooldown(ctx)
+                if original.custom_message:
+                    await ctx.send_paged(original.custom_message)
+            elif not isinstance(original, discord.HTTPException):
+                log.exception(f"In {ctx.command.qualified_name}:", exc_info=original)
+        elif isinstance(exc, commands.ArgumentParsingError):
+            await ctx.send(exc)
 
     async def check_basalisk(self, string: str) -> bool:
         """
@@ -379,7 +387,6 @@ class Salamander(commands.Bot):
     async def close(self):
         await self.aclose()
         await super().close()
-        sys.exit()
 
     async def aclose(self):
         if self._background_loop is not None:
@@ -481,15 +488,8 @@ class Salamander(commands.Bot):
             dm_reactions=True,
         )
 
-        async def runner():
-            instantiated = cls(
-                intents=intents,
-                allowed_mentions=discord.AllowedMentions(everyone=False),
-            )
-            async with instantiated as bot_object:
-                try:
-                    await bot_object.start(token)
-                finally:
-                    await bot_object.logout()
+        instance = cls(
+            intents=intents, allowed_mentions=discord.AllowedMentions(everyone=False),
+        )
 
-        asyncio.run(runner())
+        instance.run(token)
