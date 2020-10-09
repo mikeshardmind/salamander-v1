@@ -84,9 +84,6 @@ CREATE TABLE IF NOT EXISTS channel_settings (
 		ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- payload here is a python dictionary which has been serialized via msgpack
--- The structure of the dictionary is dependant on the action, but is only used for
--- direct interactions in discord, and does not need to be handled by the DB
 -- username, discrim, and nick at time of action are stored in the DB rather than payload.
 -- This allows this specific information to be stripped from the db without the DB needing understanding of
 -- the discord specific payload related to information about the mod action itself,
@@ -99,7 +96,6 @@ CREATE TABLE IF NOT EXISTS mod_log (
 	target_id INTEGER NOT NULL,
 	created_at TEXT DEFAULT CURRENT_TIMESTAMP,
 	reason TEXT,
-	payload,
 	username_at_action TEXT,
 	discrim_at_action TEXT,
 	nick_at_action TEXT,
@@ -120,7 +116,6 @@ CREATE INDEX IF NOT EXISTS modlog_moderators ON mod_log (mod_id, guild_id);
 -- We can't allow self deletion of users via GDPR
 -- who we need to know if they rejoin a server to attempt dodging a mute,
 -- the restriction on deletion is appropriate here
--- removed_roles: this is a msgpack list of ids used for undoing the mute later on
 CREATE TABLE IF NOT EXISTS guild_mutes (
 	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id)
 		ON UPDATE CASCADE ON DELETE CASCADE,
@@ -128,10 +123,20 @@ CREATE TABLE IF NOT EXISTS guild_mutes (
 	muted_at TEXT DEFAULT CURRENT_TIMESTAMP,
 	expires_at TEXT DEFAULT NULL,
     mute_role_used INTEGER, 
-    removed_roles,
 	FOREIGN KEY (user_id, guild_id) REFERENCES member_settings(user_id, guild_id)
 		ON UPDATE CASCADE ON DELETE RESTRICT,
 	PRIMARY KEY (user_id, guild_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS guild_mute_removed_roles (
+	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	user_id INTEGER NOT NULL,
+	removed_role_id INTEGER NOT NULL,
+	FOREIGN KEY (user_id, guild_id) REFERENCES guild_mutes(user_id, guild_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	UNIQUE(guild_id, user_id, removed_role_id)
 );
 
 -- END REGION
@@ -155,31 +160,10 @@ CREATE TABLE IF NOT EXISTS user_tags (
 );
 
 
--- embed payload is a msgpack serialized python dict suitable for turning into a discord embed object
-CREATE TABLE IF NOT EXISTS user_embed_tags (
-	guild_id REFERENCES guild_settings (guild_id)
-		ON UPDATE CASCADE ON DELETE CASCADE,
-	user_id INTEGER,
-	tag_name TEXT,
-	embed_payload,
-	times_used INTEGER default 0,
-	FOREIGN KEY (user_id, guild_id) REFERENCES member_settings(user_id, guild_id)
-		ON DELETE RESTRICT ON UPDATE CASCADE,
-	PRIMARY KEY (tag_name, guild_id)
-);
-
-
 -- the below tags don't store specific metadata and are only able to be created or modified by the bot owner
 CREATE TABLE IF NOT EXISTS global_text_tags (
 	tag_name TEXT NOT NULL PRIMARY KEY,
 	response TEXT
-);
-
-
--- embed payload is a msgpack serialized python dict suitable for turning into a discord embed object
-CREATE TABLE IF NOT EXISTS global_embed_tags (
-	tag_name TEXT NOT NULL PRIMARY KEY,
-	embed_payload
 );
 
 

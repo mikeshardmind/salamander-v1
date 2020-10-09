@@ -15,11 +15,10 @@
 
 from __future__ import annotations
 
-import contextlib
+from datetime import datetime
 from typing import Optional, Union
 
 import discord
-import msgpack
 from discord.ext import commands
 
 from ...bot import HierarchyException, Salamander, SalamanderContext, UserFeedbackError
@@ -30,41 +29,8 @@ INSERT INTO guild_settings (guild_id) VALUES (?)
 ON CONFLICT (guild_id) DO NOTHING
 """
 
-CREATE_MUTE = """
-INSERT INTO guild_mutes (guild_id, user_id, expires_at, mute_role_used, removed_roles)
-VALUES (
-    :guild_id,
-    :user_id,
-    :expires_at,
-    :mute_role_used,
-    :removed_roles
-)
-ON CONFLICT (guild_id, user_id) DO UPDATE SET
-    mute_role_used=excluded.mute_role_used,
-    removed_roles=excluded.removed_roles,
-    expires_at=excluded.expires_at
-"""
-
-GET_DETAILS_FOR_UNMUTE = """
-SELECT removed_roles FROM guild_mutes WHERE guild_id = ? AND user_id = ?
-"""
-
-GET_MUTE_EXPIRATION = """
-SELECT expires_at FROM guild_mutes WHERE guild_id = ? AND user_id = ?
-"""
-
 GET_MUTE_ROLE = """
 SELECT mute_role FROM guild_settings WHERE guild_id = ?
-"""
-
-SET_MUTE_ROLE = """
-INSERT INTO guild_settings (guild_id, mute_role) VALUES (?,?)
-ON CONFLICT (guild_id) DO UPDATE SET
-    mute_role=excluded.mute_role
-"""
-
-REMOVE_MUTE = """
-DELETE FROM guild_mutes WHERE guild_id = ? AND user_id = ?
 """
 
 
@@ -263,7 +229,7 @@ class Mod(commands.Cog):
         target: discord.Member,
         reason: str,
         audit_reason: str,
-        expiration: Optional[str] = None,
+        expiration: Optional[datetime] = None,
     ):
 
         guild = mod.guild
@@ -301,16 +267,32 @@ class Mod(commands.Cog):
 
         self.bot.modlog.member_muted(mod=mod, target=target, reason=reason)
 
-        cursor.execute(
-            CREATE_MUTE,
-            dict(
-                guild_id=guild.id,
-                user_id=target.id,
-                mute_role_used=mute_role_id,
-                removed_roles=msgpack.packb(removed_role_ids),
-                expires_at=expiration,
-            ),
-        )
+        with self.bot._conn:
+            expirestamp = expiration.isoformat() if expiration is not None else None
+            cursor.execute(
+                """
+                INSERT INTO guild_mutes (guild_id, user_id, expires_at, mute_role_used, removed_roles)
+                VALUES (?, ?, ?, ?)
+                    :guild_id,
+                    :user_id,
+                    :expires_at,
+                    :mute_role_used
+                )
+                ON CONFLICT (guild_id, user_id) DO UPDATE SET
+                    mute_role_used=excluded.mute_role_used,
+                    expires_at=excluded.expires_at
+                """,
+                (guild.id, target.id, mute_role_id, expirestamp),
+            )
+            cursor.executemany(
+                """
+                INSERT INTO guild_mute_removed_roles (guild_id, user_id, removed_role_id)
+                VALUES (?,?,?)
+                ON CONFLICT (guild_id, user_id, removed_role_id)
+                DO NOTHING
+                """,
+                tuple((guild.id, target.id, rid) for rid in removed_role_ids),
+            )
 
     @commands.max_concurrency(1, commands.BucketType.guild, wait=True)
     @owner_or_perms(manage_roles=True)
@@ -358,19 +340,40 @@ class Mod(commands.Cog):
         if mute_role not in who.roles:
             raise UserFeedbackError(custom_message="User does not appear to be muted")
 
-        row = cursor.execute(GET_DETAILS_FOR_UNMUTE, (ctx.guild.id, who.id)).fetchone()
+        member_params = (ctx.guild.id, who.id)
 
-        if row is None:
+        if (
+            cursor.execute(
+                """
+                SELECT 1
+                FROM guild_mutes
+                WHERE guild_id=? AND user_id=?
+                """,
+                member_params,
+            ).fetchone()
+            is None
+        ):
             raise UserFeedbackError(
                 custom_message="User was not muted using this bot (not unmuting)."
             )
 
-        (data,) = row
-        role_ids = msgpack.unpackb(data, use_list=False)
+        # Above is needed since it is possible to mute someone *without* removing any roles
+
+        to_restore = [
+            role_id
+            for (role_id,) in cursor.execute(
+                """
+                SELECT removed_role_id
+                FROM guild_mute_removed_roles
+                WHERE guild_id=? AND user_id=?
+                """,
+                member_params,
+            )
+        ]
 
         intended_state = [r for r in who.roles if r.id != mute_role_id]
         cant_add = []
-        for role_id in role_ids:
+        for role_id in to_restore:
             role = ctx.guild.get_role(role_id)
             if role:
                 if role.managed or role >= ctx.guild.me.top_role:
@@ -383,7 +386,12 @@ class Mod(commands.Cog):
         await who.edit(roles=intended_state, reason=audit_reason)
 
         self.bot.modlog.member_unmuted(mod=ctx.author, target=who, reason=reason)
-        cursor.execute(REMOVE_MUTE, (ctx.guild.id, who.id))
+        cursor.execute(
+            """
+            DELETE FROM guild_mutes WHERE guild_id = ? AND user_id = ?
+            """,
+            (ctx.guild.id, who.id),
+        )
 
         if cant_add:
             r_s = format_list([r.name for r in cant_add])
@@ -433,25 +441,61 @@ class Mod(commands.Cog):
                 return
 
         cursor = self.bot._conn.cursor()
-        cursor.execute(SET_MUTE_ROLE, (ctx.guild.id, role.id))
+        cursor.execute(
+            """
+            INSERT INTO guild_settings (guild_id, mute_role) VALUES (?,?)
+            ON CONFLICT (guild_id) DO UPDATE SET
+                mute_role=excluded.mute_role
+            """,
+            (ctx.guild.id, role.id),
+        )
         await ctx.send("Mute role set.")
 
     @commands.Cog.listener("on_member_join")
     async def mute_dodge_check(self, member: discord.Member):
 
-        with contextlib.suppress(StopIteration, UserFeedbackError):
-            cursor = self.bot._conn.cursor()
-            (expiration,) = next(
-                cursor.execute(GET_MUTE_EXPIRATION, (member.guild.id, member.id))
-            )
+        cursor = self.bot._conn.cursor()
 
-            # TODO: don't remute if it's a timed mute that's expired (No timed mute support yet)
+        guild = member.guild
 
-            rsn = "Detected mute dodging."
-            await self.mute_user_logic(
-                mod=member.guild.me,
-                target=member,
-                reason=rsn,
-                audit_reason=rsn,
-                expiration=expiration,
-            )
+        if not guild.me.guild_permissions.manage_roles:
+            return  # Can't do anything anyhow
+
+        if (
+            cursor.execute(
+                """
+                SELECT 1
+                FROM guild_mutes
+                WHERE guild_id=? AND user_id=?
+                """,
+                (guild.id, member.id),
+            ).fetchone()
+            is None
+        ):
+            return
+
+        # check that we have a mute role
+
+        row = cursor.execute(GET_MUTE_ROLE, (guild.id,)).fetchone()
+        if row is None:
+            return
+
+        (role_id,) = row
+
+        role = guild.get_role(role_id)
+        if role is None:
+            return
+
+        if role > guild.me.top_role and guild.owner != guild.me:
+            return
+
+        # Prevents unexpected granting of roles to mute dodgers
+        cursor.execute(
+            """
+            DELETE FROM guild_mute_removed_roles
+            WHERE guild_id = ? AND user_id = ?
+            """,
+            (guild.id, member.id),
+        )
+
+        await member.add_roles(role, reason="Detected mute dodge on rejoin")

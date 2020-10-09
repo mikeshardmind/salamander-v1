@@ -19,14 +19,11 @@ import contextlib
 
 import apsw
 import discord
-import msgpack
 
 from .utils import MainThreadSingletonMeta as Singleton
 
-EMPTY_MAP = b"\x80"
-
 ##########################################################################################
-# Schema for modlog in db, payload is a messagepack'd dict                               #
+# Schema for modlog in db                                                                #
 ##########################################################################################
 #   CREATE TABLE IF NOT EXISTS mod_log (                                                 #
 #   	mod_action TEXT NOT NULL,                                                        #
@@ -36,7 +33,6 @@ EMPTY_MAP = b"\x80"
 #   	target_id INTEGER NOT NULL,                                                      #
 #   	created_at DEFAULT CURRENT_TIMESTAMP,                                            #
 #       reason TEXT,                                                                     #
-#   	payload,                                                                         #
 #   	username_at_action TEXT,                                                         #
 #   	discrim_at_action TEXT,                                                          #
 #   	nick_at_action TEXT,                                                             #
@@ -120,8 +116,7 @@ INSERT INTO mod_log (
     reason,
     username_at_action,
     discrim_at_action,
-    nick_at_action,
-    payload
+    nick_at_action
 )
 VALUES (
     :action_name,
@@ -131,8 +126,7 @@ VALUES (
     :reason,
     :username,
     :discrim,
-    :nick,
-    :payload
+    :nick
 )
 """
 
@@ -173,7 +167,6 @@ class ModlogHandler(metaclass=Singleton):
                     username=target.name,
                     discrim=target.discriminator,
                     nick=target.nick,
-                    payload=EMPTY_MAP,
                 ),
             )
 
@@ -207,7 +200,6 @@ class ModlogHandler(metaclass=Singleton):
                     username=target.name,
                     discrim=target.discriminator,
                     nick=target.nick,
-                    payload=EMPTY_MAP,
                 ),
             )
 
@@ -240,7 +232,6 @@ class ModlogHandler(metaclass=Singleton):
                     username=target.name,
                     discrim=target.discriminator,
                     nick=target.nick,
-                    payload=EMPTY_MAP,
                 ),
             )
 
@@ -273,12 +264,11 @@ class ModlogHandler(metaclass=Singleton):
                     username=target.name,
                     discrim=target.discriminator,
                     nick=target.nick,
-                    payload=EMPTY_MAP,
                 ),
             )
 
     def member_tempmuted(
-        self, mod: discord.Member, target: discord.Member, reason: str, duration: float
+        self, mod: discord.Member, target: discord.Member, reason: str
     ):
         with contextlib.closing(self._conn.cursor()) as cursor, self._conn:
             guild_id = mod.guild.id
@@ -308,7 +298,6 @@ class ModlogHandler(metaclass=Singleton):
                     username=target.name,
                     discrim=target.discriminator,
                     nick=target.nick,
-                    payload=msgpack.packb({"duration": duration}),
                 ),
             )
 
@@ -338,6 +327,5 @@ class ModlogHandler(metaclass=Singleton):
                     username="",
                     discrim="",
                     nick="",
-                    payload=EMPTY_MAP,
                 ),
             )
