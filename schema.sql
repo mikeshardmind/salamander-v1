@@ -19,7 +19,12 @@
 -- any user displays for these are then formed by
 -- forming an appropriate date using the user's configured timezone
 
-PRAGMA foreign_keys=ON;
+PRAGMA foreign_keys = ON;
+PRAGMA journal_mode = WAL;
+PRAGMA synchronous = FULL;
+PRAGMA wal_autocheckpoint = 32;
+PRAGMA journal_size_limit = 3072;
+
 
 -- BEGIN REGION: Core bot settings
 
@@ -30,8 +35,8 @@ CREATE TABLE IF NOT EXISTS guild_settings (
 	mute_role INTEGER DEFAULT NULL,
 	locale TEXT DEFAULT "en-US",
 	timezone TEXT DEFAULT "America/New_York",
-	mod_log_channel INTEGER DEFAULT 0,
-	announcement_channel INTEGER DEFAULT 0,
+	mod_log_channel INTEGER DEFAULT NULL,
+	announcement_channel INTEGER DEFAULT NULL,
 	telemetry_opt_in BOOLEAN DEFAULT false,
 	bot_color INTEGER DEFAULT NULL,
 	feature_flags INTEGER DEFAULT 0
@@ -97,10 +102,6 @@ CREATE TABLE IF NOT EXISTS mod_log (
 		ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
--- Indexes for the two common lookup cases
-CREATE INDEX IF NOT EXISTS modlog_targets ON mod_log (target_id, guild_id);
-CREATE INDEX IF NOT EXISTS modlog_moderators ON mod_log (mod_id, guild_id);
-
 -- END REGION
 
 -- BEGIN REGION: Mutes
@@ -162,13 +163,10 @@ CREATE TABLE IF NOT EXISTS guild_warnings (
 	mod_id INTEGER,
 	reason TEXT DEFAULT NULL,
 	FOREIGN KEY(mod_id, guild_id) REFERENCES member_settings(user_id, guild_id)
-		ON DELETE RESTRICT ON UPDATE CASCADE,
+		ON UPDATE CASCADE ON DELETE RESTRICT ,
 	FOREIGN KEY (user_id, guild_id) REFERENCES member_settings(user_id, guild_id)
 		ON UPDATE CASCADE ON DELETE RESTRICT
 );
-
-CREATE INDEX IF NOT EXISTS warning_targets on guild_warnings (user_id, guild_id);
-CREATE INDEX IF NOT EXISTS warning_mods on guild_warnings (mod_id, guild_id);
 
 -- END REGION
 
@@ -183,13 +181,10 @@ CREATE TABLE IF NOT EXISTS mod_user_notes (
 	target_id INTEGER,
 	note TEXT NOT NULL,
 	FOREIGN KEY (mod_id, guild_id) REFERENCES member_settings(user_id, guild_id)
-		ON DELETE CASCADE ON UPDATE CASCADE,
+		ON UPDATE CASCADE ON DELETE RESTRICT,
 	FOREIGN KEY (target_id, guild_id) REFERENCES member_settings(user_id, guild_id)
-		ON DELETE CASCADE ON UPDATE CASCADE
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS modnote_targets ON mod_user_notes (target_id, guild_id);
-CREATE INDEX IF NOT EXISTS modnote_moderators ON mod_user_notes (mod_id, guild_id);
 
 
 -- TODO: DB design for
