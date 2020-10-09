@@ -36,7 +36,7 @@ PERIODS: Final[Sequence[Tuple[str, str, int]]] = (
 )
 
 
-def format_list(to_format: Sequence[str]) -> str:
+def format_list(to_format: Sequence[str], *, joiner: str = "and") -> str:
     """
     Formats a sequence of strings for display.
 
@@ -45,9 +45,9 @@ def format_list(to_format: Sequence[str]) -> str:
     Single item sequences return their only item
     Two items return the items seperated by and,
     Three or more returns a comma seperated list
-    with the last values having "and",
+    with the last values having "and"
+    (or other providided joiner)
     but without an oxford comma.
-
 
     Raises
     ------
@@ -69,7 +69,7 @@ def format_list(to_format: Sequence[str]) -> str:
     if length > 2:
         *most, last = to_format
         # I really wanna leave out that oxford comma
-        return f'{", ".join(most)} and {last}'
+        return f'{", ".join(most)} {joiner} {last}'
     return next(iter(to_format))
 
 
