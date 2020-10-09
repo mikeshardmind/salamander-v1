@@ -76,14 +76,6 @@ CREATE TABLE IF NOT EXISTS member_settings (
 	PRIMARY KEY (user_id, guild_id)
 );
 
-
-CREATE TABLE IF NOT EXISTS channel_settings (
-	channel_id INTEGER NOT NULL PRIMARY KEY,
-	is_ignored BOOLEAN DEFAULT false,
-	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id)
-		ON DELETE CASCADE ON UPDATE CASCADE
-);
-
 -- username, discrim, and nick at time of action are stored in the DB rather than payload.
 -- This allows this specific information to be stripped from the db without the DB needing understanding of
 -- the discord specific payload related to information about the mod action itself,
@@ -147,7 +139,7 @@ CREATE TABLE IF NOT EXISTS guild_mute_removed_roles (
 -- for the express purpose of allowing it to be reposted by the bot in the guild it was provided
 -- We allow anonymizing the original owner, effectively decoupling them from the data
 -- but not deletion or breaking referential integrity
-CREATE TABLE IF NOT EXISTS user_tags (
+CREATE TABLE IF NOT EXISTS member_created_tags (
 	guild_id REFERENCES guild_settings (guild_id)
 		ON UPDATE CASCADE ON DELETE CASCADE,
 	user_id INTEGER,
@@ -159,21 +151,6 @@ CREATE TABLE IF NOT EXISTS user_tags (
 	PRIMARY KEY (tag_name, guild_id)
 );
 
-
--- the below tags don't store specific metadata and are only able to be created or modified by the bot owner
-CREATE TABLE IF NOT EXISTS global_text_tags (
-	tag_name TEXT NOT NULL PRIMARY KEY,
-	response TEXT
-);
-
-
--- TODO(future considerations) consider FTS virtual table for fast lookup of similar tags
--- This isn't part of the original design at all, and only exact tags will be matched
-
--- END REGION
-
--- BEGIN REGION: REPORT TOOLS
--- TODO(design)
 -- END REGION
 
 -- BEGIN REGION: warnings
@@ -215,124 +192,6 @@ CREATE INDEX IF NOT EXISTS modnote_targets ON mod_user_notes (target_id, guild_i
 CREATE INDEX IF NOT EXISTS modnote_moderators ON mod_user_notes (mod_id, guild_id);
 
 
--- BEGIN REGION: Role assignments (region commented out until I'm more sure about some of this)
-
--- some of the queries for this section may start getting a little complex,
--- I'm fine with dropping some of this functionality if it becomes a concern
-
--- 
--- 
--- CREATE TABLE IF NOT EXISTS role_settings (
--- 	role_id INTEGER NOT NULL PRIMARY KEY,
--- 	guild_id INTEGER REFERENCES guild_settings(guild_id)
--- 		ON UPDATE CASCADE ON DELETE CASCADE,
--- 	self_assignable BOOLEAN DEFAULT false,
--- 	self_removable BOOLEAN DEFAULT false,
--- 	auto_role BOOLEAN DEFAULT false
--- );
--- 
--- CREATE TABLE IF NOT EXISTS react_role (
--- 	message_id INTEGER NOT NULL,
--- 	channel_id INTEGER NOT NULL,
--- 	reaction TEXT NOT NULL,
---  reaction_removal_can_act BOOLEAN DEFAULT false,
--- 	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id)
--- 		ON DELETE CASCADE ON UPDATE CASCADE,
--- 	role_id INTEGER REFERENCES role_settings(role_id)
--- 		ON DELETE CASCADE ON UPDATE,
--- 	PRIMARY KEY (message_id, reaction)
--- );
--- 
--- -- no_drop_below is for preventing self removal of roles which would drop a user below n roles in group
--- -- Useful for things such requiring selecting a team from a number of teams
--- -- max_allowed is defaulted at above the number of roles a discord guild can have, by a significant margin
--- -- Use case is for signing up for a limited number of activites at once via role
--- --
---
--- CREATE TABLE IF NOT EXISTS role_groups (
--- 	group_name TEXT NOT NULL,
--- 	guild_id INTEGER REFERENCES guild_settings(guild_id)
--- 		ON UPDATE CASCADE ON DELETE CASCADE,
--- 	no_drop_below INTEGER DEFAULT 0,
--- 	max_allowed INTEGER DEFAULT 4096,
--- 	PRIMARY KEY (group_name, guild_id)
--- );
--- 
--- 
--- CREATE TABLE IF NOT EXISTS role_group_membership (
--- 	group_name TEXT NOT NULL,
--- 	guild_id INTEGER NOT NULL,
--- 	role_id INTEGER REFERENCES role_settings(role_id)
--- 		ON DELETE CASCADE ON UPDATE CASCADE,
--- 	in_group BOOLEAN DEFAULT false,
--- 	FOREIGN KEY (group_name, guild_id) REFERENCES role_groups(group_name, guild_id)
--- 		ON DELETE CASCADE ON UPDATE CASCADE
--- );
--- 
--- 
--- CREATE TABLE IF NOT EXISTS role_assign_requirements (
--- 	role_id INTEGER REFERENCES role_settings(role_id)
--- 		ON DELETE CASCADE ON UPDATE CASCADE,
--- 	required_role_id INTEGER REFERENCES role_settings(role_id)
--- 		ON DELETE CASCADE ON UPDATE CASCADE
--- 	is_required BOOLEAN DEFAULT false
--- ); 
--- 
--- -- END REGION
-
--- BEGIN REGION: Command availability model (commented out for more consideration before committing to this.)
-
--- Understanding this section requires a bit of info about the command availability model
--- To summarize, commands eligible for modification by user set rules
--- have defaults of being available to:
---     - Everyone in a guild
---     - Mods
---     - Admins
---     - Guild owner
-
--- Commands which are bot owner or network admin only may not be modified here,
--- these restrictions are considered for safety.
--- Additionally, commands which are used to configure this are administrator only and can not be modified
--- subcommands do not implictly allow parent commands,
--- though command layout has been designed to limit the cases where 
--- users want to give access to some subcommands and not others. Additionally, command groups which act as
--- anything more than a help command for the group
--- have been disallowed in the project for consideration to reduce the
--- cognitive overhead for people considering their permission layouts
-
--- Beyond this, we allow the following levels of changes per guild:
--- 1. Changing the default to a more restrictive default level.
--- 2. If and only if we have access to the member update intent(discord limitation), Adding a role requirement.
--- 3. If and only if a role requirement has been added, chaning the default to a less restrctive default.
--- 4. Granularly allowing specific users access to a command.
--- 5. Disabling a command in a guild.
-
--- We do not allow restricting specific users, in case of abuse by users, 
--- we reccomend blacklisting the user entirely or banning the user outright
-
--- lookups are significantly more common than modifications, 
--- the primary key is chosen for lookup performance
-
---  CREATE TABLE IF NOT EXISTS permission_model_default_rules (
--- 	command TEXT NOT NULL,
--- 	guild_id INTEGER REFERENCES guild_settings(guild_id)
--- 		ON DELETE CASCADE ON UPDATE CASCADE,
--- 	level_modified_to TEXT DEFAULT NULL,
--- 	requires_role INTEGER DEFAULT NULL,
--- 	is_disabled BOOLEAN DEFAULT false,
--- 	PRIMARY KEY (guild_id, command)
--- );
--- 
--- CREATE TABLE IF NOT EXISTS permission_model_specifc_allows (
--- 	command TEXT NOT NULL,
--- 	is_allowed BOOLEAN DEFAULT false,
--- 	user_id INTEGER,
--- 	guild_id INTEGER REFERENCES guild_settings(guild_id)
--- 		ON DELETE CASCADE ON UPDATE CASCADE,
--- 	FOREIGN KEY (user_id, guild_id) REFERENCES member_settings (user_id, guild_id)
--- 		ON DELETE CASCADE ON UPDATE CASCADE,
--- 	PRIMARY KEY (guild_id, user_id, command)
--- );
-
-
--- END REGION
+-- TODO: DB design for
+-- Role Assignments, reports
+-- Maybe TODO: altered command availability model (probably not!)
