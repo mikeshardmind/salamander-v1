@@ -119,7 +119,7 @@ INVALID_OPTION_ERROR_FMT = (
 
 class SalamanderContext(commands.Context):
 
-    bot: "Salamander"
+    bot: Salamander
 
     @property
     def clean_prefix(self) -> str:
@@ -380,7 +380,7 @@ class BlockManager(metaclass=MainThreadSingletonMeta):
         self._modify_member_block(False, guild_id, user_ids)
 
 
-class PrivelegeHandler(metaclass=MainThreadSingletonMeta):
+class PrivHandler(metaclass=MainThreadSingletonMeta):
     def __init__(self, bot: "Salamander"):
         self._bot: "Salamander" = bot
 
@@ -478,7 +478,7 @@ class Salamander(commands.Bot):
         self.modlog: ModlogHandler = ModlogHandler(self._conn)
         self.prefix_manager: PrefixManager = PrefixManager(self)
         self.block_manager: BlockManager = BlockManager(self)
-        self.privelege_level_manager: PrivelegeHandler(self)
+        self.privlevel_manager: PrivHandler(self)
 
         self.add_cog(FilterDemo(self))
         self.add_cog(Meta(self))
@@ -497,7 +497,10 @@ class Salamander(commands.Bot):
                     ctx.command.reset_cooldown(ctx)
                 if original.custom_message:
                     await ctx.send_paged(original.custom_message)
-            elif not isinstance(original, discord.HTTPException):
+            elif not isinstance(
+                original, (discord.HTTPException, commands.TooManyArguments)
+            ):
+                # too many arguments should be handled on an individual basis
                 log.exception(f"In {ctx.command.qualified_name}:", exc_info=original)
         elif isinstance(exc, commands.ArgumentParsingError):
             await ctx.send(exc)

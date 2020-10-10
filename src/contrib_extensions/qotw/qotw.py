@@ -27,6 +27,7 @@ import discord
 from discord.ext import commands
 
 from ...bot import Salamander, SalamanderContext
+from ...checks import admin_or_perms
 from ...utils.converters import Weekday
 
 log = logging.getLogger("salamander.contrib_exts.qotw")
@@ -89,13 +90,6 @@ def resevoir_sample(iterable):
         if random.randrange(n) == 0:  # nosec
             pick = x
     return pick
-
-
-def owner_or_perms(**perms):
-
-    return commands.check_any(
-        commands.is_owner(), commands.has_guild_permissions(**perms)
-    )
 
 
 class QOTW(commands.Cog):
@@ -256,7 +250,7 @@ class QOTW(commands.Cog):
                 dict(pin=last_pin, guild_id=guild_id),
             )
 
-    @owner_or_perms(manage_messages=True)
+    @admin_or_perms(manage_messages=True)
     @commands.guild_only()
     @commands.group(name="qotwset")
     async def qotw_set(self, ctx: SalamanderContext):
@@ -264,7 +258,7 @@ class QOTW(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send_help()
 
-    @owner_or_perms(manage_messages=True)
+    @admin_or_perms(manage_messages=True)
     @commands.guild_only()
     @qotw_set.command(name="channel")
     async def qotw_set_channel(

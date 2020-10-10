@@ -16,12 +16,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional, Union
+from typing import Optional
 
 import discord
 from discord.ext import commands
 
 from ...bot import HierarchyException, Salamander, SalamanderContext, UserFeedbackError
+from ...checks import admin_or_perms, mod_or_perms
 from ...utils import format_list
 
 INSERT_OR_IGNORE_GUILD = """
@@ -167,22 +168,14 @@ def mute_sanity_check(
             )
 
 
-def owner_or_perms(**perms):
-
-    return commands.check_any(
-        commands.is_owner(), commands.has_guild_permissions(**perms)
-    )
-
-
 class Mod(commands.Cog):
     """ Some basic mod tools """
 
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
 
-    @owner_or_perms(kick_members=True)
+    @mod_or_perms(kick_members=True)
     @commands.bot_has_guild_permissions(kick_members=True)
-    @commands.guild_only()
     @commands.command(name="kick")
     async def kick_commnand(
         self, ctx: SalamanderContext, who: discord.Member, *, reason: str = ""
@@ -195,30 +188,19 @@ class Mod(commands.Cog):
         )
         self.bot.modlog.member_kick(mod=ctx.author, target=who, reason=reason)
 
-    @owner_or_perms(ban_members=True)
-    @commands.bot_has_permissions(ban_members=True)
-    @commands.guild_only()
+    @mod_or_perms(ban_members=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
     @commands.command(name="ban")
     async def ban_command(
-        self,
-        ctx: SalamanderContext,
-        who: Union[discord.Member, int],  # TODO: handle this better
-        *,
-        reason: str = "",
+        self, ctx: SalamanderContext, who: discord.Member, *, reason: str = "",
     ):
         """ Ban a member without removing messages """
 
-        if isinstance(who, discord.Member):
-            ban_sanity_check(bot_user=ctx.me, mod=ctx.author, target=who)
-            await who.ban(
-                reason=f"User banned by command. (Authorizing mod: {ctx.author}({ctx.author.id})"
-            )
-            self.bot.modlog.member_ban(mod=ctx.author, target=who, reason=reason)
-        else:  # TODO: Verify: Is this guaranteed to convert to a member if the ID is a member? --Liz
-            await ctx.guild.ban(
-                discord.Object(id=who), reason=reason, delete_message_days=0
-            )
-            self.bot.modlog.user_ban(mod=ctx.author, target_id=who, reason=reason)
+        ban_sanity_check(bot_user=ctx.me, mod=ctx.author, target=who)
+        await who.ban(
+            reason=f"User banned by command. (Authorizing mod: {ctx.author}({ctx.author.id})"
+        )
+        self.bot.modlog.member_ban(mod=ctx.author, target=who, reason=reason)
 
     # TODO: more commands / ban options
 
@@ -294,10 +276,8 @@ class Mod(commands.Cog):
                 tuple((guild.id, target.id, rid) for rid in removed_role_ids),
             )
 
-    @commands.max_concurrency(1, commands.BucketType.guild, wait=True)
-    @owner_or_perms(manage_roles=True)
-    @commands.bot_has_permissions(manage_roles=True)
-    @commands.guild_only()
+    @mod_or_perms(manage_roles=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
     @commands.command(name="mute")
     async def basic_mute_command(
         self, ctx: SalamanderContext, who: discord.Member, *, reason: str = "",
@@ -311,10 +291,8 @@ class Mod(commands.Cog):
         )
         await ctx.send("User Muted")
 
-    @commands.max_concurrency(1, commands.BucketType.guild, wait=True)
-    @owner_or_perms(manage_roles=True)
-    @commands.bot_has_permissions(manage_roles=True)
-    @commands.guild_only()
+    @mod_or_perms(manage_roles=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
     @commands.command(name="unmute")
     async def basic_unmute_command(
         self, ctx: SalamanderContext, who: discord.Member, *, reason: str = "",
@@ -399,11 +377,9 @@ class Mod(commands.Cog):
         else:
             await ctx.send("User unmuted.")
 
-    @commands.max_concurrency(1, commands.BucketType.guild, wait=True)
-    @owner_or_perms(manage_roles=True)
-    @commands.bot_has_permissions(manage_roles=True)
-    @commands.guild_only()
-    @commands.command(name="setmuterole")
+    @admin_or_perms(manage_roles=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
+    @commands.command(name="setmuterole", ignore_extra=False)
     async def set_muterole_command(self, ctx: SalamanderContext, role: discord.Role):
         """ Set the mute role for the server """
 
@@ -450,6 +426,14 @@ class Mod(commands.Cog):
             (ctx.guild.id, role.id),
         )
         await ctx.send("Mute role set.")
+
+    @set_muterole_command.on_error
+    async def mute_role_error(self, ctx, exc):
+        if isinstance(exc, commands.TooManyArguments):
+            await ctx.send(
+                "You've given me what appears to be more than 1 role. "
+                "If your role name has spaces in it, quote it."
+            )
 
     @commands.Cog.listener("on_member_join")
     async def mute_dodge_check(self, member: discord.Member):
