@@ -17,13 +17,17 @@ from __future__ import annotations
 
 from discord.ext import commands
 
+from ..bot import Salamander, SalamanderContext
+
 
 class Meta(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: Salamander):
+        self.bot: Salamander = bot
 
     @commands.is_owner()
     @commands.command()
-    async def shutdown(self, ctx):
+    async def shutdown(self, ctx: SalamanderContext):
         """ Shuts down the bot """
         await self.bot.logout()
+
+    # TODO prefix management, user blocking, mod/admin settings

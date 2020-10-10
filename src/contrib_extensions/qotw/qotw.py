@@ -75,6 +75,12 @@ CREATE TABLE IF NOT EXISTS selected_history (
 )
 """
 
+PRAGMAS = (
+    "PRAGMA foreign_keys=ON ",
+    "PRAGMA journal_mode = WAL",
+    "PRAGMA synchronous = FULL",
+)
+
 # The default here isn't wrong, but it is intentionally offset for math.
 
 
@@ -97,9 +103,10 @@ class QOTW(commands.Cog):
 
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
-        self.conn = apsw.Connection("contrib_data/qotw.sqlite")
+        self.conn = apsw.Connection("contrib_data/qotw.db")
         cursor = self.conn.cursor()
-        cursor.execute(""" PRAGMA foreign_keys=ON """)
+        for pragma in PRAGMAS:
+            cursor.execute(pragma)
         for statement in (
             GUILD_SETTINGS_TABLE_CREATION_STATEMENT,
             CREATE_MEMBERS_TABLE_STATEMENT,

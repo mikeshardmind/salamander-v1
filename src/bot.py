@@ -20,7 +20,6 @@ import io
 import logging
 import re
 import sys
-from collections import Counter
 from logging.handlers import RotatingFileHandler
 from types import TracebackType
 from typing import Awaitable, Callable, List, Optional, Sequence, Type, TypeVar
@@ -122,20 +121,6 @@ INVALID_OPTION_ERROR_FMT = (
 class SalamanderContext(commands.Context):
 
     bot: "Salamander"
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: Optional[Type[BaseException]] = None,
-        exc_value: Optional[BaseException] = None,
-        traceback: Optional[TracebackType] = None,
-    ):
-        await self.aclose()
-
-    async def aclose(self):
-        pass
 
     @property
     def clean_prefix(self) -> str:
@@ -327,29 +312,93 @@ class PrefixManager(MainThreadSingletonMeta):
             pass
 
 
+class BlockManager(MainThreadSingletonMeta):
+    def __init__(self, bot: "Salamander"):
+        self._bot: "Salamander" = bot
+
+    def user_is_blocked(self, user_id: int) -> bool:
+        cursor = self._bot._conn.cursor()
+        r = cursor.execute(
+            """
+            SELECT is_blocked from user_settings
+            WHERE user_id = ?
+            """,
+            (user_id,),
+        ).fetchone()
+        if r:
+            return r[0]
+        return False
+
+    def member_is_blocked(self, guild_id: int, user_id: int) -> bool:
+        cursor = self._bot._conn.cursor()
+        r = cursor.execute(
+            """
+            SELECT is_blocked from member_settings
+            WHERE guild_id = ? AND user_id = ?
+            """,
+            (guild_id, user_id),
+        ).fetchone()
+        if r:
+            return r[0]
+        return False
+
+    def _modify_user_block(self, val: bool, user_ids: Sequence[int]):
+        cursor = self._bot._conn.cursor()
+        with self._bot._conn:
+            cursor.executemany(
+                """
+                INSERT INTO user_settings (user_id, is_blocked)
+                VALUES (?, ?)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    is_blocked=excluded.is_blocked
+                """,
+                tuple((uid, val) for uid in user_ids),
+            )
+
+    def _modify_member_block(self, val: bool, guild_id: int, user_ids: Sequence[int]):
+        cursor = self._bot._conn.cursor()
+        with self._bot._conn:
+            cursor.executemany(
+                """
+                INSERT INTO user_settings (guild_id, user_id, is_blocked)
+                VALUES (?, ?, ?)
+                ON CONFLICT (guild_id, user_id) DO UPDATE SET
+                    is_blocked=excluded.is_blocked
+                """,
+                tuple((guild_id, uid, val) for uid in user_ids),
+            )
+
+    def block_users(self, *user_ids: int):
+        self._modify_user_block(True, user_ids)
+
+    def unblock_users(self, *user_ids: int):
+        self._modify_user_block(False, user_ids)
+
+    def block_members(self, guild_id: int, *user_ids: int):
+        self._modify_member_block(True, guild_id, user_ids)
+
+    def unblock_members(self, guild_id: int, *user_ids: int):
+        self._modify_member_block(False, guild_id, user_ids)
+
+
 class Salamander(commands.Bot):
     def __init__(self, *args, **kwargs):
         self._close_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[...]]
         self._background_loop: Optional[asyncio.Task] = None
         self._behavior_flags: BehaviorFlags = BehaviorFlags()
         super().__init__(*args, command_prefix=_prefix, **kwargs)
-        # spam handling
 
-        # DEP-WARN: commands.CooldownMapping.from_cooldown
-        self.__global_cooldown = commands.CooldownMapping.from_cooldown(
-            8, 20, commands.BucketType.user
-        )
-        self._spam_counter = Counter()
         self._zmq = ZMQHandler()
         self._zmq_task: Optional[asyncio.Task] = None
 
-        self._conn = apsw.Connection("salamander.sqlite")
+        self._conn = apsw.Connection("salamander.db")
 
         self.add_cog(FilterDemo(self))
         self.add_cog(Meta(self))
 
         self.modlog: ModlogHandler = ModlogHandler(self._conn)
         self.prefix_manager: PrefixManager = PrefixManager(self)
+        self.block_manager: BlockManager = BlockManager(self)
 
         self.load_extension("jishaku")
         self.load_extension("src.contrib_extensions.dice")
@@ -505,9 +554,14 @@ class Salamander(commands.Bot):
         if ctx.command is None:
             return
 
-        # TODO: blocked user checking
+        if self.block_manager.user_is_blocked(message.author.id):
+            return
 
         if ctx.guild:
+
+            if self.block_manager.member_is_blocked(ctx.guild.id, message.author.id):
+                return
+
             if not ctx.channel.permissions_for(ctx.me).send_messages:
                 if await self.is_owner(ctx.author):
                     await ctx.author.send(
@@ -515,26 +569,7 @@ class Salamander(commands.Bot):
                     )
                 return
 
-        #  TODO: block users
-        #  if not await self.is_owner(ctx.author):
-        #      author_id = ctx.author.id
-        #      # DEP-WARN: commands.CooldownMapping.update_rate_limit
-        #      retry = self.__global_cooldown.update_rate_limit(ctx.message)
-        #      if retry:
-        #          self._spam_counter[author_id] += 1
-        #          if self._spam_counter[author_id] > 3:
-        #              TODO: block users here
-        #              log.info(
-        #                  "User: {user_id} has been blocked temporarily for "
-        #                  "hitting the global ratelimit a lot.",
-        #                  user_id=author_id,
-        #              )
-        #          return
-        #      else:
-        #          self._spam_counter.pop(author_id, None)
-
-        async with ctx:
-            await self.invoke(ctx)
+        await self.invoke(ctx)
 
     @classmethod
     def run_with_wrapping(cls, token):

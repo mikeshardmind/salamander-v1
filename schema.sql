@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
 	is_network_admin BOOLEAN DEFAULT false,
 	timezone TEXT DEFAULT NULL,
 	timezone_is_public BOOLEAN DEFAULT false,
-	is_blacklisted BOOLEAN DEFAULT false,
+	is_blocked BOOLEAN DEFAULT false,
 	last_known_name TEXT DEFAULT NULL,
 	last_known_discrim TEXT DEFAULT NULL,
 	anon DEFAULT false
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS member_settings (
 		ON UPDATE CASCADE ON DELETE CASCADE,
 	user_id INTEGER NOT NULL REFERENCES user_settings(user_id)
 		ON UPDATE CASCADE ON DELETE CASCADE,
-	is_blacklisted BOOLEAN DEFAULT false,
+	is_blocked BOOLEAN DEFAULT false,
 	is_mod BOOLEAN DEFAULT false,
 	is_admin BOOLEAN DEFAULT false,
 	last_known_nick TEXT DEFAULT NULL,
