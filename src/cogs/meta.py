@@ -29,5 +29,3 @@ class Meta(commands.Cog):
     async def shutdown(self, ctx: SalamanderContext):
         """ Shuts down the bot """
         await self.bot.logout()
-
-    # TODO prefix management, user blocking, mod/admin settings

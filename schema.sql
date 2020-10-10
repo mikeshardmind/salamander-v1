@@ -63,8 +63,6 @@ CREATE TABLE IF NOT EXISTS user_settings (
 	timezone TEXT DEFAULT NULL,
 	timezone_is_public BOOLEAN DEFAULT false,
 	is_blocked BOOLEAN DEFAULT false,
-	last_known_name TEXT DEFAULT NULL,
-	last_known_discrim TEXT DEFAULT NULL,
 	anon DEFAULT false
 );
 
@@ -77,7 +75,6 @@ CREATE TABLE IF NOT EXISTS member_settings (
 	is_blocked BOOLEAN DEFAULT false,
 	is_mod BOOLEAN DEFAULT false,
 	is_admin BOOLEAN DEFAULT false,
-	last_known_nick TEXT DEFAULT NULL,
 	PRIMARY KEY (user_id, guild_id)
 );
 

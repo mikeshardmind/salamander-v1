@@ -21,7 +21,6 @@ import logging
 import re
 import sys
 from logging.handlers import RotatingFileHandler
-from types import TracebackType
 from typing import Awaitable, Callable, List, Optional, Sequence, Type, TypeVar
 from uuid import uuid4
 
@@ -236,7 +235,7 @@ class BehaviorFlags:
         self.no_serpent: bool = no_serpent
 
 
-class PrefixManager(MainThreadSingletonMeta):
+class PrefixManager(metaclass=MainThreadSingletonMeta):
     def __init__(self, bot: "Salamander"):
         self._bot: "Salamander"
         self._cache = LRU(128)
@@ -312,7 +311,7 @@ class PrefixManager(MainThreadSingletonMeta):
             pass
 
 
-class BlockManager(MainThreadSingletonMeta):
+class BlockManager(metaclass=MainThreadSingletonMeta):
     def __init__(self, bot: "Salamander"):
         self._bot: "Salamander" = bot
 
@@ -381,6 +380,89 @@ class BlockManager(MainThreadSingletonMeta):
         self._modify_member_block(False, guild_id, user_ids)
 
 
+class PrivelegeHandler(metaclass=MainThreadSingletonMeta):
+    def __init__(self, bot: "Salamander"):
+        self._bot: "Salamander" = bot
+
+    def member_is_mod(self, guild_id: int, user_id: int) -> bool:
+        cursor = self._bot._conn.cursor()
+        r = cursor.execute(
+            """
+            SELECT is_mod OR is_admin
+            FROM member_settings
+            WHERE guild_id = ? and user_id = ?
+            """,
+            (guild_id, user_id),
+        ).fetchone()
+
+        return r[0] if r else False
+
+    def member_id_admin(self, guild_id: int, user_id: int) -> bool:
+        cursor = self._bot._conn.cursor()
+        r = cursor.execute(
+            """
+            SELECT is_admin
+            FROM member_settings
+            WHERE guild_id = ? and user_id = ?
+            """,
+            (guild_id, user_id),
+        ).fetchone()
+
+        return r[0] if r else False
+
+    def _modify_mod_status(self, val: bool, guild_id: int, user_ids: Sequence[int]):
+        cursor = self._bot._conn.cursor()
+        with self._bot._conn:
+            cursor.executemany(
+                """
+                INSERT INTO user_settings (user_id) VALUES (?)
+                ON CONFLICT (user_id) DO NOTHING
+                """,
+                tuple((uid,) for uid in user_ids),
+            )
+            cursor.executemany(
+                """
+                INSERT INTO guild_settings (guild_id, user_id, is_mod)
+                VALUES (?,?,?)
+                ON CONFLICT (guild_id, user_id)
+                DO UPDATE SET is_mod=excluded.is_mod
+                """,
+                tuple((guild_id, uid, val) for uid in user_ids),
+            )
+
+    def _modify_admin_status(self, val: bool, guild_id: int, user_ids: Sequence[int]):
+        cursor = self._bot._conn.cursor()
+        with self._bot._conn:
+            cursor.executemany(
+                """
+                INSERT INTO user_settings (user_id) VALUES (?)
+                ON CONFLICT (user_id) DO NOTHING
+                """,
+                tuple((uid,) for uid in user_ids),
+            )
+            cursor.executemany(
+                """
+                INSERT INTO guild_settings (guild_id, user_id, is_admin)
+                VALUES (?,?,?)
+                ON CONFLICT (guild_id, user_id)
+                DO UPDATE SET is_admin=excluded.is_mod
+                """,
+                tuple((guild_id, uid, val) for uid in user_ids),
+            )
+
+    def give_mod(self, guild_id: int, *user_ids: int):
+        self._modify_mod_status(True, guild_id, user_ids)
+
+    def remove_mod(self, guild_id: int, *user_ids: int):
+        self._modify_mod_status(False, guild_id, user_ids)
+
+    def give_admin(self, guild_id: int, *user_ids: int):
+        self._modify_admin_status(True, guild_id, user_ids)
+
+    def remove_admin(self, guild_id: int, *user_ids: int):
+        self._modify_admin_status(False, guild_id, user_ids)
+
+
 class Salamander(commands.Bot):
     def __init__(self, *args, **kwargs):
         self._close_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[...]]
@@ -393,12 +475,13 @@ class Salamander(commands.Bot):
 
         self._conn = apsw.Connection("salamander.db")
 
-        self.add_cog(FilterDemo(self))
-        self.add_cog(Meta(self))
-
         self.modlog: ModlogHandler = ModlogHandler(self._conn)
         self.prefix_manager: PrefixManager = PrefixManager(self)
         self.block_manager: BlockManager = BlockManager(self)
+        self.privelege_level_manager: PrivelegeHandler(self)
+
+        self.add_cog(FilterDemo(self))
+        self.add_cog(Meta(self))
 
         self.load_extension("jishaku")
         self.load_extension("src.contrib_extensions.dice")
@@ -499,10 +582,6 @@ class Salamander(commands.Bot):
             finally:
                 self._close_queue.task_done()
 
-    async def __aenter__(self):
-        await self.__prepare()
-        return self
-
     async def __prepare(self):
         self.start_zmq()
         if self._background_loop is None:
@@ -528,14 +607,6 @@ class Salamander(commands.Bot):
             self._zmq_task = None
 
         await self._close_queue.join()
-
-    async def __aexit__(
-        self,
-        exc_type: Optional[Type[BaseException]] = None,
-        exc_value: Optional[BaseException] = None,
-        traceback: Optional[TracebackType] = None,
-    ) -> None:
-        await self.aclose()
 
     async def get_context(
         self, message: discord.Message, *, cls: Type[_CT] = SalamanderContext

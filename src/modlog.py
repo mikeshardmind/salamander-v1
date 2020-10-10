@@ -52,7 +52,6 @@ from .utils import MainThreadSingletonMeta as Singleton
 #   	is_blacklisted BOOLEAN DEFAULT false,                                            #
 #   	is_mod BOOLEAN DEFAULT false,                                                    #
 #   	is_admin BOOLEAN DEFAULT false,                                                  #
-#   	last_known_nick TEXT DEFAULT NULL,                                               #
 #   	PRIMARY KEY (user_id, guild_id)                                                  #
 #   );                                                                                   #
 ##########################################################################################
@@ -65,8 +64,6 @@ from .utils import MainThreadSingletonMeta as Singleton
 #   	timezone TEXT DEFAULT NULL,                                                      #
 #   	timezone_is_public BOOLEAN DEFAULT false,                                        #
 #   	is_blacklisted BOOLEAN DEFAULT false,                                            #
-#   	last_known_name TEXT DEFAULT NULL,                                               #
-#   	last_known_discrim TEXT DEFAULT NULL,                                            #
 #   	anon DEFAULT false                                                               #
 #   );                                                                                   #
 ##########################################################################################
@@ -85,26 +82,9 @@ VALUES (?, ?)
 ON CONFLICT (user_id, guild_id) DO NOTHING
 """
 
-INSERT_OR_UPDATE_USER = """
-INSERT INTO user_settings (user_id, last_known_name, last_known_discrim)
-VALUES (?,?,?)
-ON CONFLICT (user_id)
-DO UPDATE SET
-    last_known_name=excluded.last_known_name,
-    last_known_discrim=excluded.last_known_discrim
-"""
-
 INSERT_OR_IGNORE_GUILD = """
 INSERT INTO guild_settings (guild_id) VALUES (?)
 ON CONFLICT (guild_id) DO NOTHING
-"""
-
-INSERT_OR_UPDATE_MEMBER = """
-INSERT INTO member_settings (user_id, guild_id, last_known_nick)
-VALUES (?,?,?)
-ON CONFLICT (user_id, guild_id)
-DO UPDATE SET
-    last_known_nick=excluded.last_known_nick
 """
 
 BASIC_MODLOG_INSERT = """
@@ -143,18 +123,13 @@ class ModlogHandler(metaclass=Singleton):
             guild_id = mod.guild.id
 
             cursor.executemany(
-                INSERT_OR_UPDATE_USER,
-                (
-                    (target.id, target.name, target.discriminator),
-                    (mod.id, mod.name, mod.discriminator),
-                ),
+                INSERT_USER_ID, ((target.id,), (mod.id,)),
             )
             cursor.execute(
                 INSERT_OR_IGNORE_GUILD, (guild_id,),
             )
             cursor.executemany(
-                INSERT_OR_UPDATE_MEMBER,
-                ((target.id, guild_id, target.nick), (mod.id, guild_id, mod.nick)),
+                INSERT_MEMBER_IDS, ((target.id, guild_id), (mod.id, guild_id)),
             )
             cursor.execute(
                 BASIC_MODLOG_INSERT,
@@ -176,18 +151,13 @@ class ModlogHandler(metaclass=Singleton):
             guild_id = mod.guild.id
 
             cursor.executemany(
-                INSERT_OR_UPDATE_USER,
-                (
-                    (target.id, target.name, target.discriminator),
-                    (mod.id, mod.name, mod.discriminator),
-                ),
+                INSERT_USER_ID, ((target.id,), (mod.id,)),
             )
             cursor.execute(
                 INSERT_OR_IGNORE_GUILD, (guild_id,),
             )
             cursor.executemany(
-                INSERT_OR_UPDATE_MEMBER,
-                ((target.id, guild_id, target.nick), (mod.id, guild_id, mod.nick)),
+                INSERT_MEMBER_IDS, ((target.id, guild_id), (mod.id, guild_id)),
             )
             cursor.execute(
                 BASIC_MODLOG_INSERT,
@@ -208,18 +178,13 @@ class ModlogHandler(metaclass=Singleton):
             guild_id = mod.guild.id
 
             cursor.executemany(
-                INSERT_OR_UPDATE_USER,
-                (
-                    (target.id, target.name, target.discriminator),
-                    (mod.id, mod.name, mod.discriminator),
-                ),
+                INSERT_USER_ID, ((target.id,), (mod.id,)),
             )
             cursor.execute(
                 INSERT_OR_IGNORE_GUILD, (guild_id,),
             )
             cursor.executemany(
-                INSERT_OR_UPDATE_MEMBER,
-                ((target.id, guild_id, target.nick), (mod.id, guild_id, mod.nick)),
+                INSERT_MEMBER_IDS, ((target.id, guild_id), (mod.id, guild_id)),
             )
             cursor.execute(
                 BASIC_MODLOG_INSERT,
@@ -240,18 +205,13 @@ class ModlogHandler(metaclass=Singleton):
             guild_id = mod.guild.id
 
             cursor.executemany(
-                INSERT_OR_UPDATE_USER,
-                (
-                    (target.id, target.name, target.discriminator),
-                    (mod.id, mod.name, mod.discriminator),
-                ),
+                INSERT_USER_ID, ((target.id,), (mod.id,)),
             )
             cursor.execute(
                 INSERT_OR_IGNORE_GUILD, (guild_id,),
             )
             cursor.executemany(
-                INSERT_OR_UPDATE_MEMBER,
-                ((target.id, guild_id, target.nick), (mod.id, guild_id, mod.nick)),
+                INSERT_MEMBER_IDS, ((target.id, guild_id), (mod.id, guild_id)),
             )
             cursor.execute(
                 BASIC_MODLOG_INSERT,
@@ -274,18 +234,13 @@ class ModlogHandler(metaclass=Singleton):
             guild_id = mod.guild.id
 
             cursor.executemany(
-                INSERT_OR_UPDATE_USER,
-                (
-                    (target.id, target.name, target.discriminator),
-                    (mod.id, mod.name, mod.discriminator),
-                ),
+                INSERT_USER_ID, ((target.id,), (mod.id,)),
             )
             cursor.execute(
                 INSERT_OR_IGNORE_GUILD, (guild_id,),
             )
             cursor.executemany(
-                INSERT_OR_UPDATE_MEMBER,
-                ((target.id, guild_id, target.nick), (mod.id, guild_id, mod.nick)),
+                INSERT_MEMBER_IDS, ((target.id, guild_id), (mod.id, guild_id)),
             )
             cursor.execute(
                 BASIC_MODLOG_INSERT,
@@ -306,15 +261,14 @@ class ModlogHandler(metaclass=Singleton):
         with contextlib.closing(self._conn.cursor()) as cursor, self._conn:
             guild_id = mod.guild.id
             cursor.execute(INSERT_USER_ID, (target_id,))
-            cursor.execute(
-                INSERT_OR_UPDATE_USER, (mod.id, mod.name, mod.discriminator),
+            cursor.executemany(
+                INSERT_USER_ID, ((target_id,), (mod.id,)),
             )
             cursor.execute(
                 INSERT_OR_IGNORE_GUILD, (guild_id,),
             )
-            cursor.execute(INSERT_MEMBER_IDS, (target_id, guild_id))
-            cursor.execute(
-                INSERT_OR_UPDATE_MEMBER, (mod.id, guild_id, mod.nick),
+            cursor.executemany(
+                INSERT_MEMBER_IDS, ((target_id, guild_id), (mod.id, guild_id)),
             )
             cursor.execute(
                 BASIC_MODLOG_INSERT,
