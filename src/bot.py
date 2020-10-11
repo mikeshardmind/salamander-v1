@@ -597,9 +597,7 @@ class EmbedHelp(commands.HelpCommand):
 
         for command in filtered:
             embed = add_field(
-                embed,
-                self.get_command_signature(command),
-                command.short_doc or "...",
+                embed, self.get_command_signature(command), command.short_doc or "...",
             )
 
         if embed.fields:  # needed in case the very last add field rolled it over
@@ -643,6 +641,7 @@ class EmbedHelp(commands.HelpCommand):
                     command.short_doc or "...",
                 )
         else:
+            embed.add_field(name=self.get_command_signature, value=command.short_doc or "...")
             embeds.append(embed)
 
         if embed.fields:  # needed in case the very last add field rolled it over
