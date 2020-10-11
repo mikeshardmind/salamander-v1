@@ -33,7 +33,7 @@ class Meta(commands.Cog):
         await self.bot.logout()
 
     @admin_or_perms(manage_guild=True)
-    @commands.command()
+    @commands.group()
     async def prefix(self, ctx: SalamanderContext):
         """ Commands for managing the bot's prefix in this server """
         if ctx.invoked_subcommand is None:
