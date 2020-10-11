@@ -235,8 +235,8 @@ class BehaviorFlags:
 
 
 class PrefixManager(metaclass=MainThreadSingletonMeta):
-    def __init__(self, bot: "Salamander"):
-        self._bot: "Salamander"
+    def __init__(self, bot: Salamander):
+        self._bot: Salamander = bot
         self._cache = LRU(128)
 
     def get_guild_prefixes(self, guild_id: int) -> Sequence[str]:
@@ -311,8 +311,8 @@ class PrefixManager(metaclass=MainThreadSingletonMeta):
 
 
 class BlockManager(metaclass=MainThreadSingletonMeta):
-    def __init__(self, bot: "Salamander"):
-        self._bot: "Salamander" = bot
+    def __init__(self, bot: Salamander):
+        self._bot: Salamander = bot
 
     def user_is_blocked(self, user_id: int) -> bool:
         cursor = self._bot._conn.cursor()
@@ -380,8 +380,8 @@ class BlockManager(metaclass=MainThreadSingletonMeta):
 
 
 class PrivHandler(metaclass=MainThreadSingletonMeta):
-    def __init__(self, bot: "Salamander"):
-        self._bot: "Salamander" = bot
+    def __init__(self, bot: Salamander):
+        self._bot: Salamander = bot
 
     def member_is_mod(self, guild_id: int, user_id: int) -> bool:
         cursor = self._bot._conn.cursor()
