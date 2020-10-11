@@ -253,13 +253,8 @@ class Mod(commands.Cog):
             expirestamp = expiration.isoformat() if expiration is not None else None
             cursor.execute(
                 """
-                INSERT INTO guild_mutes (guild_id, user_id, expires_at, mute_role_used, removed_roles)
+                INSERT INTO guild_mutes (guild_id, user_id, mute_role_used, expires_at)
                 VALUES (?, ?, ?, ?)
-                    :guild_id,
-                    :user_id,
-                    :expires_at,
-                    :mute_role_used
-                )
                 ON CONFLICT (guild_id, user_id) DO UPDATE SET
                     mute_role_used=excluded.mute_role_used,
                     expires_at=excluded.expires_at
