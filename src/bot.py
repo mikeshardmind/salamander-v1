@@ -569,8 +569,8 @@ class EmbedHelp(commands.HelpCommand):
 
         emb_l = len(embeds)
         end_note = self.get_ending_note()
-        for index, embed in enumerate(embeds):
-            embed.set_footer(f"Page {index} of {emb_l} | {end_note}")
+        for index, embed in enumerate(embeds, 1):
+            embed.set_footer(text=f"Page {index} of {emb_l} | {end_note}")
 
         menu = menus.MenuPages(
             source=EmbedListSource(embeds),
@@ -614,8 +614,8 @@ class EmbedHelp(commands.HelpCommand):
 
         emb_l = len(embeds)
         end_note = self.get_ending_note()
-        for index, embed in enumerate(embeds):
-            embed.set_footer(f"Page {index} of {emb_l} | {end_note}")
+        for index, embed in enumerate(embeds, 1):
+            embed.set_footer(text=f"Page {index} of {emb_l} | {end_note}")
 
         menu = menus.MenuPages(
             source=EmbedListSource(embeds),
@@ -655,8 +655,8 @@ class EmbedHelp(commands.HelpCommand):
 
         emb_l = len(embeds)
         end_note = self.get_ending_note()
-        for index, embed in enumerate(embeds):
-            embed.set_footer(f"Page {index} of {emb_l} | {end_note}")
+        for index, embed in enumerate(embeds, 1):
+            embed.set_footer(text=f"Page {index} of {emb_l} | {end_note}")
 
         menu = menus.MenuPages(
             source=EmbedListSource(embeds),
