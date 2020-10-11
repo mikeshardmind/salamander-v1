@@ -575,8 +575,7 @@ class EmbedHelp(commands.HelpCommand):
 
     async def send_cog_help(self, cog):
         embed = discord.Embed(
-            title="{0.qualified_name} Commands".format(cog),
-            colour=self.context.me.color,
+            title=f"{cog.qualified_name} Commands", colour=self.context.me.color,
         )
         if cog.description:
             embed.description = cog.description
@@ -640,9 +639,6 @@ class EmbedHelp(commands.HelpCommand):
                     self.get_command_signature(command),
                     command.short_doc or "...",
                 )
-        else:
-            embed.add_field(name=self.get_command_signature(group), value=group.short_doc or "...")
-            embeds.append(embed)
 
         if embed.fields:  # needed in case the very last add field rolled it over
             embeds.append(embed)
@@ -659,7 +655,19 @@ class EmbedHelp(commands.HelpCommand):
         )
         await menu.start(self.context, channel=self.get_destination())
 
-    send_command_help = send_group_help
+    async def send_command_help(self, command):
+        embed = discord.Embed(
+            title=self.get_command_signature(command), colour=self.context.me.color
+        )
+        if command.help:
+            embed.description = command.help
+
+        menu = menus.MenuPages(
+            source=EmbedListSource([embed]),
+            check_embeds=True,
+            clear_reactions_after=True,
+        )
+        await menu.start(self.context, channel=self.get_destination())
 
 
 class Salamander(commands.Bot):
