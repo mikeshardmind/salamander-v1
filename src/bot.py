@@ -552,7 +552,7 @@ class EmbedHelp(commands.HelpCommand):
                 return embed
 
         for cog, cog_commands in sorted(
-            mapping.items(), key=lambda kv: kv[0].qualified_name or "\U0010FFFF"
+            mapping.items(), key=lambda kv: kv[0].qualified_name if kv[0] else "\U0010FFFF"
         ):
             name = "No Category" if cog is None else cog.qualified_name
             filtered = await self.filter_commands(cog_commands, sort=True)
