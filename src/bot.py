@@ -675,7 +675,11 @@ class Salamander(commands.Bot):
         # TODO: ensure filter can be enabled per server before this rolls out.
         self._behavior_flags: BehaviorFlags = BehaviorFlags(no_serpent=True)
         super().__init__(
-            *args, command_prefix=_prefix, description="Project Salamander", **kwargs
+            *args,
+            command_prefix=_prefix,
+            description="Project Salamander",
+            help_command=EmbedHelp(),
+            **kwargs,
         )
 
         self._zmq = ZMQHandler()
