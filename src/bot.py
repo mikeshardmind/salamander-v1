@@ -501,6 +501,8 @@ class Salamander(commands.Bot):
                 original, (discord.HTTPException, commands.TooManyArguments)
             ):
                 # too many arguments should be handled on an individual basis
+                # it requires enabling ignore_extra=False (default is True)
+                # and the user facing message should be tailored to the situation.
                 log.exception(f"In {ctx.command.qualified_name}:", exc_info=original)
         elif isinstance(exc, commands.ArgumentParsingError):
             await ctx.send(exc)

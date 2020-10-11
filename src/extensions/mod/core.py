@@ -427,7 +427,7 @@ class Mod(commands.Cog):
         )
         await ctx.send("Mute role set.")
 
-    @set_muterole_command.on_error
+    @set_muterole_command.error
     async def mute_role_error(self, ctx, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
