@@ -13,5 +13,8 @@
 #   limitations under the License.
 
 
-from .filt import FilterDemo as FilterDemo  # NOQA: F401
-from .meta import Meta as Meta  # NOQA: F401
+from .filter import Filter
+
+
+def setup(bot):
+    bot.add_cog(Filter(bot))

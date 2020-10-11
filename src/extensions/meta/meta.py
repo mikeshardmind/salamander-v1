@@ -18,8 +18,8 @@ from __future__ import annotations
 import discord
 from discord.ext import commands
 
-from ..bot import Salamander, SalamanderContext, UserFeedbackError
-from ..checks import admin_or_perms
+from ...bot import Salamander, SalamanderContext, UserFeedbackError
+from ...checks import admin_or_perms
 
 
 class Meta(commands.Cog):
@@ -89,7 +89,7 @@ class Meta(commands.Cog):
         """
         Remove a prefix
 
-        If you would like your prefix to end in a space, make sure you use quates.
+        If referring to a prefix which ends in a space, make sure you use quates.
         (Discord removes trailing whitespace from messages)
 
         Multi-word prefixes should also be quoted.

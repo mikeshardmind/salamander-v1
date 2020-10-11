@@ -34,7 +34,6 @@ import discord
 from discord.ext import commands
 from lru import LRU
 
-from .cogs import FilterDemo, Meta
 from .ipc_layer import ZMQHandler
 from .modlog import ModlogHandler
 from .utils import MainThreadSingletonMeta, format_list, only_once, pagify
@@ -467,7 +466,10 @@ class Salamander(commands.Bot):
     def __init__(self, *args, **kwargs):
         self._close_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[...]]
         self._background_loop: Optional[asyncio.Task] = None
-        self._behavior_flags: BehaviorFlags = BehaviorFlags()
+        # TODO: ensure filter can be enabled per server before this rolls out.
+        self._behavior_flags: BehaviorFlags = BehaviorFlags(
+            no_basalisk=True, no_serpent=True
+        )
         super().__init__(*args, command_prefix=_prefix, **kwargs)
 
         self._zmq = ZMQHandler()
@@ -480,12 +482,10 @@ class Salamander(commands.Bot):
         self.block_manager: BlockManager = BlockManager(self)
         self.privlevel_manager: PrivHandler(self)
 
-        self.add_cog(FilterDemo(self))
-        self.add_cog(Meta(self))
-
-        self.load_extension("jishaku")
         self.load_extension("src.contrib_extensions.dice")
         self.load_extension("src.extensions.mod")
+        self.load_extension("src.extensions.meta")
+        self.load_extension("src.extensions.filter")
 
     async def on_command_error(self, ctx: SalamanderContext, exc: Exception):
         if isinstance(exc, commands.NoPrivateMessage):

@@ -16,18 +16,12 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import discord
 from discord.ext import commands
 
-if TYPE_CHECKING:
-    from ..bot import Salamander, SalamanderContext
-else:
-    Salamander = commands.Bot
-    SalamanderContext = commands.Context
-
+from ...bot import Salamander, SalamanderContext
 
 BASALISK = "basalisk"
 REFOCUS = "basalisk.refocus"
@@ -35,7 +29,7 @@ STATUS_CHECK = "status.check"
 STATUS_RESPONSE = "status.response"
 
 
-class FilterDemo(commands.Cog):
+class Filter(commands.Cog):
 
     bot: Salamander
 
@@ -45,10 +39,10 @@ class FilterDemo(commands.Cog):
     @commands.Cog.listener("on_message")
     async def on_message(self, msg: discord.Message):
 
-        if msg.content and (not msg.author.bot):
-
-            if await self.bot.check_basalisk(msg.content):
-                await msg.channel.send("Found match")
+        if msg.content and (not msg.author.bot) and msg.guild:
+            if msg.channel.permissions_for(msg.guild.me).manage_messages:
+                if await self.bot.check_basalisk(msg.content):
+                    await msg.delete()
 
     @commands.is_owner()
     @commands.command()
