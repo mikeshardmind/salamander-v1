@@ -525,8 +525,8 @@ class EmbedListSource(menus.ListPageSource):
     def __init__(self, data):
         super().__init__(data, per_page=1)
 
-    async def format_page(self, menu, entries):
-        return entries[menu.current_page]
+    async def format_page(self, menu, page):
+        return page
 
 
 class EmbedHelp(commands.HelpCommand):
@@ -538,9 +538,6 @@ class EmbedHelp(commands.HelpCommand):
 
     async def send_bot_help(self, mapping):
         embed = discord.Embed(title="Bot Commands", color=self.context.me.color)
-        description = self.context.bot.description
-        if description:
-            embed.description = description
 
         embeds = []
 
@@ -559,9 +556,6 @@ class EmbedHelp(commands.HelpCommand):
             filtered = await self.filter_commands(cog_commands, sort=True)
             if filtered:
                 value = "\N{EN SPACE}".join(c.name for c in cog_commands)
-                if cog and cog.description:
-                    value = "{0}\n{1}".format(cog.description, value)
-
                 embed = add_field(embed, name, value)
 
         if embed.fields:  # needed in case the very last add field rolled it over
@@ -606,7 +600,6 @@ class EmbedHelp(commands.HelpCommand):
                 embed,
                 self.get_command_signature(command),
                 command.short_doc or "...",
-                inline=False,
             )
 
         if embed.fields:  # needed in case the very last add field rolled it over
