@@ -482,6 +482,7 @@ class Salamander(commands.Bot):
         self.block_manager: BlockManager = BlockManager(self)
         self.privlevel_manager: PrivHandler(self)
 
+        self.load_extension("jishaku")
         self.load_extension("src.contrib_extensions.dice")
         self.load_extension("src.extensions.mod")
         self.load_extension("src.extensions.meta")
