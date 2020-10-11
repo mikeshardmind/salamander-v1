@@ -642,6 +642,8 @@ class EmbedHelp(commands.HelpCommand):
                     self.get_command_signature(command),
                     command.short_doc or "...",
                 )
+        else:
+            embeds.append(embed)
 
         if embed.fields:  # needed in case the very last add field rolled it over
             embeds.append(embed)
