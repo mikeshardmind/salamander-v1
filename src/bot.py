@@ -551,7 +551,9 @@ class EmbedHelp(commands.HelpCommand):
                 embed.add_field(name=name, value=value)
                 return embed
 
-        for cog, cog_commands in mapping.items():
+        for cog, cog_commands in sorted(
+            mapping.items(), key=lambda kv: kv[0].qualified_name or "\U0010FFFF"
+        ):
             name = "No Category" if cog is None else cog.qualified_name
             filtered = await self.filter_commands(cog_commands, sort=True)
             if filtered:
