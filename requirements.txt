@@ -7,3 +7,4 @@ uvloop
 jishaku
 python-dateutil
 lru-dict
+git+https://github.com/Rapptz/discord-ext-menus

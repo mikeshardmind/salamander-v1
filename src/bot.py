@@ -31,7 +31,7 @@ except ImportError:
 
 import apsw
 import discord
-from discord.ext import commands
+from discord.ext import commands, menus
 from lru import LRU
 
 from .ipc_layer import ZMQHandler
@@ -519,6 +519,153 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
 
     def remove_admin(self, guild_id: int, *user_ids: int):
         self._modify_admin_status(False, guild_id, user_ids)
+
+
+class EmbedListSource(menus.ListPageSource):
+    def __init__(self, data):
+        super().__init__(data, per_page=1)
+
+    async def format_page(self, menu, entries):
+        return entries[menu.current_page]
+
+
+class EmbedHelp(commands.HelpCommand):
+    def get_ending_note(self):
+        return f"Use {self.clean_prefix}{self.invoked_with} [command] for help with a specific command"
+
+    def get_command_signature(self, command):
+        return f"{command.qualified_name} {command.signature}"
+
+    async def send_bot_help(self, mapping):
+        embed = discord.Embed(title="Bot Commands", color=self.context.me.color)
+        description = self.context.bot.description
+        if description:
+            embed.description = description
+
+        embeds = []
+
+        def add_field(embed: discord.Embed, name: str, value: str) -> discord.Embed:
+            if embed.fields and len(embed.fields) > 24:
+                embeds.append(embed)
+                r = discord.Embed(color=self.context.me.color)
+                r.add_field(name=name, value=value)
+                return r
+            else:
+                embed.add_field(name=name, value=value)
+                return embed
+
+        for cog, cog_commands in mapping.items():
+            name = "No Category" if cog is None else cog.qualified_name
+            filtered = await self.filter_commands(commands, sort=True)
+            if filtered:
+                value = "\N{EN SPACE}".join(c.name for c in cog_commands)
+                if cog and cog.description:
+                    value = "{0}\n{1}".format(cog.description, value)
+
+                embed = add_field(embed, name, value)
+
+        if embed.fields:  # needed in case the very last add field rolled it over
+            embeds.append(embed)
+
+        emb_l = len(embeds)
+        end_note = self.get_ending_note()
+        for index, embed in enumerate(embeds):
+            embed.set_footer(f"Page {index} of {emb_l} | {end_note}")
+
+        menu = menus.MenuPages(
+            source=EmbedListSource(embeds),
+            check_embeds=True,
+            clear_reactions_after=True,
+        )
+        await menu.start(self.context, channel=self.get_destination())
+
+    async def send_cog_help(self, cog):
+        embed = discord.Embed(
+            title="{0.qualified_name} Commands".format(cog),
+            colour=self.context.me.color,
+        )
+        if cog.description:
+            embed.description = cog.description
+
+        filtered = await self.filter_commands(cog.get_commands(), sort=True)
+
+        embeds = []
+
+        def add_field(embed: discord.Embed, name: str, value: str) -> discord.Embed:
+            if embed.fields and len(embed.fields) > 24:
+                embeds.append(embed)
+                r = discord.Embed(color=self.context.me.color)
+                r.add_field(name=name, value=value, inline=False)
+                return r
+            else:
+                embed.add_field(name=name, value=value, inline=False)
+                return embed
+
+        for command in filtered:
+            embed = add_field(
+                embed,
+                self.get_command_signature(command),
+                command.short_doc or "...",
+                inline=False,
+            )
+
+        if embed.fields:  # needed in case the very last add field rolled it over
+            embeds.append(embed)
+
+        emb_l = len(embeds)
+        end_note = self.get_ending_note()
+        for index, embed in enumerate(embeds):
+            embed.set_footer(f"Page {index} of {emb_l} | {end_note}")
+
+        menu = menus.MenuPages(
+            source=EmbedListSource(embeds),
+            check_embeds=True,
+            clear_reactions_after=True,
+        )
+        await menu.start(self.context, channel=self.get_destination())
+
+    async def send_group_help(self, group):
+        embed = discord.Embed(title=group.qualified_name, colour=self.context.me.color)
+        if group.help:
+            embed.description = group.help
+
+        embeds = []
+
+        def add_field(embed: discord.Embed, name: str, value: str) -> discord.Embed:
+            if embed.fields and len(embed.fields) > 24:
+                embeds.append(embed)
+                r = discord.Embed(color=self.context.me.color)
+                r.add_field(name=name, value=value, inline=False)
+                return r
+            else:
+                embed.add_field(name=name, value=value, inline=False)
+                return embed
+
+        if isinstance(group, commands.Group):
+            filtered = await self.filter_commands(group.commands, sort=True)
+            for command in filtered:
+                embed = add_field(
+                    embed,
+                    self.get_command_signature(command),
+                    command.short_doc or "...",
+                )
+
+        if embed.fields:  # needed in case the very last add field rolled it over
+            embeds.append(embed)
+
+        emb_l = len(embeds)
+        end_note = self.get_ending_note()
+        for index, embed in enumerate(embeds):
+            embed.set_footer(f"Page {index} of {emb_l} | {end_note}")
+
+        menu = menus.MenuPages(
+            source=EmbedListSource(embeds),
+            check_embeds=True,
+            clear_reactions_after=True,
+        )
+        await menu.start(self.context, channel=self.get_destination())
+
+    send_command_help = send_group_help
 
 
 class Salamander(commands.Bot):
