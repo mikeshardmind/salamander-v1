@@ -526,9 +526,7 @@ class Salamander(commands.Bot):
         self._close_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[...]]
         self._background_loop: Optional[asyncio.Task] = None
         # TODO: ensure filter can be enabled per server before this rolls out.
-        self._behavior_flags: BehaviorFlags = BehaviorFlags(
-            no_basalisk=True, no_serpent=True
-        )
+        self._behavior_flags: BehaviorFlags = BehaviorFlags(no_serpent=True)
         super().__init__(
             *args, command_prefix=_prefix, description="Project Salamander", **kwargs
         )
@@ -547,7 +545,8 @@ class Salamander(commands.Bot):
         self.load_extension("src.contrib_extensions.dice")
         self.load_extension("src.extensions.mod")
         self.load_extension("src.extensions.meta")
-        self.load_extension("src.extensions.filter")
+        if not self._behavior_flags.no_basalisk:
+            self.load_extension("src.extensions.filter")
 
     async def on_command_error(self, ctx: SalamanderContext, exc: Exception):
         if isinstance(exc, commands.NoPrivateMessage):

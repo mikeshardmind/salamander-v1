@@ -22,6 +22,7 @@ import discord
 from discord.ext import commands
 
 from ...bot import Salamander, SalamanderContext
+from ...checks import admin_or_perms
 
 BASALISK = "basalisk"
 REFOCUS = "basalisk.refocus"
@@ -36,30 +37,88 @@ class Filter(commands.Cog):
     def __init__(self, bot):
         self.bot: Salamander = bot
 
+    def check_enabled_in_guild(self, guild_id: int) -> bool:
+
+        cursor = self.bot._conn.cursor()
+        row = cursor.execute(
+            """
+            SELECT feature_flags & 1 FROM guild_settings WHERE guild_id = ?
+            """,
+            (guild_id,),
+        ).fetchone()
+        if row:
+            return row[0]
+        return False
+
+    def disable_in_guild(self, guild_id: int):
+        cursor = self.bot._conn.cursor()
+        cursor.execute(
+            """
+            UPDATE guild_settings
+            SET feature_flags=feature_flags & ~1
+            WHERE guild_id = ?
+            """,
+            (guild_id,),
+        )
+
+    def enable_in_guild(self, guild_id: int):
+        cursor = self.bot._conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO guild_settings (guild_id, feature_flags)
+            VALUES (?, 1)
+            ON CONFLICT (guild_id)
+            DO UPDATE SET feature_flags=feature_flags | 1
+            """,
+            (guild_id,),
+        )
+
     @commands.Cog.listener("on_message")
     async def on_message(self, msg: discord.Message):
 
         if msg.content and (not msg.author.bot) and msg.guild:
             if msg.channel.permissions_for(msg.guild.me).manage_messages:
-                if await self.bot.check_basalisk(msg.content):
-                    await msg.delete()
+                if self.check_enabled_in_guild(msg.guild.id):
+                    if await self.bot.check_basalisk(msg.content):
+                        await msg.delete()
+
+    @commands.check_any(commands.is_owner(), admin_or_perms(manage_guild=True))
+    @commands.group(name="filterset")
+    async def filterset(self, ctx: SalamanderContext):
+        """ Commands for managing the network filter """
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help()
+
+    @admin_or_perms(manage_guild=True)
+    @filterset.command()
+    async def enable(self, ctx: SalamanderContext):
+        """ Enable the network wide filter in this server """
+        self.enable_in_guild(ctx.guild.id)
+        await ctx.send("Filtering enabled.")
+
+    @admin_or_perms(manage_guild=True)
+    @filterset.command()
+    async def disable(self, ctx: SalamanderContext):
+        """ Disable the network wide filter in this server """
+        self.disable_in_guild(ctx.guild.id)
+        await ctx.send("Filtering disabled.")
 
     @commands.is_owner()
-    @commands.command()
+    @filterset.command()
     async def addpattern(self, ctx: SalamanderContext, *, pattern):
         """ Add a pattern to the scanner """
         self.bot.ipc_put(REFOCUS, ((pattern,), ()))
         await ctx.send("Pattern added.")
 
     @commands.is_owner()
-    @commands.command()
+    @filterset.command()
     async def removepattern(self, ctx: SalamanderContext, *, pattern):
         """ Remove a pattern from the scanner """
         self.bot.ipc_put(REFOCUS, ((), (pattern,)))
         await ctx.send("Pattern removed.")
 
-    @commands.is_owner()
-    @commands.command()
+    @admin_or_perms(manage_guild=True)
+    @filterset.command()
     async def listpatterns(self, ctx: SalamanderContext):
         """ List the current patterns being filtered """
 

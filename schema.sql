@@ -28,7 +28,8 @@ PRAGMA journal_size_limit = 3072;
 
 -- BEGIN REGION: Core bot settings
 
--- feature flags is a bitfield reserved for some future plans for enabling specific features per guild
+-- feature flags is a bitfield which supports future growth in 1 column.
+-- Filter via basalisk's networkwide settings: 1
 CREATE TABLE IF NOT EXISTS guild_settings (
 	guild_id INTEGER PRIMARY KEY NOT NULL,
 	is_blacklisted BOOLEAN DEFAULT false,
