@@ -112,10 +112,11 @@ class Meta(commands.Cog):
             )
 
         self.bot.prefix_manager.remove_guild_prefixes(ctx.guild.id, prefix)
+        await ctx.send("Prefix removed.")
 
     @prefix_remove.error
     @prefix_add.error
-    async def prefix_addremove_too_many_argy(self, ctx: SalamanderContext, exc):
+    async def prefix_addremove_too_many_args(self, ctx: SalamanderContext, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
                 "I can only add one prefix at a time. "
