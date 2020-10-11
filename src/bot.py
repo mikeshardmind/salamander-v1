@@ -275,7 +275,7 @@ class PrefixManager(metaclass=MainThreadSingletonMeta):
                 """
                 INSERT INTO guild_prefixes (guild_id, prefix)
                 VALUES (?, ?)
-                ON CONFLICT (guild_id) DO NOTHING
+                ON CONFLICT (guild_id, prefix) DO NOTHING
                 """,
                 tuple((guild_id, pfx) for pfx in prefixes),
             )
@@ -289,14 +289,6 @@ class PrefixManager(metaclass=MainThreadSingletonMeta):
     def remove_guild_prefixes(self, guild_id: int, *prefixes: str):
         cursor = self._bot._conn.cursor()
         with self._bot._conn:
-
-            cursor.execute(
-                """
-                INSERT INTO guild_settings (guild_id) VALUES (?)
-                ON CONFLICT (guild_id) DO NOTHING
-                """,
-                (guild_id,),
-            )
 
             cursor.executemany(
                 """
