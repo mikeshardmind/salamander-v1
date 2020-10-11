@@ -44,12 +44,18 @@ class Meta(commands.Cog):
         """ List the prefixes currently configured for this server """
 
         prefixes = self.bot.prefix_manager.get_guild_prefixes(ctx.guild.id)[::-1]
-        em = discord.Embed(title="Configured Prefixes", color=ctx.me.color)
-        em.set_footer(text="You can also start your command by mentioning me.")
-        em.description = "\n".join(
-            f"{index}. `{prefix}`" for index, prefix in enumerate(prefixes, 1)
-        )
-        await ctx.send(embed=em)
+        if prefixes:
+            em = discord.Embed(title="Configured Prefixes", color=ctx.me.color)
+            em.set_footer(text="You can also start your command by mentioning me.")
+            em.description = "\n".join(
+                f"{index}. `{prefix}`" for index, prefix in enumerate(prefixes, 1)
+            )
+            await ctx.send(embed=em)
+        else:
+            await ctx.send(
+                "There are no configured extra prefixes in this server, "
+                "but using a mention will work."
+            )
 
     @prefix.command(name="add", ignore_extra=True)
     async def prefix_add(self, ctx: SalamanderContext, prefix: str):

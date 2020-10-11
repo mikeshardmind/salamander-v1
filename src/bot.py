@@ -265,9 +265,10 @@ class PrefixManager(metaclass=MainThreadSingletonMeta):
 
             cursor.execute(
                 """
-                INSERT INTO guild_settings (guild_id) VALUES ?
+                INSERT INTO guild_settings (guild_id) VALUES (?)
                 ON CONFLICT (guild_id) DO NOTHING
-                """
+                """,
+                (guild_id,),
             )
 
             cursor.executemany(
@@ -291,9 +292,10 @@ class PrefixManager(metaclass=MainThreadSingletonMeta):
 
             cursor.execute(
                 """
-                INSERT INTO guild_settings (guild_id) VALUES ?
+                INSERT INTO guild_settings (guild_id) VALUES (?)
                 ON CONFLICT (guild_id) DO NOTHING
-                """
+                """,
+                (guild_id,),
             )
 
             cursor.executemany(
@@ -358,7 +360,23 @@ class BlockManager(metaclass=MainThreadSingletonMeta):
         with self._bot._conn:
             cursor.executemany(
                 """
-                INSERT INTO user_settings (guild_id, user_id, is_blocked)
+                INSERT INTO user_settings (user_id)
+                VALUES (?)
+                ON CONFLICT (user_id) DO NOTHING
+                """,
+                tuple((uid,) for uid in user_ids),
+            )
+            cursor.execute(
+                """
+                INSERT INTO guild_settings (guild_id)
+                VALUES (?)
+                ON CONFLICT (guild_id) DO NOTHING
+                """,
+                (guild_id,),
+            )
+            cursor.executemany(
+                """
+                INSERT INTO member_settings (guild_id, user_id, is_blocked)
                 VALUES (?, ?, ?)
                 ON CONFLICT (guild_id, user_id) DO UPDATE SET
                     is_blocked=excluded.is_blocked
@@ -396,7 +414,7 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
 
         return r[0] if r else False
 
-    def member_id_admin(self, guild_id: int, user_id: int) -> bool:
+    def member_is_admin(self, guild_id: int, user_id: int) -> bool:
         cursor = self._bot._conn.cursor()
         r = cursor.execute(
             """
@@ -412,6 +430,7 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
     def _modify_mod_status(self, val: bool, guild_id: int, user_ids: Sequence[int]):
         cursor = self._bot._conn.cursor()
         with self._bot._conn:
+
             cursor.executemany(
                 """
                 INSERT INTO user_settings (user_id) VALUES (?)
@@ -419,9 +438,17 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
                 """,
                 tuple((uid,) for uid in user_ids),
             )
+            cursor.execute(
+                """
+                INSERT INTO guild_settings (guild_id)
+                VALUES (?)
+                ON CONFLICT (guild_id) DO NOTHING
+                """,
+                (guild_id,),
+            )
             cursor.executemany(
                 """
-                INSERT INTO guild_settings (guild_id, user_id, is_mod)
+                INSERT INTO member_settings (guild_id, user_id, is_mod)
                 VALUES (?,?,?)
                 ON CONFLICT (guild_id, user_id)
                 DO UPDATE SET is_mod=excluded.is_mod
@@ -434,14 +461,23 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
         with self._bot._conn:
             cursor.executemany(
                 """
-                INSERT INTO user_settings (user_id) VALUES (?)
+                INSERT INTO user_settings (user_id)
+                VALUES (?)
                 ON CONFLICT (user_id) DO NOTHING
                 """,
                 tuple((uid,) for uid in user_ids),
             )
+            cursor.execute(
+                """
+                INSERT INTO guild_settings (guild_id)
+                VALUES (?)
+                ON CONFLICT (guild_id) DO NOTHING
+                """,
+                (guild_id,),
+            )
             cursor.executemany(
                 """
-                INSERT INTO guild_settings (guild_id, user_id, is_admin)
+                INSERT INTO member_settings (guild_id, user_id, is_admin)
                 VALUES (?,?,?)
                 ON CONFLICT (guild_id, user_id)
                 DO UPDATE SET is_admin=excluded.is_mod
