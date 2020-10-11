@@ -35,8 +35,6 @@ CREATE TABLE IF NOT EXISTS guild_settings (
 	mute_role INTEGER DEFAULT NULL,
 	timezone TEXT DEFAULT "America/New_York",
 	mod_log_channel INTEGER DEFAULT NULL,
-	announcement_channel INTEGER DEFAULT NULL,
-	telemetry_opt_in BOOLEAN DEFAULT false,
 	feature_flags INTEGER DEFAULT 0
 );
 
@@ -129,22 +127,23 @@ CREATE TABLE IF NOT EXISTS guild_mute_removed_roles (
 
 -- END REGION
 
--- BEGIN REGION: User generated tags
+-- BEGIN REGION: Knowledgebase
 
--- tag data is data explicitly given to the bot
+-- this data is explicitly given to the bot
 -- for the express purpose of allowing it to be reposted by the bot in the guild it was provided
 -- We allow anonymizing the original owner, effectively decoupling them from the data
 -- but not deletion or breaking referential integrity
-CREATE TABLE IF NOT EXISTS member_created_tags (
+CREATE TABLE IF NOT EXISTS guild_kb_entries (
 	guild_id REFERENCES guild_settings (guild_id)
 		ON UPDATE CASCADE ON DELETE CASCADE,
 	user_id INTEGER,
-	tag_name TEXT,
-	response TEXT,
-	times_used INTEGER default 0,
+	kb_article_name TEXT,
+	content TEXT,
+	times_used INTEGER DEFAULT 0,
+	created_at TEXT DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (user_id, guild_id) REFERENCES member_settings(user_id, guild_id)
 		ON DELETE RESTRICT ON UPDATE CASCADE,
-	PRIMARY KEY (tag_name, guild_id)
+	PRIMARY KEY (kb_article_name, guild_id)
 );
 
 -- END REGION
@@ -157,8 +156,9 @@ CREATE TABLE IF NOT EXISTS guild_warnings (
 	user_id INTEGER,
 	mod_id INTEGER,
 	reason TEXT DEFAULT NULL,
+	created_at TEXT DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY(mod_id, guild_id) REFERENCES member_settings(user_id, guild_id)
-		ON UPDATE CASCADE ON DELETE RESTRICT ,
+		ON UPDATE CASCADE ON DELETE RESTRICT,
 	FOREIGN KEY (user_id, guild_id) REFERENCES member_settings(user_id, guild_id)
 		ON UPDATE CASCADE ON DELETE RESTRICT
 );
@@ -180,7 +180,6 @@ CREATE TABLE IF NOT EXISTS mod_user_notes (
 	FOREIGN KEY (target_id, guild_id) REFERENCES member_settings(user_id, guild_id)
 		ON UPDATE CASCADE ON DELETE CASCADE
 );
-
 
 -- TODO: DB design for
 -- Role Assignments, reports

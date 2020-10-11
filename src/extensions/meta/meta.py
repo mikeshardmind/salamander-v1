@@ -32,6 +32,18 @@ class Meta(commands.Cog):
         """ Shuts down the bot """
         await self.bot.logout()
 
+    @commands.command(name="info", aliases=["about"])
+    async def info_com(self, ctx: SalamanderContext):
+        """ Get info about this bot """
+
+        about_text = (
+            "This bot is an instance of [Project Salamander]"
+            "(https://github.com/unified-moderation-network/salamander)"
+            "\nIt is currently considered to be in alpha."
+        )
+        em = discord.Embed(color=ctx.me.color, description=about_text)
+        await ctx.send(embed=em)
+
     @admin_or_perms(manage_guild=True)
     @commands.group()
     async def prefix(self, ctx: SalamanderContext):

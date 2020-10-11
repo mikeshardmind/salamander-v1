@@ -308,6 +308,37 @@ class BlockManager(metaclass=MainThreadSingletonMeta):
     def __init__(self, bot: Salamander):
         self._bot: Salamander = bot
 
+    def guild_is_blocked(self, guild_id: int) -> bool:
+        cursor = self._bot._conn.cursor()
+        r = cursor.execute(
+            """
+            SELECT is_blocked from guild_settings
+            WHERE guild_id =?
+            """,
+            (guild_id,),
+        ).fetchone()
+        if r:
+            return r[0]
+        return False
+
+    def _modify_guild_block(self, val: bool, guild_id: int):
+        cursor = self._bot._conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO guild_settings (guild_id, is_blocked)
+            VALUES (?, ?)
+            ON CONFLICT (guild_id)
+            DO UPDATE SET is_blocked=excluded.is_blocked
+            """,
+            (guild_id, val),
+        )
+
+    def block_guild(self, guild_id: int):
+        self._modify_guild_block(True, guild_id)
+
+    def unblock_guild(self, guild_id: int):
+        self._modify_guild_block(False, guild_id)
+
     def user_is_blocked(self, user_id: int) -> bool:
         cursor = self._bot._conn.cursor()
         r = cursor.execute(
@@ -498,7 +529,9 @@ class Salamander(commands.Bot):
         self._behavior_flags: BehaviorFlags = BehaviorFlags(
             no_basalisk=True, no_serpent=True
         )
-        super().__init__(*args, command_prefix=_prefix, **kwargs)
+        super().__init__(
+            *args, command_prefix=_prefix, description="Project Salamander", **kwargs
+        )
 
         self._zmq = ZMQHandler()
         self._zmq_task: Optional[asyncio.Task] = None
