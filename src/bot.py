@@ -556,7 +556,7 @@ class EmbedHelp(commands.HelpCommand):
 
         for cog, cog_commands in mapping.items():
             name = "No Category" if cog is None else cog.qualified_name
-            filtered = await self.filter_commands(commands, sort=True)
+            filtered = await self.filter_commands(cog_commands, sort=True)
             if filtered:
                 value = "\N{EN SPACE}".join(c.name for c in cog_commands)
                 if cog and cog.description:
