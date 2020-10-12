@@ -21,7 +21,7 @@ import logging
 import re
 import sys
 from logging.handlers import RotatingFileHandler
-from typing import Awaitable, Callable, List, Optional, Sequence, Type, TypeVar
+from typing import Awaitable, Callable, List, Optional, Sequence, Type, TypeVar, Union
 from uuid import uuid4
 
 try:
@@ -116,6 +116,14 @@ INVALID_OPTION_ERROR_FMT = (
 )
 
 
+class PreFormattedListSource(menus.ListPageSource):
+    def __init__(self, data):
+        super().__init__(data, per_page=1)
+
+    async def format_page(self, menu, page):
+        return page
+
+
 class SalamanderContext(commands.Context):
 
     bot: Salamander
@@ -133,6 +141,27 @@ class SalamanderContext(commands.Context):
         """
         command = command or self.command
         await super().send_help(command)
+
+    async def list_menu(
+        self,
+        pages: List[Union[discord.Embed, str]],
+        *,
+        timeout: float = 180,
+        alt_destination: Optional[discord.abc.Messageable] = None,
+    ) -> menus.Menu:
+        """
+        Returns the started menu,
+        a List source is made for you from strings/embeds
+        provided assuming them as being already prepared.
+        """
+        menu = menus.MenuPages(
+            source=PreFormattedListSource(pages),
+            check_embeds=True,
+            clear_reactions_after=True,
+            timeout=timeout,
+        )
+        await menu.start(self.context, channel=alt_destination or self.channel)
+        return menu
 
     async def prompt(
         self,
@@ -521,14 +550,6 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
         self._modify_admin_status(False, guild_id, user_ids)
 
 
-class EmbedListSource(menus.ListPageSource):
-    def __init__(self, data):
-        super().__init__(data, per_page=1)
-
-    async def format_page(self, menu, page):
-        return page
-
-
 class EmbedHelp(commands.HelpCommand):
     def get_ending_note(self):
         return f"Use {self.clean_prefix}{self.invoked_with} [command] for help with a specific command"
@@ -570,7 +591,7 @@ class EmbedHelp(commands.HelpCommand):
             embed.set_footer(text=f"Page {index} of {emb_l} | {end_note}")
 
         menu = menus.MenuPages(
-            source=EmbedListSource(embeds),
+            source=PreFormattedListSource(embeds),
             check_embeds=True,
             clear_reactions_after=True,
         )
@@ -611,7 +632,7 @@ class EmbedHelp(commands.HelpCommand):
             embed.set_footer(text=f"Page {index} of {emb_l} | {end_note}")
 
         menu = menus.MenuPages(
-            source=EmbedListSource(embeds),
+            source=PreFormattedListSource(embeds),
             check_embeds=True,
             clear_reactions_after=True,
         )
@@ -652,7 +673,7 @@ class EmbedHelp(commands.HelpCommand):
             embed.set_footer(text=f"Page {index} of {emb_l} | {end_note}")
 
         menu = menus.MenuPages(
-            source=EmbedListSource(embeds),
+            source=PreFormattedListSource(embeds),
             check_embeds=True,
             clear_reactions_after=True,
         )
@@ -666,7 +687,7 @@ class EmbedHelp(commands.HelpCommand):
             embed.description = command.help
 
         menu = menus.MenuPages(
-            source=EmbedListSource([embed]),
+            source=PreFormattedListSource([embed]),
             check_embeds=True,
             clear_reactions_after=True,
         )
