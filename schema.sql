@@ -169,10 +169,10 @@ CREATE TABLE IF NOT EXISTS guild_warnings (
 -- Similar to tags, this is data provided to the bot for the express purpose of resending
 -- However, as this is notes about specific users,
 -- if the user no longer exists, the data is no longer needed.
-CREATE TABLE IF NOT EXISTS mod_user_notes (
+CREATE TABLE IF NOT EXISTS mod_notes_on_members (
 	guild_id INTEGER REFERENCES guild_settings(guild_id)
 		ON DELETE CASCADE ON UPDATE CASCADE,
-	created_at INTEGER DEFAULT CURRENT_TIMESTAMP,
+	created_at TEXT DEFAULT CURRENT_TIMESTAMP,
 	mod_id INTEGER,
 	target_id INTEGER,
 	note TEXT NOT NULL,

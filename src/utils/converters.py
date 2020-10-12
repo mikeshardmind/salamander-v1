@@ -14,9 +14,18 @@
 
 from __future__ import annotations
 
+import contextlib
+import re
+from typing import NamedTuple, Optional
+
+import discord
 from discord.ext import commands
 
 from ..bot import SalamanderContext
+
+_discord_member_converter_instance = commands.MemberConverter()
+_id_regex = re.compile(r"([0-9]{15,21})$")
+_mention_regex = re.compile(r"<@!?([0-9]{15,21})>$")
 
 
 class Weekday:
@@ -55,3 +64,21 @@ class Weekday:
         raise commands.BadArgument(
             message="I didn't understand that input as a day of the week"
         )
+
+
+class MemberOrID(NamedTuple):
+    member: Optional[discord.Member]
+    id: int
+
+    @classmethod
+    async def convert(cls, ctx: SalamanderContext, argument: str):
+
+        with contextlib.suppress(Exception):
+            m = await _discord_member_converter_instance.convert(ctx, argument)
+            return cls(m, m.id)
+
+        match = _id_regex.match(argument) or _mention_regex.match(argument)
+        if match:
+            return cls(None, int(match.group(1)))
+
+        raise commands.BadArgument(message="That wasn't a member or member ID.")
