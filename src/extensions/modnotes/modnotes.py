@@ -85,7 +85,8 @@ class ModNotes(commands.Cog):
                 """
                 INSERT INTO member_settings (guild_id, user_id) VALUES (?,?)
                 ON CONFLICT (guil_id, user_id) DO NOTHING
-                """
+                """,
+                ((guild_id, target_id), (guild_id, mod_id)),
             )
 
             cursor.execute(
