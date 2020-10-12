@@ -43,6 +43,15 @@ def mod():
     return commands.check(predicate)
 
 
+def guildowner():
+    def predicate(ctx: SalamanderContext) -> bool:
+        if ctx.guild:
+            return ctx.author == ctx.guild.owner
+        return False
+
+    return commands.check(predicate)
+
+
 def admin():
     def predicate(ctx: SalamanderContext) -> bool:
         if ctx.guild:
@@ -65,4 +74,10 @@ def mod_or_perms(**perms):
 def admin_or_perms(**perms):
     return commands.check_any(
         commands.has_guild_permissions(**perms), admin(), owner_in_guild()
+    )
+
+
+def guildowner_or_perms(**perms):
+    return commands.check_any(
+        commands.has_guild_permissions(**perms), guildowner(), owner_in_guild()
     )

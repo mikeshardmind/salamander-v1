@@ -15,11 +15,13 @@
 
 from __future__ import annotations
 
+from typing import Union
+
 import discord
 from discord.ext import commands
 
 from ...bot import Salamander, SalamanderContext, UserFeedbackError
-from ...checks import admin_or_perms
+from ...checks import admin_or_perms, guildowner_or_perms
 
 
 class Meta(commands.Cog):
@@ -133,4 +135,68 @@ class Meta(commands.Cog):
             await ctx.send(
                 "I can only add one prefix at a time. "
                 "If you intended that as a singular prefix, please quote it."
+            )
+
+    @admin_or_perms(manage_guild=True)
+    @commands.command(name="addmod", ignore_extra=False)
+    async def add_mod(self, ctx: SalamanderContext, who: discord.Member):
+        """
+        Add a mod.
+
+        Mention them for best matching success.
+        """
+
+        self.bot.privlevel_manager.give_mod(ctx.guild.id, who.id)
+        await ctx.send("User is considered a mod in this server.")
+
+    @admin_or_perms(manage_guild=True)
+    @commands.command(name="removemod", ignore_extra=False)
+    async def rem_mod(self, ctx: SalamanderContext, who: Union[discord.Member, int]):
+        """
+        Remove a mod
+        """
+
+        if isinstance(who, discord.Member):
+            self.bot.privlevel_manager.remove_mod(ctx.guild.id, who.id)
+        else:
+            self.bot.privlevel_manager.remove_mod(ctx.guild.id, who)
+
+        await ctx.send("If they were a mod, they aren't anymore.")
+
+    @guildowner_or_perms(manage_guild=True)
+    @commands.command(name="addadmin", ignore_extra=False)
+    async def add_admin(self, ctx: SalamanderContext, who: discord.Member):
+        """
+        Add an admin.
+
+        Mention them for best matching success.
+        """
+
+        self.bot.privlevel_manager.give_admin(ctx.guild.id, who.id)
+        await ctx.send("User is considered an admin in this server.")
+
+    @guildowner_or_perms(manage_guild=True)
+    @commands.command(name="removeadmin", ignore_extra=False)
+    async def rem_admin(self, ctx: SalamanderContext, who: Union[discord.Member, int]):
+        """
+        Remove an admin
+        """
+
+        if isinstance(who, discord.Member):
+            self.bot.privlevel_manager.remove_admin(ctx.guild.id, who.id)
+        else:
+            self.bot.privlevel_manager.remove_admin(ctx.guild.id, who)
+
+        await ctx.send("If they were an admin, they aren't anymore.")
+
+    @add_mod.error
+    @rem_mod.error
+    @add_admin.error
+    @rem_admin.error
+    async def add_rem_mod_admin_too_many(self, ctx, exc):
+        if isinstance(exc, commands.TooManyArguments):
+            await ctx.send(
+                "You appeared to give me multiple users. "
+                "If this isn't the case, please use quotes around "
+                "their name or mention them instead."
             )
