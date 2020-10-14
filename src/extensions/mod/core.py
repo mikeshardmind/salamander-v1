@@ -177,6 +177,10 @@ class Mod(commands.Cog):
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
         self._mute_locks: Dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
+        self._bgloop = asyncio.create_task(self.background_loop())
+
+    def cog_unload(self):
+        self._bgloop.cancel()
 
     @mod_or_perms(kick_members=True)
     @commands.bot_has_guild_permissions(kick_members=True)
@@ -306,6 +310,8 @@ class Mod(commands.Cog):
                 asyncio.create_task(
                     self.unmute_logic(guild_id, user_id, "", "Tempmute expiration")
                 )
+
+            await asyncio.sleep(30)
 
     @mod_or_perms(manage_roles=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
