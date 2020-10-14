@@ -299,6 +299,12 @@ class Mod(commands.Cog):
 
         cursor = self.bot._conn.cursor()
 
+        async def wrapper(gid, uid):  # prevent task noise
+            try:
+                await self.unmute_logic(gid, uid, "", "Tempmute expiration")
+            except (UserFeedbackError, RuntimeError):
+                pass
+
         while True:
 
             for guild_id, user_id in cursor.execute(
@@ -307,9 +313,7 @@ class Mod(commands.Cog):
                 WHERE expires_at IS NOT NULL and DATETIME(expires_at) < CURRENT_TIMESTAMP
                 """
             ):
-                asyncio.create_task(
-                    self.unmute_logic(guild_id, user_id, "", "Tempmute expiration")
-                )
+                asyncio.create_task(wrapper(guild_id, user_id))
 
             await asyncio.sleep(30)
 
