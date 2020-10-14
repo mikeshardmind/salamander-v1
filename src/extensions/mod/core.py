@@ -278,7 +278,7 @@ class Mod(commands.Cog):
                 cursor.execute(
                     """
                     INSERT INTO guild_mutes (guild_id, user_id, mute_role_used, expires_at)
-                    VALUES (?, ?, ?, ?)
+                    VALUES (?, ?, ?, DATETIME(?))
                     ON CONFLICT (guild_id, user_id) DO UPDATE SET
                         mute_role_used=excluded.mute_role_used,
                         expires_at=excluded.expires_at
@@ -304,7 +304,7 @@ class Mod(commands.Cog):
             for guild_id, user_id in cursor.execute(
                 """
                 SELECT guild_id, user_id FROM guild_mutes
-                WHERE expires_at IS NOT NULL and expires_at < CURRENT_TIMESTAMP
+                WHERE expires_at IS NOT NULL and DATETIME(expires_at) < CURRENT_TIMESTAMP
                 """
             ):
                 asyncio.create_task(
