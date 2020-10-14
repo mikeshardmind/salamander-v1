@@ -16,12 +16,15 @@ from __future__ import annotations
 
 import contextlib
 import re
+from datetime import timedelta
 from typing import NamedTuple, Optional
 
 import discord
 from discord.ext import commands
 
 from ..bot import SalamanderContext
+from .formatting import humanize_timedelta
+from .parsing import parse_timedelta
 
 _discord_member_converter_instance = commands.MemberConverter()
 _id_regex = re.compile(r"([0-9]{15,21})$")
@@ -82,3 +85,20 @@ class MemberOrID(NamedTuple):
             return cls(None, int(match.group(1)))
 
         raise commands.BadArgument(message="That wasn't a member or member ID.")
+
+
+class TimedeltaConverter(NamedTuple):
+    arg: str
+    delta: timedelta
+
+    @classmethod
+    async def convert(cls, ctx: SalamanderContext, argument: str):
+
+        parsed = parse_timedelta(argument)
+        if not parsed:
+            raise commands.BadArgument(message="That wasn't a duration of time.")
+
+        return cls(argument, parsed)
+
+    def __str__(self):
+        return humanize_timedelta(self.delta)

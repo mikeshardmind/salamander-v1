@@ -16,4 +16,6 @@ from .qotw import QOTW
 
 
 def setup(bot):
-    bot.add_cog(QOTW(bot))
+    cog = QOTW(bot)
+    bot.add_cog(cog)
+    cog.init()

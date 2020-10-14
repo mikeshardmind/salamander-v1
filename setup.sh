@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+mkdir -p contrib_data
 sqlite3 salamander.db < schema.sql
 python3.8 -m pip install -r requirements.txt
 python3.8 -m pip install https://github.com/rogerbinns/apsw/releases/download/3.33.0-r1/apsw-3.33.0-r1.zip \
