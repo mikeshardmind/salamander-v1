@@ -182,6 +182,67 @@ CREATE TABLE IF NOT EXISTS mod_notes_on_members (
 		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
--- TODO: DB design for
--- Role Assignments, reports
+
+-- BEGIN REGION: Role Management
+
+CREATE TABLE IF NOT EXISTS role_settings (
+	role_id INTEGER PRIMARY KEY NOT NULL,
+	guild_id INTEGER REFERENCES guild_settings(guild_id)
+		ON DELETE CASCADE ON UPDATE CASCADE,
+	self_assignable BOOLEAN DEFAULT false,
+	self_removable BOOLEAN DEFAULT false,
+	sticky BOOLEAN DEFAULT false
+);
+
+CREATE TABLE IF NOT EXISTS roles_stuck_to_members (
+	role_id INTEGER NOT NULL REFERENCES role_settings(role_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	user_id INTEGER NOT NULL,
+	FOREIGN KEY (user_id, guild_id) REFERENCES member_settings(user_id, guild_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	PRIMARY KEY(guild_id, user_id, role_id)
+);
+
+CREATE TABLE IF NOT EXISTS react_role_entries (
+	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	channel_id INTEGER NOT NULL,
+	message_id INTEGER NOT NULL,
+	reaction_string TEXT NOT NULL,
+	role_id INTEGER REFERENCES role_settings(role_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	react_remove_triggers_removal BOOLEAN DEFAULT false,
+	PRIMARY KEY (message_id, reaction_string)
+);
+
+CREATE TABLE IF NOT EXISTS role_mutual_exclusivity (
+	role_id_1 INTEGER NOT NULL REFERENCES role_settings(role_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	role_id_2 INTEGER NOT NULL REFERENCES role_settings(role_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	PRIMARY KEY (role_id_1, role_id_2),
+	CHECK (role_id_1 < role_id_2)
+);
+
+CREATE TABLE IF NOT EXISTS role_requires_any (
+	role_id INTEGER NOT NULL REFERENCES role_settings(role_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	required_role_id INTEGER NOT NULL REFERENCES role_settings(role_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	PRIMARY KEY (role_id, required_role_id)
+);
+
+CREATE TABLE IF NOT EXISTS role_requires_all (
+	role_id INTEGER NOT NULL REFERENCES role_settings(role_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	required_role_id INTEGER NOT NULL REFERENCES role_settings(role_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	PRIMARY KEY (role_id, required_role_id)
+);
+
+-- END REGION
+
+-- TODO: DB design for reports
 -- Maybe TODO: altered command availability model (probably not!)

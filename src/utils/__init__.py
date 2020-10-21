@@ -16,6 +16,9 @@
 from __future__ import annotations
 
 from .async_utils import Waterfall as Waterfall
+from .converters import MemberOrID as MemberOrID
+from .converters import Weekday as Weekday
+from .converters import resolve_as_roles as resolve_as_roles
 from .cya import AlreadyDone as AlreadyDone
 from .cya import Choice as Choice
 from .cya import ChooseYourOwnAdventure as ChooseYourOwnAdventure
@@ -44,10 +47,12 @@ __all__ = [
     "Decision",
     "InvalidState",
     "MainThreadSingletonMeta",
+    "MemberOrID",
     "NoMatchingChoice",
     "NotDone",
     "Termination",
     "Waterfall",
+    "Weekday",
     "add_variation_selectors_to_emojis",
     "async_utils",
     "cya",
@@ -57,6 +62,7 @@ __all__ = [
     "humanize_timedelta",
     "only_once",
     "pagify",
+    "resolve_as_roles",
     "runtime_utils",
     "strip_variation_selectors",
 ]

@@ -17,18 +17,20 @@ from __future__ import annotations
 import contextlib
 import re
 from datetime import timedelta
-from typing import NamedTuple, Optional
+from typing import Final, NamedTuple, Optional, Sequence
 
 import discord
 from discord.ext import commands
 
-from ..bot import SalamanderContext
 from .formatting import humanize_timedelta
 from .parsing import parse_timedelta
 
-_discord_member_converter_instance = commands.MemberConverter()
-_id_regex = re.compile(r"([0-9]{15,21})$")
-_mention_regex = re.compile(r"<@!?([0-9]{15,21})>$")
+_discord_member_converter_instance: Final[
+    commands.MemberConverter
+] = commands.MemberConverter()
+_id_regex: Final[re.Pattern] = re.compile(r"([0-9]{15,21})$")
+_mention_regex: Final[re.Pattern] = re.compile(r"<@!?([0-9]{15,21})>$")
+_role_mention_regex: Final[re.Pattern] = re.compile(r"^<@&([0-9]{15,21})>$")
 
 
 class Weekday:
@@ -56,7 +58,7 @@ class Weekday:
         return self.as_string()
 
     @classmethod
-    async def convert(cls, ctx: SalamanderContext, argument: str):
+    async def convert(cls, ctx, argument: str):
 
         argument = argument.strip().casefold()
 
@@ -74,7 +76,7 @@ class MemberOrID(NamedTuple):
     id: int
 
     @classmethod
-    async def convert(cls, ctx: SalamanderContext, argument: str):
+    async def convert(cls, ctx, argument: str):
 
         with contextlib.suppress(Exception):
             m = await _discord_member_converter_instance.convert(ctx, argument)
@@ -92,7 +94,7 @@ class TimedeltaConverter(NamedTuple):
     delta: timedelta
 
     @classmethod
-    async def convert(cls, ctx: SalamanderContext, argument: str):
+    async def convert(cls, ctx, argument: str):
 
         parsed = parse_timedelta(argument)
         if not parsed:
@@ -102,3 +104,16 @@ class TimedeltaConverter(NamedTuple):
 
     def __str__(self):
         return humanize_timedelta(self.delta)
+
+
+def resolve_as_roles(guild: discord.Guild, user_input: str) -> Sequence[discord.Role]:
+
+    if match := (_id_regex.match(user_input) or _role_mention_regex.match(user_input)):
+        # We assume that nobody will make a role with a name that is an ID
+        # If someone reports this as a bug,
+        # kindly tell them to change the name of the impacted role.
+        if role := guild.get_role(int(match.group(1))):
+            return (role,)
+
+    casefolded_user_input = user_input.casefold()
+    return tuple(r for r in guild.roles if r.name.casefold() == casefolded_user_input)

@@ -16,7 +16,7 @@ jobs:
         name: Install deps
       - run: "black --check --target-version py38 runner.py src"
         name: Format checking with Black
-      - run: "isort --profile=black runner.py src"
+      - run: "isort --profile=black --check runner.py src"
         name: Import sorting
       - run: >
           ! $(find . ! -path "./.git/*" -not -type d -exec file "{}" ";" |& grep -q " CRLF ")

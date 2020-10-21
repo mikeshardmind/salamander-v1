@@ -735,6 +735,7 @@ class Salamander(commands.Bot):
         self.load_extension("src.extensions.mod")
         self.load_extension("src.extensions.meta")
         self.load_extension("src.extensions.cleanup")
+        self.load_extension("src.extensions.rolemanagement")
         if not self._behavior_flags.no_basalisk:
             self.load_extension("src.extensions.filter")
 
@@ -863,6 +864,42 @@ class Salamander(commands.Bot):
             self._zmq_task = None
 
         await self._close_queue.join()
+
+    def member_is_considered_muted(self, member: discord.Member) -> bool:
+        """
+        Checks if a user has a mute entry in the database
+        *or* has the muted role for the guild
+
+        You should not modify the roles of members outside
+        of muting/unmuting for whom this returns true
+        """
+
+        cursor = self._conn.cursor()
+        guild = member.guild
+        (has_mute_entry,) = cursor.execute(
+            """
+            SELECT EXISTS(
+                SELECT 1 FROM guild_mutes
+                WHERE guild_id = ? AND user_id = ?
+            )
+            """,
+            (guild.id, member.id),
+        ).fetchone()
+
+        if has_mute_entry:
+            return True
+
+        row = cursor.execute(
+            """
+            SELECT mute_role FROM guild_settings WHERE guild_id = ?
+            """,
+            (guild.id,),
+        ).fetchone()
+
+        if row and member._roles.has(row[0]):
+            return True
+
+        return False
 
     async def get_context(
         self, message: discord.Message, *, cls: Type[_CT] = SalamanderContext
