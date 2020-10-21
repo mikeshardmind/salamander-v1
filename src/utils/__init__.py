@@ -25,6 +25,10 @@ from .cya import InvalidState as InvalidState
 from .cya import NoMatchingChoice as NoMatchingChoice
 from .cya import NotDone as NotDone
 from .cya import Termination as Termination
+from .emoji_handling import (
+    add_variation_selectors_to_emojis as add_variation_selectors_to_emojis,
+)
+from .emoji_handling import strip_variation_selectors as strip_variation_selectors
 from .formatting import format_list as format_list
 from .formatting import humanize_seconds as humanize_seconds
 from .formatting import humanize_timedelta as humanize_timedelta
@@ -44,7 +48,7 @@ __all__ = [
     "NotDone",
     "Termination",
     "Waterfall",
-    "annotations",
+    "add_variation_selectors_to_emojis",
     "async_utils",
     "cya",
     "format_list",
@@ -54,4 +58,5 @@ __all__ = [
     "only_once",
     "pagify",
     "runtime_utils",
+    "strip_variation_selectors",
 ]
