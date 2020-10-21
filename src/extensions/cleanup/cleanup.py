@@ -46,13 +46,16 @@ class Cleanup(commands.Cog):
 
         to_delete = [ctx.message]
 
+        cutoff = ctx.message.created_at - timedelta(days=10)
+
         # Strategy might go in params here
-        async for message in ctx.history(
-            limit=number_or_strategy,
-            before=ctx.message,
-            after=(ctx.message.created_at - timedelta(days=10)),
-        ):
+        # Don't use after param, changes API behavior. Can add oldest_first=False,
+        # but this will increase the needed underlying api calls.
+        async for message in ctx.history(limit=number_or_strategy, before=ctx.message):
             # Strategy support goes here
+
+            if message.created_at < cutoff:
+                break
 
             to_delete.append(message)
 
