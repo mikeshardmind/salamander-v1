@@ -160,7 +160,7 @@ class SalamanderContext(commands.Context):
             clear_reactions_after=True,
             timeout=timeout,
         )
-        await menu.start(self.context, channel=alt_destination or self.channel)
+        await menu.start(self, channel=alt_destination or self.channel)
         return menu
 
     async def prompt(
@@ -171,6 +171,7 @@ class SalamanderContext(commands.Context):
         timeout: float,
         case_sensitive: bool = False,
         reset_cooldown_on_failure: bool = False,
+        delete_on_return: bool = False,
     ) -> _PT:
         """
         Prompt for a choice, raising an error if not matching
@@ -184,7 +185,7 @@ class SalamanderContext(commands.Context):
         #  before asking, but have the timeout apply after we've sent
         #  (avoiding a (user perspective) inconsistent timeout)
         fut = self.bot.wait_for("message", check=check, timeout=timeout)
-        await self.send(prompt)
+        sent = await self.send(prompt)
         try:
             response = await fut
         except asyncio.TimeoutError:
@@ -208,7 +209,20 @@ class SalamanderContext(commands.Context):
                 reset_cooldown=reset_cooldown_on_failure,
             )
 
-        return content
+        try:
+            return content
+        finally:
+            if delete_on_return:
+                try:
+                    await sent.delete()
+                    await response.delete()
+                except Exception as exc:
+                    if __debug__:
+                        log.exception(
+                            "Could not delete messages as intended in prompt",
+                            exc_info=exc,
+                        )
+
 
     async def send_paged(
         self,
@@ -698,7 +712,6 @@ class Salamander(commands.Bot):
     def __init__(self, *args, **kwargs):
         self._close_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[...]]
         self._background_loop: Optional[asyncio.Task] = None
-        # TODO: ensure filter can be enabled per server before this rolls out.
         self._behavior_flags: BehaviorFlags = BehaviorFlags(no_serpent=True)
         super().__init__(
             *args,
@@ -722,6 +735,7 @@ class Salamander(commands.Bot):
         self.load_extension("src.contrib_extensions.dice")
         self.load_extension("src.extensions.mod")
         self.load_extension("src.extensions.meta")
+        self.load_extension("src.extensions.cleanup")
         if not self._behavior_flags.no_basalisk:
             self.load_extension("src.extensions.filter")
 
