@@ -14,12 +14,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
-from typing import Dict
-import discord
+from datetime import timedelta
+
 from discord.ext import commands
 
-from ...bot import Salamander, SalamanderContext
+from ...bot import SalamanderContext
 from ...checks import mod_or_perms
 
 
@@ -31,8 +30,7 @@ class Cleanup(commands.Cog):
     @commands.command()
     async def cleanup(self, ctx: SalamanderContext, number_or_strategy: int):
         """ Cleanup some messages """  # TODO: strategy support
-        
-    
+
         if number_or_strategy > 100:
             confirm = await ctx.prompt(
                 f"Are you sure you want to delete up to {number_or_strategy} messages?",
@@ -42,8 +40,9 @@ class Cleanup(commands.Cog):
             )
             if confirm == "no":
                 return
-        
+
         # I think waterfall use might make sense here? IDK --Liz
+        # Maybe, but I get the feeling it won't feel responsive enough. -- Sinbad
 
         to_delete = [ctx.message]
 
@@ -59,8 +58,7 @@ class Cleanup(commands.Cog):
 
             if len(to_delete) == 100:
                 await ctx.channel.delete_messages(to_delete)
-            
-            to_delete = []
+                to_delete = []
 
         if to_delete:
             if len(to_delete) == 1:

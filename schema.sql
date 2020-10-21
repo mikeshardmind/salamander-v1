@@ -185,3 +185,45 @@ CREATE TABLE IF NOT EXISTS mod_notes_on_members (
 -- TODO: DB design for
 -- Role Assignments, reports
 -- Maybe TODO: altered command availability model (probably not!)
+
+
+CREATE TABLE IF NOT EXISTS role_settings (
+	role_id INTEGER PRIMARY KEY NOT NULL,
+	guild_id INTEGER REFERENCES guild_settings(guild_id)
+		ON DELETE CASCADE ON UPDATE CASCADE,
+	self_assignable BOOLEAN DEFAULT false,
+	self_removable BOOLEAN DEFAULT false
+);
+
+
+CREATE TABLE IF NOT EXISTS reaction_role (
+	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	channel_id INTEGER NOT NULL,
+	message_id INTEGER NOT NULL,
+	reaction_string TEXT NOT NULL,
+	role_id INTEGER REFERENCES role_settings(role_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	react_remove_triggers_removal BOOLEAN DEFAULT false,
+	PRIMARY KEY (message_id, reaction_string)
+);
+
+
+CREATE TABLE IF NOT EXISTS role_group_rule (
+	rule_name TEXT NOT NULL,
+	guild_id INTEGER REFERENCES guild_settings(guild_id)
+		ON DELETE CASCADE ON UPDATE CASCADE,
+	maximum_allowed INTEGER DEFAULT 2048,
+	no_drop_below INTEGER DEFAULT 0,
+	PRIMARY KEY (guild_id, rule_name)
+);
+
+
+CREATE TABLE IF NOT EXISTS roles_in_rules (
+	role_id INTEGER NOT NULL REFERENCES role_settings(role_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	guild_id INTEGER NOT NULL,
+	rule_name TEXT NOT NULL,
+	FOREIGN KEY (guild_id, rule_name) REFERENCES role_group_rule (guild_id, rule_name)
+		ON UPDATE CASCADE ON DELETE CASCADE
+);

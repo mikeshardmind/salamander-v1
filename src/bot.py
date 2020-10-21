@@ -223,7 +223,6 @@ class SalamanderContext(commands.Context):
                             exc_info=exc,
                         )
 
-
     async def send_paged(
         self,
         content: str,
