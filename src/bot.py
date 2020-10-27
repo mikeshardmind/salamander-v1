@@ -19,15 +19,22 @@ import asyncio
 import io
 import logging
 import re
+import signal
 import sys
 from logging.handlers import RotatingFileHandler
-from typing import Awaitable, Callable, List, Optional, Sequence, Type, TypeVar, Union
+from types import TracebackType
+from typing import Any, Callable, List, Optional, Sequence, Type, TypeVar, Union
 from uuid import uuid4
 
 try:
     import uvloop
 except ImportError:
     uvloop = None
+
+try:
+    import jishaku
+except ImportError:
+    jishaku = None
 
 import apsw
 import discord
@@ -271,9 +278,34 @@ class BehaviorFlags:
     This isn't exposed to construction of the bot yet. (TODO)
     """
 
-    def __init__(self, *, no_basalisk: bool = False, no_serpent: bool = False):
+    def __init__(
+        self,
+        *,
+        no_basalisk: bool = False,
+        no_serpent: bool = False,
+        initial_exts: Sequence[str] = (),
+    ):
         self.no_basalisk: bool = no_basalisk
         self.no_serpent: bool = no_serpent
+        self.initial_exts: Sequence[str] = initial_exts
+
+    @classmethod
+    def defaults(cls):
+        """ Factory method for the defaults """
+
+        exts = (
+            "src.contrib_extensions.dice",
+            "src.extensions.mod",
+            "src.extensions.meta",
+            "src.extensions.cleanup",
+            "src.extensions.rolemanagement",
+        )
+
+        if __debug__:
+            if jishaku is not None:
+                exts = exts + ("jishaku",)
+
+        cls(no_serpent=True, initial_exts=exts)
 
 
 class PrefixManager(metaclass=MainThreadSingletonMeta):
@@ -709,9 +741,9 @@ class EmbedHelp(commands.HelpCommand):
 
 class Salamander(commands.Bot):
     def __init__(self, *args, **kwargs):
-        self._close_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[...]]
-        self._background_loop: Optional[asyncio.Task] = None
-        self._behavior_flags: BehaviorFlags = BehaviorFlags(no_serpent=True)
+        self._behavior_flags: BehaviorFlags = kwargs.pop(
+            "behavior", None
+        ) or BehaviorFlags.defaults()
         super().__init__(
             *args,
             command_prefix=_prefix,
@@ -730,14 +762,35 @@ class Salamander(commands.Bot):
         self.block_manager: BlockManager = BlockManager(self)
         self.privlevel_manager: PrivHandler(self)
 
-        self.load_extension("jishaku")
-        self.load_extension("src.contrib_extensions.dice")
-        self.load_extension("src.extensions.mod")
-        self.load_extension("src.extensions.meta")
-        self.load_extension("src.extensions.cleanup")
-        self.load_extension("src.extensions.rolemanagement")
+        for ext in self._behavior_flags.initial_exts:
+            self.load_extension(ext)
+
         if not self._behavior_flags.no_basalisk:
             self.load_extension("src.extensions.filter")
+
+    async def __aenter__(self) -> "Salamander":
+        if self._zmq_task is None:
+
+            async def zmq_injest_task():
+                await self.wait_until_ready()
+                async with self._zmq as zmq_handler:
+                    while True:
+                        topic, payload = await zmq_handler.get()
+                        self.dispatch("ipc_recv", topic, payload)
+
+            self._zmq_task = asyncio.create_task(zmq_injest_task())
+
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]] = None,
+        exc_value: Optional[BaseException] = None,
+        traceback: Optional[TracebackType] = None,
+    ):
+        if self._zmq_task is not None:
+            self._zmq_task.cancel()
+            self._zmq_task = None
 
     async def on_command_error(self, ctx: SalamanderContext, exc: Exception):
         if isinstance(exc, commands.NoPrivateMessage):
@@ -795,75 +848,11 @@ class Salamander(commands.Bot):
         else:
             return True
 
-    def ipc_put(self, topic, payload):
+    def ipc_put(self, topic: str, payload: Any) -> None:
         """
         Put something in a queue to be sent via IPC
         """
         self._zmq.put(topic, payload)
-
-    def start_zmq(self):
-
-        if self._zmq_task is not None:
-            return
-
-        async def zmq_injest_task():
-            await self.wait_until_ready()
-            async with self._zmq as zmq_handler:
-                while True:
-                    topic, payload = await zmq_handler.get()
-                    self.dispatch("ipc_recv", topic, payload)
-
-        self.__zmq_task = asyncio.create_task(zmq_injest_task())
-
-    def submit_for_finalizing_await(self, f: Awaitable):
-        """
-        Intended for finalizing async resources from sync contexts.
-
-        Awaitable provided should handle it's own exceptions
-
-        >>> submit_for_finalizing_await(aiohttp_clientsession.close())
-        """
-        self._close_queue.put_nowait(f)
-
-    async def _closing_loop(self):
-        """ Handle things get put in queue to be async closed from sync contexts """
-
-        while True:
-            awaitable = await self._close_queue.get()
-            try:
-                await awaitable
-            except Exception as exc:
-                log.exception(
-                    "Unhandled exception while closing resource", exc_info=exc
-                )
-            finally:
-                self._close_queue.task_done()
-
-    async def __prepare(self):
-        self.start_zmq()
-        if self._background_loop is None:
-            self._background_loop = asyncio.create_task(self._closing_loop())
-
-    async def start(self, *args, **kwargs):
-        await self.__prepare()
-        await super().start(*args, **kwargs)
-
-    async def close(self):
-        await self.aclose()
-        await super().close()
-
-    async def aclose(self):
-        if self._background_loop is not None:
-            self._background_loop.cancel()
-            await self._background_loop
-            self._background_loop = None
-
-        if self._zmq_task is not None:
-            self._zmq_task.cancel()
-            await self._zmq_task
-            self._zmq_task = None
-
-        await self._close_queue.join()
 
     def member_is_considered_muted(self, member: discord.Member) -> bool:
         """
@@ -936,7 +925,7 @@ class Salamander(commands.Bot):
         await self.invoke(ctx)
 
     @classmethod
-    def run_with_wrapping(cls, token):
+    def run_with_wrapping(cls, token: str, config=None):
         """
         This wraps all asyncio behavior
 
@@ -951,19 +940,14 @@ class Salamander(commands.Bot):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
+        loop.add_signal_handler(signal.SIGINT, lambda: loop.stop())
+        loop.add_signal_handler(signal.SIGTERM, lambda: loop.stop())
+
         async def runner():
 
             intents = discord.Intents(
                 guilds=True,
-                # below might be settable to False if we require mentioning users in moderation actions.
-                # This then means the bot can scale with fewer barriers
-                # (mentioned users contain roles in message objects allowing proper hierarchy checks)
-                # It's also needed if we allow reaction removals to trigger actions...
-                # Or if we want to resolve permissions accurately per channel....
                 members=True,
-                # This is only needed for live bansync, consider if that's something we want and either uncomment or remove
-                # Known downside: still requires fetch based sync due to no guarantee of event delivery.
-                #  bans=True,
                 voice_states=True,
                 guild_messages=True,
                 guild_reactions=True,
@@ -977,15 +961,18 @@ class Salamander(commands.Bot):
             )
 
             try:
-                await instance.start(token, reconnect=True)
+                async with instance:
+                    await instance.start(token, reconnect=True)
             finally:
                 if not instance.is_closed():
                     await instance.close()
 
         loop.run_until_complete(runner())
+
         tasks = {t for t in asyncio.all_tasks(loop) if not t.done()}
         for t in tasks:
             t.cancel()
+
         loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
         loop.run_until_complete(loop.shutdown_asyncgens())
 
