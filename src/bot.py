@@ -967,26 +967,42 @@ class Salamander(commands.Bot):
                 if not instance.is_closed():
                     await instance.close()
 
-        loop.run_until_complete(runner())
+        def stop_when_done(fut):
+            loop.stop()
 
-        tasks = {t for t in asyncio.all_tasks(loop) if not t.done()}
-        for t in tasks:
-            t.cancel()
+        try:
+            fut = asyncio.ensure_future(runner(), loop=loop)
+            fut.add_done_callback(stop_when_done)
+            loop.run_forever()
+        except KeyboardInterrupt:
+            log.warning("Please don't shut the bot down by keyboard interrupt")
+        finally:
+            fut.remove_done_callback(stop_when_done)
 
-        loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
-        loop.run_until_complete(loop.shutdown_asyncgens())
+            tasks = {t for t in asyncio.all_tasks(loop) if not t.done()}
+            for t in tasks:
+                t.cancel()
 
-        for task in tasks:
-            if task.cancelled():
-                continue
-            if task.exception() is not None:
-                loop.call_exception_handler(
-                    {
-                        "message": "Unhandled exception in task during shutdown.",
-                        "exception": task.exception(),
-                        "task": task,
-                    }
-                )
+            loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
+            loop.run_until_complete(loop.shutdown_asyncgens())
 
-        loop.close()
-        asyncio.set_event_loop(None)
+            for task in tasks:
+                if task.cancelled():
+                    continue
+                if task.exception() is not None:
+                    loop.call_exception_handler(
+                        {
+                            "message": "Unhandled exception in task during shutdown.",
+                            "exception": task.exception(),
+                            "task": task,
+                        }
+                    )
+
+            loop.close()
+            asyncio.set_event_loop(None)
+
+        if not fut.cancelled():
+            try:
+                return fut.result()
+            except KeyboardInterrupt:
+                return None
