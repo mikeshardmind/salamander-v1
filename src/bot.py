@@ -305,7 +305,7 @@ class BehaviorFlags:
             if jishaku is not None:
                 exts = exts + ("jishaku",)
 
-        cls(no_serpent=True, initial_exts=exts)
+        return cls(no_serpent=True, initial_exts=exts)
 
 
 class PrefixManager(metaclass=MainThreadSingletonMeta):
