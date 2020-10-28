@@ -14,7 +14,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import re
 from datetime import timedelta
 from typing import Final, NamedTuple, Optional, Sequence
@@ -71,24 +70,6 @@ class Weekday:
         )
 
 
-class MemberOrID(NamedTuple):
-    member: Optional[discord.Member]
-    id: int
-
-    @classmethod
-    async def convert(cls, ctx, argument: str):
-
-        with contextlib.suppress(Exception):
-            m = await _discord_member_converter_instance.convert(ctx, argument)
-            return cls(m, m.id)
-
-        match = _id_regex.match(argument) or _mention_regex.match(argument)
-        if match:
-            return cls(None, int(match.group(1)))
-
-        raise commands.BadArgument(message="That wasn't a member or member ID.")
-
-
 class TimedeltaConverter(NamedTuple):
     arg: str
     delta: timedelta
@@ -117,3 +98,80 @@ def resolve_as_roles(guild: discord.Guild, user_input: str) -> Sequence[discord.
 
     casefolded_user_input = user_input.casefold()
     return tuple(r for r in guild.roles if r.name.casefold() == casefolded_user_input)
+
+
+class StrictMemberConverter(NamedTuple):
+    """
+    Forces some stricter matching semantics
+
+    Always matches a user input as a converter, some fields may result optional.
+    This is intentional for ease of use with `ignore_extra=False` in commands, as well as
+    making it easier to tailor error messages raised.
+
+    Matches by exact ID or mention match or Username#discrim
+
+    It can fail to find a valid existing match if over 100 users in a server
+    have the exact same username and Username#discrim is used with a non-cached member list,
+    or if discord raises an http exception in an unexpected manner with a non-cached member list.
+    """
+
+    user_input: str
+    member: Optional[discord.Member]
+    id: Optional[int]
+
+    @classmethod
+    async def convert(cls, ctx, argument):
+        bot = ctx.bot
+        guild = ctx.guild
+
+        if re_match := (_id_regex.match(argument) or _mention_regex.match(argument)):
+            uid = int(re_match.group(1))
+
+            member = guild.get_member(uid) or next(
+                (m for m in ctx.message.mentions if m.id == uid), None
+            )
+
+            if member:
+                return cls(argument, member, uid)
+
+            # DEP WARN: bot._get_websocket, guild._state._member_cache_flags
+            ws = bot._get_websocket(shard_id=guild.shard_id)
+            if ws.is_ratelimited():
+                try:
+                    member = await guild.fetch_member(uid)
+                    if guild._state._member_cache_flags.joined:
+                        guild._add_member(member)
+                    return cls(argument, member, uid)
+                except discord.NotFound:
+                    return cls(argument, None, uid)
+                except discord.HTTPException:
+                    return cls(argument, None, None)
+            else:
+                members = await guild.query_members(limit=1, user_ids=[uid])
+                if not members:
+                    return cls(argument, None, uid)
+                member = member[0]
+                return cls(argument, member, uid)
+
+        elif len(argument) > 5 and argument[-5] == "#":
+            name, _hash, discrim = argument.rpartition("#")
+            member = next(
+                (
+                    m
+                    for m in guild.members
+                    if m.name == name and m.discriminator == discrim
+                ),
+                None,
+            )
+            if member:
+                return cls(argument, member, member.id)
+            members = await guild.query_members(name, limit=100)
+            member = next(
+                (m for m in members if m.name == name and m.discriminator == discrim),
+                None,
+            )
+            uid = member.id if member else None
+            return cls(argument, member, uid)
+
+        else:
+            return cls(argument, None, None)

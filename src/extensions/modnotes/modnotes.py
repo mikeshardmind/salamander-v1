@@ -20,9 +20,9 @@ from typing import Iterator, NamedTuple
 import discord
 from discord.ext import commands
 
-from ...bot import Salamander, SalamanderContext
+from ...bot import Salamander, SalamanderContext, UserFeedbackError
 from ...checks import mod
-from ...utils.converters import MemberOrID
+from ...utils.converters import StrictMemberConverter
 
 
 class Note(NamedTuple):
@@ -152,11 +152,16 @@ class ModNotes(commands.Cog):
 
     @mod()
     @commands.command()
-    async def makemodnote(self, ctx: SalamanderContext, user: MemberOrID, *, note: str):
+    async def makemodnote(
+        self, ctx: SalamanderContext, who: StrictMemberConverter, *, note: str
+    ):
         """ Make a note about a user """
 
+        if not who.id:
+            raise UserFeedbackError(custom_message="That didn't look like a user or ID")
+
         self.insert(
-            mod_id=ctx.author.id, target_id=user.id, note=note, guild_id=ctx.guild.id,
+            mod_id=ctx.author.id, target_id=who.id, note=note, guild_id=ctx.guild.id,
         )
         await ctx.send("Note created.")
 
@@ -168,12 +173,15 @@ class ModNotes(commands.Cog):
 
     @mod()
     @getmodnotes.command()
-    async def about(self, ctx: SalamanderContext, user: MemberOrID):
+    async def about(self, ctx: SalamanderContext, who: StrictMemberConverter):
         """ Get notes about a user """
+
+        if not who.id:
+            raise UserFeedbackError(custom_message="That didn't look like a user or ID")
 
         notes = [
             n.embed(ctx)
-            for n in self.find_by_member(member_id=user.id, guild_id=ctx.guild.id)
+            for n in self.find_by_member(member_id=who.id, guild_id=ctx.guild.id)
         ]
         if not notes:
             return await ctx.send("No mod notes about this user")
@@ -182,3 +190,8 @@ class ModNotes(commands.Cog):
             n.title = f"Showing #{i} of {mx} found notes"
 
         await ctx.list_menu(notes)
+
+    @about.error
+    async def too_many_consistency(self, ctx, exc):
+        if isinstance(exc, commands.TooManyArguments):
+            await ctx.send("That didn't look like a single user to me.")

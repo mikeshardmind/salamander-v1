@@ -16,7 +16,8 @@
 from __future__ import annotations
 
 from .async_utils import Waterfall as Waterfall
-from .converters import MemberOrID as MemberOrID
+from .converters import StrictMemberConverter as StrictMemberConverter
+from .converters import TimedeltaConverter as TimedeltaConverter
 from .converters import Weekday as Weekday
 from .converters import resolve_as_roles as resolve_as_roles
 from .cya import AlreadyDone as AlreadyDone
@@ -28,6 +29,7 @@ from .cya import InvalidState as InvalidState
 from .cya import NoMatchingChoice as NoMatchingChoice
 from .cya import NotDone as NotDone
 from .cya import Termination as Termination
+from .embed_generators import embed_from_member as embed_from_member
 from .emoji_handling import (
     add_variation_selectors_to_emojis as add_variation_selectors_to_emojis,
 )
@@ -47,15 +49,17 @@ __all__ = [
     "Decision",
     "InvalidState",
     "MainThreadSingletonMeta",
-    "MemberOrID",
     "NoMatchingChoice",
     "NotDone",
+    "StrictMemberConverter",
     "Termination",
+    "TimedeltaConverter",
     "Waterfall",
     "Weekday",
     "add_variation_selectors_to_emojis",
     "async_utils",
     "cya",
+    "embed_from_member",
     "format_list",
     "formatting",
     "humanize_seconds",

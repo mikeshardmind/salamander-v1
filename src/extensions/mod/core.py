@@ -25,8 +25,12 @@ from discord.ext import commands
 
 from ...bot import HierarchyException, Salamander, SalamanderContext, UserFeedbackError
 from ...checks import admin_or_perms, mod_or_perms
-from ...utils import format_list
-from ...utils.converters import MemberOrID, TimedeltaConverter
+from ...utils import (
+    StrictMemberConverter,
+    TimedeltaConverter,
+    embed_from_member,
+    format_list,
+)
 
 INSERT_OR_IGNORE_GUILD = """
 INSERT INTO guild_settings (guild_id) VALUES (?)
@@ -200,9 +204,14 @@ class Mod(commands.Cog):
     @commands.bot_has_guild_permissions(manage_roles=True)
     @commands.command(name="ban")
     async def ban_command(
-        self, ctx: SalamanderContext, who: MemberOrID, *, reason: str = "",
+        self, ctx: SalamanderContext, who: StrictMemberConverter, *, reason: str = "",
     ):
         """ Ban a member without removing messages """
+
+        if not who.id:
+            raise commands.BadArgument(
+                "That wasn't a member or the ID of a user not in the server."
+            )
 
         if member := who.member:
 
@@ -211,6 +220,7 @@ class Mod(commands.Cog):
                 reason=f"User banned by command. (Authorizing mod: {ctx.author}({ctx.author.id})",
                 delete_message_days=0,
             )
+            self.bot.modlog.member_ban(mod=ctx.author, target=member, reason=reason)
 
         else:
             drsn = (
@@ -220,8 +230,7 @@ class Mod(commands.Cog):
             await ctx.guild.ban(
                 discord.Object(who.id), reason=drsn, delete_message_days=0
             )
-
-        self.bot.modlog.member_ban(mod=ctx.author, target=member, reason=reason)
+            self.bot.modlog.user_ban(mod=ctx.author, target_id=who.id, reason=reason)
 
     # TODO: more commands / ban options
 
@@ -599,3 +608,26 @@ class Mod(commands.Cog):
             )
 
             await member.add_roles(role, reason="Detected mute dodge on rejoin")
+
+    @commands.guild_only()
+    @commands.command(ignore_extra=False)
+    async def userinfo(self, ctx: SalamanderContext, who: StrictMemberConverter):
+        """
+        Get info about a user.
+        """
+
+        if not who.member:
+            if who.id:
+                raise UserFeedbackError(
+                    custom_message="That looks like it might be a user, but they aren't a member of this server."
+                )
+            raise UserFeedbackError(
+                custom_message="I didn't find a matching user in this server. You can try a mention, Username#tag or their ID"
+            )
+
+        await ctx.send(embed=embed_from_member(who.member))
+
+    @userinfo.error
+    async def too_many_consistency(self, ctx, exc):
+        if isinstance(exc, commands.TooManyArguments):
+            await ctx.send("That didn't look like a single user to me.")
