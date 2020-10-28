@@ -272,10 +272,10 @@ def _prefix(
 
 class BehaviorFlags:
     """
-    Class for setting extra behavior
-    mostly when relating to IPC services which may not be running.
+    Contains info about which external services are expected
+    and which extensions are to be loaded initially.
 
-    This isn't exposed to construction of the bot yet. (TODO)
+    (To be used by a configuration parser of some sort in the future: TODO)
     """
 
     def __init__(
@@ -291,7 +291,13 @@ class BehaviorFlags:
 
     @classmethod
     def defaults(cls):
-        """ Factory method for the defaults """
+        """
+        Factory method for the defaults.
+
+        The defaults are not guaranteed to be unchanging.
+
+        The current defaults depend partially on if running python with -O or not.
+        """
 
         exts = (
             "src.contrib_extensions.dice",
