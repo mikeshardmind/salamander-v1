@@ -1073,12 +1073,13 @@ class RoleManagement(commands.Cog):
     @commands.bot_has_guild_permissions(manage_roles=True)
     @admin_or_perms(manage_guild=True, manage_roles=True)
     @commands.guild_only()
-    @commands.group(name="roleset", autohelp=True)
+    @commands.group(name="roleset")
     async def rgroup(self, ctx: SalamanderContext):
         """
         Settings for role requirements.
         """
-        pass
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help()
 
     @commands.bot_has_guild_permissions(manage_roles=True)
     @admin_or_perms(manage_guild=True, manage_roles=True)

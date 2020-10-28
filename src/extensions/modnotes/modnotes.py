@@ -167,9 +167,10 @@ class ModNotes(commands.Cog):
 
     @mod()
     @commands.group()
-    async def getmodnotes(self, ctx):
+    async def getmodnotes(self, ctx: SalamanderContext):
         """ Get notes """
-        pass
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help()
 
     @mod()
     @getmodnotes.command()
