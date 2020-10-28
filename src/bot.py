@@ -799,7 +799,12 @@ class Salamander(commands.Bot):
             self._zmq_task = None
 
     async def on_command_error(self, ctx: SalamanderContext, exc: Exception):
-        if isinstance(exc, commands.NoPrivateMessage):
+
+        if isinstance(exc, commands.CommandNotFound):
+            return
+        elif isinstance(exc, commands.MissingRequiredArgument):
+            await ctx.send_help()
+        elif isinstance(exc, commands.NoPrivateMessage):
             await ctx.author.send("This command cannot be used in private messages.")
         elif isinstance(exc, commands.CommandInvokeError):
             original = exc.original
@@ -814,9 +819,11 @@ class Salamander(commands.Bot):
                 # too many arguments should be handled on an individual basis
                 # it requires enabling ignore_extra=False (default is True)
                 # and the user facing message should be tailored to the situation.
+                # HTTP exceptions should never hit this logger from a command (faulty command)
                 log.exception(f"In {ctx.command.qualified_name}:", exc_info=original)
         elif isinstance(exc, commands.ArgumentParsingError):
-            await ctx.send(exc)
+            if exc.args and (msg := exc.args[0]):
+                await ctx.send(msg)
 
     async def check_basalisk(self, string: str) -> bool:
         """
@@ -963,7 +970,9 @@ class Salamander(commands.Bot):
 
             instance = cls(
                 intents=intents,
-                allowed_mentions=discord.AllowedMentions(everyone=False, roles=False),
+                allowed_mentions=discord.AllowedMentions(
+                    everyone=False, roles=False, users=False
+                ),
             )
 
             try:
