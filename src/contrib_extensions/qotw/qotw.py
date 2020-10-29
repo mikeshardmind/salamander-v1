@@ -26,9 +26,10 @@ import apsw
 import discord
 from discord.ext import commands
 
-from ...bot import Salamander, SalamanderContext
+from ...bot import Salamander, SalamanderContext, UserFeedbackError
 from ...checks import admin_or_perms
 from ...utils.converters import Weekday
+from ...utils.embed_generators import embed_from_member
 
 log = logging.getLogger("salamander.contrib_exts.qotw")
 
@@ -314,6 +315,79 @@ class QOTW(commands.Cog):
             (ctx.guild.id, day.number),
         )
         await ctx.send(f"QOTW will be selected on {day}")
+
+    @commands.guild_only()
+    @qotw_set.command(name="force")
+    async def force_qotw(self, ctx: SalamanderContext):
+        """ Force a new question to be asked """
+
+        cursor = self.conn.cursor()
+
+        row = cursor.execute(
+            """
+            SELECT channel_id, last_pinned_message_id
+            FROM guild_settings
+            WHERE
+                channel_id IS NOT NULL
+                AND guild_id = ?
+            """,
+            (ctx.guild.id,),
+        ).fetchone()
+
+        channel = None
+
+        if row:
+            channel_id, last_pinned_message_id = row
+            channel = ctx.guild.get_channel(channel_id)
+
+        if not channel:
+            raise UserFeedbackError(custom_message="No QOTW channel has been set")
+
+        await self.handle_qotw(ctx.guild.id, channel_id, last_pinned_message_id)
+
+    @commands.guild_only()
+    @qotw_set.command(name="view")
+    async def view_pending(self, ctx: SalamanderContext):
+        """ View the currently pending questions """
+
+        cursor = self.conn.cursor()
+
+        questions = cursor.execute(
+            """
+            SELECT user_id, current_question, questions_since_select
+            FROM members
+            WHERE current_question IS NOT NULL AND guild_id=?
+            """,
+            (ctx.guild.id,),
+        ).fetchall()
+
+        if not questions:
+            return await ctx.send("No current questions.")
+
+        total = 0
+
+        filtered_questions = []
+
+        for user_id, question, weight in questions:
+
+            if m := ctx.guild.get_member(user_id):
+                filtered_questions.append((m, question, weight))
+                total += weight
+
+        if not filtered_questions:
+            return await ctx.send("No current questions")
+
+        embeds = []
+
+        for member, question, weight in filtered_questions:
+            em = embed_from_member(member)
+            em.add_field(name="Question", value=question, inline=False)
+            em.add_field(
+                name="Current odds of selection", value=f"{weight} out of {total}"
+            )
+            embeds.append(em)
+
+        await ctx.list_menu(embeds)
 
     @commands.guild_only()
     @commands.command()

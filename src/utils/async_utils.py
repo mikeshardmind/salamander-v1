@@ -53,7 +53,7 @@ class Waterfall(Generic[_T]):
             raise RuntimeError("Already Running")
 
         self._alive = True
-        self.task = asyncio.create_task(self._loop)
+        self.task = asyncio.create_task(self._loop())
 
     @overload
     def stop(self, wait: Literal[True]) -> Awaitable:

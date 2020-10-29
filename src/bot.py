@@ -237,6 +237,7 @@ class SalamanderContext(commands.Context):
         box: bool = False,
         prepend: Optional[str] = None,
         page_size: int = 1800,
+        allowed_mentions: Optional[discord.AllowedMentions] = None,
     ):
         """ Send something paged out """
 
@@ -245,7 +246,7 @@ class SalamanderContext(commands.Context):
                 page = f"```\n{page}\n```"
             if i == 0 and prepend:
                 page = f"{prepend}\n{page}"
-            await self.send(page)
+            await self.send(page, allowed_mentions=allowed_mentions)
 
     async def safe_send(self, content: str, **kwargs):
         if kwargs.pop("file", None):
@@ -300,7 +301,9 @@ class BehaviorFlags:
         """
 
         exts = (
+            "src.contrib_extensions.activitymetadata",
             "src.contrib_extensions.dice",
+            "src.contrib_extensions.qotw",
             "src.extensions.mod",
             "src.extensions.meta",
             "src.extensions.cleanup",
