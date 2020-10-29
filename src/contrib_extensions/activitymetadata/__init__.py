@@ -19,3 +19,4 @@ def setup(bot):
     cog = MessageMetaTrack(bot)
     bot.add_cog(cog)
     cog._waterfall.start()
+    cog._deletions.start()
