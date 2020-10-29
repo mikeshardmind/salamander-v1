@@ -87,23 +87,21 @@ class MessageMetaTrack(commands.Cog):
 
     async def add_messages(self, messages: Sequence[discord.Message]):
 
-        if not messages:
-            return
-
         with contextlib.closing(self.conn.cursor()) as cursor, self.conn:
-            cursor.executemany(
-                """
-                INSERT INTO message_metadata(
-                    message_id, channel_id, guild_id, user_id
+            if messages:  # not a full early exit, we still age out expired every 2 minutes
+                cursor.executemany(
+                    """
+                    INSERT INTO message_metadata(
+                        message_id, channel_id, guild_id, user_id
+                    )
+                    SELECT ?1, ?2, ?3, ?4
+                    WHERE EXISTS(
+                        SELECT 1 from guild_settings WHERE guild_id = ?3 AND enabled
+                    )
+                    ON CONFLICT (message_id) DO NOTHING
+                    """,
+                    tuple((m.id, m.channel.id, m.guild.id, m.author.id) for m in messages),
                 )
-                SELECT ?1, ?2, ?3, ?4
-                WHERE EXISTS(
-                    SELECT 1 from guild_settings WHERE guild_id = ?3 AND enabled
-                )
-                ON CONFLICT (message_id) DO NOTHING
-                """,
-                tuple((m.id, m.channel.id, m.guild.id, m.author.id) for m in messages),
-            )
             cursor.execute(
                 """
                 DELETE FROM message_metadata
@@ -133,6 +131,7 @@ class MessageMetaTrack(commands.Cog):
 
     def cog_unload(self):
         asyncio.create_task(self._waterfall.stop(wait=True))
+        asyncio.create_task(self._deletions.stop(wait=True))
 
     @commands.Cog.listener("salamander_data_deletion_guild")
     async def guild_data_drop(self, guild_id: int):
