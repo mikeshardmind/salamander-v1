@@ -83,8 +83,12 @@ class MessageMetaTrack(commands.Cog):
         self._waterfall: Waterfall[discord.Message] = Waterfall(
             60, 120, self.add_messages
         )
+        self._deletions: Waterfall[int] = Waterfall(60, 120, self.delete_messages)
 
     async def add_messages(self, messages: Sequence[discord.Message]):
+
+        if not messages:
+            return
 
         with contextlib.closing(self.conn.cursor()) as cursor, self.conn:
             cursor.executemany(
@@ -102,7 +106,7 @@ class MessageMetaTrack(commands.Cog):
             )
             cursor.execute(
                 """
-                DELETE from message_metadata
+                DELETE FROM message_metadata
                 WHERE created_at < (
                     SELECT DATETIME(
                         CURRENT_TIMESTAMP, CAST(0 - max_days as TEXT) || " days"
@@ -111,6 +115,20 @@ class MessageMetaTrack(commands.Cog):
                     WHERE message_metadata.guild_id = guild_settings.guild_id
                 )
                 """
+            )
+
+    async def delete_messages(self, message_ids: Sequence[int]):
+
+        if not message_ids:
+            return
+
+        with contextlib.closing(self.conn.cursor()) as cursor, self.conn:
+            cursor.executemany(
+                """
+                DELETE FROM DELETE FROM message_metadata
+                WHERE message_id=?
+                """,
+                tuple((mid,) for mid in message_ids)
             )
 
     def cog_unload(self):
@@ -154,6 +172,19 @@ class MessageMetaTrack(commands.Cog):
             with contextlib.suppress(RuntimeError):
                 # can happen during cog unload
                 self._waterfall.put(message)
+
+    @commands.Cog.listener("on_raw_message_delete")
+    async def raw_delete_handler(self, payload: discord.RawMessageDeleteEvent):
+        if payload.guild_id:
+            with contextlib.suppress(RuntimeError):
+                self._deletions.put(payload.message_id)
+
+    @commands.Cog.listener("on_raw_bulk_message_delete")
+    async def on_bulk_delete_handler(self, payload: discord.RawBulkMessageDeleteEvent):
+        if payload.guild_id:
+            with contextlib.suppress(RuntimeError):
+                for mid in payload.message_ids:
+                    self._deletions.put(mid)
 
     @admin()
     @commands.group(name="activitytrackset")
