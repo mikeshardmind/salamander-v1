@@ -408,7 +408,7 @@ class MessageMetaTrack(commands.Cog):
             FROM guild_settings
             WHERE guild_id = ? AND enabled
             """,
-            (member.guild.id),
+            (member.guild.id,),
         ).fetchone()
 
         if not row:
