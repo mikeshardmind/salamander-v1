@@ -88,7 +88,9 @@ class MessageMetaTrack(commands.Cog):
     async def add_messages(self, messages: Sequence[discord.Message]):
 
         with contextlib.closing(self.conn.cursor()) as cursor, self.conn:
-            if messages:  # not a full early exit, we still age out expired every 2 minutes
+            if (
+                messages
+            ):  # not a full early exit, we still age out expired every 2 minutes
                 cursor.executemany(
                     """
                     INSERT INTO message_metadata(
@@ -100,7 +102,9 @@ class MessageMetaTrack(commands.Cog):
                     )
                     ON CONFLICT (message_id) DO NOTHING
                     """,
-                    tuple((m.id, m.channel.id, m.guild.id, m.author.id) for m in messages),
+                    tuple(
+                        (m.id, m.channel.id, m.guild.id, m.author.id) for m in messages
+                    ),
                 )
             cursor.execute(
                 """
@@ -126,7 +130,7 @@ class MessageMetaTrack(commands.Cog):
                 DELETE FROM DELETE FROM message_metadata
                 WHERE message_id=?
                 """,
-                tuple((mid,) for mid in message_ids)
+                tuple((mid,) for mid in message_ids),
             )
 
     def cog_unload(self):
@@ -395,6 +399,22 @@ class MessageMetaTrack(commands.Cog):
     def get_formatted_activity_for_member(self, member: discord.Member) -> str:
 
         cursor = self.conn.cursor()
+        row = cursor.execute(
+            """
+            SELECT DATETIME(
+                CURRENT_TIMESTAMP,
+                CAST(0 - max_days as TEXT) || " days"
+            )
+            FROM guild_settings
+            WHERE guild_id = ? AND enabled
+            """,
+            (member.guild.id),
+        ).fetchone()
+
+        if not row:
+            return "Message metadata tracking has not been enabled for this server's members"
+
+        expiration = datetime.fromisoformat(row[0])
 
         data = cursor.execute(
             """
@@ -407,8 +427,15 @@ class MessageMetaTrack(commands.Cog):
             (member.guild.id, member.id, member.joined_at.isoformat()),
         ).fetchall()
 
+        if member.joined_at > expiration:
+            since = f"since joining this server on {member.joined_at:%B %d, %Y}"
+        else:
+            since = (
+                f"since the cutoff date for stored metadata ({expiration:%B %d, %Y})"
+            )
+
         if not data:
-            return f"{member.mention} has not sent any messages since joining this server on {member.joined_at:%B %d, %Y}."
+            return f"{member.mention} has not sent any messages that I've seen {since}."
 
         parts = []
 
@@ -433,14 +460,8 @@ class MessageMetaTrack(commands.Cog):
                         )
 
         if total != 1:
-            parts.insert(
-                0,
-                f"{member.mention} has sent a total of {total} messages since joining this server on {member.joined_at:%B %d, %Y}.",
-            )
+            parts.insert(0, f"{member.mention} has sent {total} messages {since}.")
         else:
-            parts.insert(
-                0,
-                f"{member.mention} has sent a single message since joining this server on {member.joined_at:%B %d, %Y}.",
-            )
+            parts.insert(0, f"{member.mention} has sent a single message {since}.")
 
         return "\n".join(parts)
