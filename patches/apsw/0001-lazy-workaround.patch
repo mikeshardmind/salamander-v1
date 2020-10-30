@@ -1,0 +1,24 @@
+From 576af675def6716c6176d75fc400938e7321c794 Mon Sep 17 00:00:00 2001
+From: Michael H <michael@michaelhall.tech>
+Date: Thu, 29 Oct 2020 21:47:21 -0400
+Subject: [PATCH] lazy-workaround
+
+---
+ setup.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/setup.py b/setup.py
+index 20ebf74..8882c01 100644
+--- a/setup.py
++++ b/setup.py
+@@ -529,7 +529,7 @@ class apsw_build(bparent):
+         v = bparent.initialize_options(self)
+         self.enable = None
+         self.omit = None
+-        self.enable_all_extensions = build_enable_all_extensions
++        self.enable_all_extensions = True
+         return v
+
+     def finalize_options(self):
+--
+2.25.1

@@ -996,6 +996,8 @@ class Salamander(commands.Bot):
             log.warning("Please don't shut the bot down by keyboard interrupt")
         finally:
             fut.remove_done_callback(stop_when_done)
+            # allow outstanding non-discord tasks a brief moment to clean themselves up
+            loop.run_until_complete(asyncio.sleep(1))
 
             tasks = {t for t in asyncio.all_tasks(loop) if not t.done()}
             for t in tasks:
