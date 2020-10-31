@@ -71,7 +71,7 @@ class Cleanup(commands.Cog):
             waterfall.start()
             member_ids = {m.id for m in ctx.channel.members}
 
-            async for msg in ctx.history(limit=None, before=informational.id):
+            async for msg in ctx.history(limit=None, before=informational):
                 # artificial delay to avoid saturating ratelimits for something allowed to be a slow process
                 # This one takes a hit once every 100 messages under the hood, making this ~ 8s/100m
                 await asyncio.sleep(0.08)
