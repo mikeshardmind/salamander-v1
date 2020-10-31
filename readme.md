@@ -66,3 +66,42 @@ ubuntu server 20.04
 This reflects the environment it will be tested on early in development, however
 the final product should be deployable on any posix compatible OS,
 including through docker, terraform, ansible and others.
+
+## Installation
+
+**The process of getting this up and running will be streamlined in the future.**
+
+This section is not in a polished state as there is a lot left to streamline on this to make it more accessible.
+For now, it serves as a very minimal documentation of what's needed to get this up, running and tested on ubuntu 20.04
+
+Currently, this requires [hydra](https://github.com/unified-moderation-network/hydra]) to be running.
+
+The filter is designed as an external service (see [basalisk](https://github.com/unified-moderation-network/hydra))
+though there may be an option to enable a local filter in the future.
+
+
+1. Install dependencies 
+
+These are the expecific packages required to build *everything* associated with the network
+on Ubuntu 20.04 (to be streamlined in the future)
+
+Many of these are build-time but not run-time dependencies, and if you intend to create a container, should not end up in the resulting image.
+
+```
+make build-essential libssl-dev zlib1g-dev libbz2-dev
+libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev
+xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+libgdbm-dev uuid-dev python3-openssl git hypercan
+```
+
+2. Install (or preferably, build with optimizations enabled) python3.8
+
+3. run `setup.sh` from the direcotry which you want to run the bot (currently, you should only run one instance, this will be rectified in the near future)
+
+  NB. This creates a binary wheel built against the sqlite3 amalgamation at a specific version, targeting the current architecture,
+  and installs into the current `python3.8` This also runs `sqlite3 < schema.db`
+  These steps do not need to be done together, and the wheel step specifically may be slow, while creating a resource which can be reused.
+  This also needs improvement, but if run in the same directory, (or if the wheel is copied to an appropriate location before running again)
+  this won't be regenerated.
+  
+  There's a lot to improve here.

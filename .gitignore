@@ -98,6 +98,7 @@ ENV/
 template/
 
 # extras
+
 .mypy_cache/
 *.db
 *.db-shm
@@ -105,3 +106,4 @@ template/
 contrib_data/
 data/
 local_data/
+config.toml
