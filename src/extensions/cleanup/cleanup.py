@@ -64,7 +64,10 @@ class Cleanup(commands.Cog):
             async with lock:
                 if msgs:
                     if len(msgs) == 1:
-                        await msgs[0].delete()
+                        try:
+                            await msgs[0].delete()
+                        except discord.NotFound:
+                            pass
 
                     # some wiggle room included
                     cutoff = datetime.utcnow() - timedelta(days=13, hours=22)
@@ -74,7 +77,10 @@ class Cleanup(commands.Cog):
                         if m.created_at > cutoff:
                             mass_deletable.append(m)
                         else:
-                            await m.delete()
+                            try:
+                                await m.delete()
+                            except discord.NotFound:
+                                pass
                             await asyncio.sleep(2)
 
                     if mass_deletable:
@@ -94,8 +100,6 @@ class Cleanup(commands.Cog):
                 if msg.author.id not in member_ids:
                     waterfall.put(msg)
 
-            waterfall.put(informational)
-
         except Exception as exc:
             log.exception("Error during removegone", exc_info=exc)
             await waterfall.stop(wait=True)
@@ -107,7 +111,8 @@ class Cleanup(commands.Cog):
         else:
             await waterfall.stop(wait=True)
             await ctx.send(
-                f"{ctx.author.mention} The message removal process has finished."
+                f"{ctx.author.mention} The message removal process has finished.",
+                allowed_mentions=discord.AllowedMentions(users=[ctx.author]),
             )
 
     @removegone.error
