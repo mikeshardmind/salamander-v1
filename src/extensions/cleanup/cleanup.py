@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import discord
 from discord.ext import commands
@@ -58,12 +58,28 @@ class Cleanup(commands.Cog):
             "This may take a while, I'll inform you when it is done."
         )
 
+        lock = asyncio.Lock()
+
         async def safe_slow_delete(msgs):
-            if msgs:
-                if len(msgs) == 1:
-                    await msgs[0].delete()
-                else:
-                    await ctx.channel.delete_messages(msgs)
+            async with lock:
+                if msgs:
+                    if len(msgs) == 1:
+                        await msgs[0].delete()
+
+                    # some wiggle room included
+                    cutoff = datetime.utcnow() - timedelta(days=13, hours=22)
+
+                    mass_deletable = []
+                    for m in msgs:
+                        if m.created_at > cutoff:
+                            mass_deletable.append(m)
+                        else:
+                            await m.delete()
+                            await asyncio.sleep(2)
+
+                    if mass_deletable:
+                        await ctx.channel.delete_messages(mass_deletable)
+                        await asyncio.sleep(1)
 
         waterfall = Waterfall(12, 100, safe_slow_delete)
         try:
