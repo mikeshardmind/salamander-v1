@@ -748,7 +748,7 @@ class EmbedHelp(commands.HelpCommand):
         await menu.start(self.context, channel=self.get_destination())
 
 
-class Salamander(commands.Bot):
+class Salamander(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
         self._behavior_flags: BehaviorFlags = kwargs.pop(
             "behavior", None
@@ -918,6 +918,10 @@ class Salamander(commands.Bot):
         await self.process_commands(message)
 
     async def process_commands(self, message: discord.Message):
+        try:
+            await asyncio.wait_for(self.wait_until_ready(), timeout=5)
+        except asyncio.TimeoutError:
+            return
         ctx = await self.get_context(message, cls=SalamanderContext)
 
         if ctx.command is None:
