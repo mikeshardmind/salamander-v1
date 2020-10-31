@@ -104,3 +104,4 @@ template/
 *.db-wal
 contrib_data/
 data/
+local_data/
