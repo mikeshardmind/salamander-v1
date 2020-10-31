@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import asyncio
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 import discord
@@ -353,6 +353,11 @@ class Mod(commands.Cog):
         reason: str = "",
     ):
         """ Mute a user using the configure mute role for a duration. """
+
+        if duration.delta < timedelta(minutes=2):
+            raise UserFeedbackError(
+                custom_message="Temp mutes must be at least 2 minutes long"
+            )
 
         audit_reason = (
             f"User muted for {duration} by command. (Mod: {ctx.author}({ctx.author.id})"
