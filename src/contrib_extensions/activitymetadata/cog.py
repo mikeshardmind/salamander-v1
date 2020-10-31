@@ -127,8 +127,7 @@ class MessageMetaTrack(commands.Cog):
         with contextlib.closing(self.conn.cursor()) as cursor, self.conn:
             cursor.executemany(
                 """
-                DELETE FROM DELETE FROM message_metadata
-                WHERE message_id = ?
+                DELETE FROM message_metadata WHERE message_id = ?
                 """,
                 tuple((mid,) for mid in message_ids),
             )
