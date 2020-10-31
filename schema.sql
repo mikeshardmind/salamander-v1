@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS guild_settings (
 	guild_id INTEGER PRIMARY KEY NOT NULL,
 	is_blacklisted BOOLEAN DEFAULT false,
 	mute_role INTEGER DEFAULT NULL,
-	timezone TEXT DEFAULT "America/New_York",
+	timezone TEXT DEFAULT 'America/New_York',
 	mod_log_channel INTEGER DEFAULT NULL,
 	feature_flags INTEGER DEFAULT 0
 );

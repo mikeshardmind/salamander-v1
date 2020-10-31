@@ -111,7 +111,7 @@ class MessageMetaTrack(commands.Cog):
                 DELETE FROM message_metadata
                 WHERE created_at < (
                     SELECT DATETIME(
-                        CURRENT_TIMESTAMP, CAST(0 - max_days as TEXT) || " days"
+                        CURRENT_TIMESTAMP, CAST(0 - max_days as TEXT) || ' days'
                     )
                     FROM guild_settings
                     WHERE message_metadata.guild_id = guild_settings.guild_id
@@ -128,7 +128,7 @@ class MessageMetaTrack(commands.Cog):
             cursor.executemany(
                 """
                 DELETE FROM DELETE FROM message_metadata
-                WHERE message_id=?
+                WHERE message_id = ?
                 """,
                 tuple((mid,) for mid in message_ids),
             )
@@ -412,7 +412,7 @@ class MessageMetaTrack(commands.Cog):
             """
             SELECT DATETIME(
                 CURRENT_TIMESTAMP,
-                CAST(0 - max_days as TEXT) || " days"
+                CAST(0 - max_days as TEXT) || ' days'
             )
             FROM guild_settings
             WHERE guild_id = ? AND enabled
