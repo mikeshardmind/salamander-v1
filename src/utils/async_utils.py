@@ -114,6 +114,9 @@ class Waterfall(Generic[_T]):
 
             remaining_items.append(ev)
 
+        if not remaining_items:
+            return
+
         num_remaining = len(remaining_items)
 
         pending_futures = []
