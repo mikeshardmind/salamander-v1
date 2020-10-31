@@ -116,11 +116,16 @@ class Waterfall(Generic[_T]):
 
         num_remaining = len(remaining_items)
 
+        pending_futures = []
+
         for chunk in (
             remaining_items[p : p + self.max_quantity]
             for p in range(0, num_remaining, self.max_quantity)
         ):
-            asyncio.create_task(self.callback(chunk))
+            fut = asyncio.create_task(self.callback(chunk))
+            pending_futures.append(fut)
+
+        await asyncio.gather(*pending_futures)
 
         for _ in range(num_remaining):
             self.queue.task_done()
