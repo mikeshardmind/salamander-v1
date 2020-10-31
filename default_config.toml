@@ -1,0 +1,12 @@
+# This is an example configuration file
+# you can copy it to config.toml to make modifications which will be used.
+
+no_serpent = false  # refers to the scheduling service
+no_basalisk = false  # refers to the filtering service
+
+[exts]
+core = [ "mod", "meta", "cleanup", "rolemanagement",]  # refers to module names in src/extensions
+contrib = [ "dice", "qotw", "activitymetadata",]  # refers to module names in src/contrib_extensions
+local = []  # refers to module names in src/local_extensions
+global = []  # refers to discord.py extensions which are installed as modules (ie. `jishaku`)
+

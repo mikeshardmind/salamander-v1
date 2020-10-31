@@ -977,6 +977,7 @@ class Salamander(commands.AutoShardedBot):
 
             instance = cls(
                 intents=intents,
+                behavior=config,
                 allowed_mentions=discord.AllowedMentions(
                     everyone=False, roles=False, users=False
                 ),
