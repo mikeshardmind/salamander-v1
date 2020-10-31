@@ -81,9 +81,9 @@ class MessageMetaTrack(commands.Cog):
         )
 
         self._waterfall: Waterfall[discord.Message] = Waterfall(
-            60, 120, self.add_messages
+            120, 500, self.add_messages
         )
-        self._deletions: Waterfall[int] = Waterfall(60, 120, self.delete_messages)
+        self._deletions: Waterfall[int] = Waterfall(120, 500, self.delete_messages)
 
     async def add_messages(self, messages: Sequence[discord.Message]):
 
