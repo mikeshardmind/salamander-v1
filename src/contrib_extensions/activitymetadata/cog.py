@@ -252,6 +252,7 @@ class MessageMetaTrack(commands.Cog):
         )
         await ctx.send("Done")
 
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @owner_in_guild()
     @atrackset.command(name="retro")
     async def retroactive_filler(
@@ -272,7 +273,10 @@ class MessageMetaTrack(commands.Cog):
                             break
                         if not message.author.bot and message.type.value == 0:
                             self._waterfall.put(message)
-                        await asyncio.sleep(0.05)
+                        await asyncio.sleep(0.1)
+                        # This is intentionally extremely slow.
+                        # This should not be used frequently
+                        # 10s/100msgs or ~ 1 API call every 10s
 
         except Exception as exc:
             log.exception(
@@ -285,6 +289,11 @@ class MessageMetaTrack(commands.Cog):
             f"Done filling in the data {ctx.author.mention}",
             allowed_mentions=discord.AllowedMentions(users=[ctx.author]),
         )
+
+    @retroactive_filler.error
+    async def concurrency_fail(self, ctx, exc):
+        if isinstance(exc, commands.MaxConcurrencyReached):
+            await ctx.send("You can't be doing this while I'm already doing this.")
 
     @mod()
     @commands.command(name="checkactivity")
