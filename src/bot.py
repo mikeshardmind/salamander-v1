@@ -77,10 +77,7 @@ class SalamanderException(Exception):
     """ Base Exception for custom Exceptions """
 
     custom_message: str
-
-    @property
-    def reset_cooldown(self) -> bool:
-        return False
+    reset_cooldown: bool
 
 
 class IncompleteInputError(SalamanderException):
@@ -98,6 +95,7 @@ class HierarchyException(SalamanderException):
     def __init__(self, *args, custom_message: str = ""):
         super().__init__("Hierarchy memes")
         self.custom_message: str = custom_message
+        self.reset_cooldown: bool = False
 
 
 class UserFeedbackError(SalamanderException):
@@ -106,6 +104,7 @@ class UserFeedbackError(SalamanderException):
     def __init__(self, *args, custom_message: str):
         super().__init__(self, custom_message)
         self.custom_message = custom_message
+        self.reset_cooldown: bool = False
 
 
 _PT = TypeVar("_PT", bound=str)

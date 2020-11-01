@@ -244,5 +244,27 @@ CREATE TABLE IF NOT EXISTS role_requires_all (
 
 -- END REGION
 
+-- BEGIN REGION: feedback system
+-- This won't be anabled by default
+
+CREATE TABLE IF NOT EXISTS feedback_types (
+	feedback_type TEXT PRIMARY KEY NOT NULL,
+	destination_id INTEGER DEFAULT NULL,
+	autoresponse TEXT DEFAULT NULL
+);
+
+
+-- repr status won't be user facing immediately, but soon enough that it's worth including here now
+CREATE TABLE IF NOT EXISTS feedback_entries (
+	user_id INTEGER REFERENCES user_settings(user_id)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	feedback_type TEXT REFERENCES feedback_types(feedback_type)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	uuid TEXT PRIMARY KEY NOT NULL,
+	repr_status TEXT DEFAULT 'unknown',
+	created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+	feedback TEXT NOT NULL
+);
+
 -- TODO: DB design for reports
 -- Maybe TODO: altered command availability model (probably not!)
