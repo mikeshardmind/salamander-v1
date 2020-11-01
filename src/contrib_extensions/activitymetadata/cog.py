@@ -81,16 +81,15 @@ class MessageMetaTrack(commands.Cog):
         )
 
         self._waterfall: Waterfall[discord.Message] = Waterfall(
-            120, 500, self.add_messages
+            60, 500, self.add_messages
         )
-        self._deletions: Waterfall[int] = Waterfall(120, 500, self.delete_messages)
+        self._deletions: Waterfall[int] = Waterfall(60, 500, self.delete_messages)
 
     async def add_messages(self, messages: Sequence[discord.Message]):
 
         with contextlib.closing(self.conn.cursor()) as cursor, self.conn:
-            if (
-                messages
-            ):  # not a full early exit, we still age out expired every 2 minutes
+            if messages:
+                # not a full early exit, we still age out expired every minute
                 cursor.executemany(
                     """
                     INSERT INTO message_metadata(
