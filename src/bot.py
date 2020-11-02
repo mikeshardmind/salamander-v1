@@ -770,7 +770,7 @@ class Salamander(commands.AutoShardedBot):
         self.modlog: ModlogHandler = ModlogHandler(self._conn)
         self.prefix_manager: PrefixManager = PrefixManager(self)
         self.block_manager: BlockManager = BlockManager(self)
-        self.privlevel_manager: PrivHandler(self)
+        self.privlevel_manager: PrivHandler = PrivHandler(self)
 
         for ext in self._behavior_flags.initial_exts:
             self.load_extension(ext)
