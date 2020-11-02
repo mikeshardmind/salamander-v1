@@ -37,6 +37,7 @@ def get_conf() -> Optional[BehaviorFlags]:
     no_basalisk = raw_data.pop("no_basalisk", False)
 
     ext_dict = raw_data.pop("exts", None)
+    about_text = raw_data.pop("about_text", None)
 
     if ext_dict:
         exts = tuple(
@@ -54,7 +55,10 @@ def get_conf() -> Optional[BehaviorFlags]:
         exts = ()
 
     return BehaviorFlags(
-        no_serpent=no_serpent, no_basalisk=no_basalisk, initial_exts=exts
+        no_serpent=no_serpent,
+        no_basalisk=no_basalisk,
+        initial_exts=exts,
+        about_text=about_text,
     )
 
 

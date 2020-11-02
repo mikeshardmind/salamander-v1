@@ -38,10 +38,11 @@ class Meta(commands.Cog):
     async def info_com(self, ctx: SalamanderContext):
         """ Get info about this bot """
 
-        about_text = (
+        about_text = self.bot._behavior_flags.about_text or (
             "This bot is an instance of [Project Salamander]"
             "(https://github.com/unified-moderation-network/salamander)"
-            "\nIt is currently considered to be in alpha."
+            "\nIt is considered to be stable enough for use, "
+            "with lots of room to grow."
         )
         em = discord.Embed(color=ctx.me.color, description=about_text)
         await ctx.send(embed=em)

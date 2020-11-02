@@ -23,7 +23,7 @@ import signal
 import sys
 from logging.handlers import RotatingFileHandler
 from types import TracebackType
-from typing import Any, Callable, List, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Callable, Final, List, Optional, Sequence, Type, TypeVar, Union
 from uuid import uuid4
 
 try:
@@ -284,10 +284,12 @@ class BehaviorFlags:
         no_basalisk: bool = False,
         no_serpent: bool = False,
         initial_exts: Sequence[str] = (),
+        about_text: Optional[str] = None,
     ):
         self.no_basalisk: bool = no_basalisk
         self.no_serpent: bool = no_serpent
         self.initial_exts: Sequence[str] = initial_exts
+        self.about_text: Final[Optional[str]] = about_text
 
     @classmethod
     def defaults(cls):
