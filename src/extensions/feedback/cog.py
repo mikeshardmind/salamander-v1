@@ -236,7 +236,7 @@ class Feedback(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send_help()
 
-    @commands.cooldown(2, 30, commands.BucketType.user)
+    @commands.cooldown(5, 40, commands.BucketType.user)
     @feedback.command()
     async def send(self, ctx: SalamanderContext, feedback_type: str, *, feedback: str):
         """ Send feedback """
