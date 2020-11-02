@@ -943,6 +943,11 @@ class Salamander(commands.AutoShardedBot):
 
         await self.invoke(ctx)
 
+    async def close(self):
+        await super().close()
+        # do not remove, allows graceful disconnects.
+        await asyncio.sleep(1)
+
     @classmethod
     def run_with_wrapping(cls, token: str, config=None):
         """
