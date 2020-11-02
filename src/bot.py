@@ -627,6 +627,12 @@ class EmbedHelp(commands.HelpCommand):
                 embed.add_field(name=name, value=value)
                 return embed
 
+        async def predicate(cmd):
+            try:
+                return await cmd.can_run(self.context)
+            except commands.CommandError:
+                return False
+
         for cog, cog_commands in sorted(
             mapping.items(),
             key=lambda kv: kv[0].qualified_name if kv[0] else "\U0010FFFF",
@@ -634,7 +640,9 @@ class EmbedHelp(commands.HelpCommand):
             name = "No Category" if cog is None else cog.qualified_name
             filtered = await self.filter_commands(cog_commands, sort=True)
             if filtered:
-                value = "\N{EN SPACE}".join(c.name for c in cog_commands)
+                value = "\N{EN SPACE}".join(
+                    [c.name for c in cog_commands if await predicate(c)]
+                )
                 embed = add_field(embed, name, value)
 
         if embed.fields:  # needed in case the very last add field rolled it over
@@ -645,12 +653,14 @@ class EmbedHelp(commands.HelpCommand):
         for index, embed in enumerate(embeds, 1):
             embed.set_footer(text=f"Page {index} of {emb_l} | {end_note}")
 
-        menu = menus.MenuPages(
-            source=PreFormattedListSource(embeds),
-            check_embeds=True,
-            clear_reactions_after=True,
-        )
-        await menu.start(self.context, channel=self.get_destination())
+        if embeds:
+
+            menu = menus.MenuPages(
+                source=PreFormattedListSource(embeds),
+                check_embeds=True,
+                clear_reactions_after=True,
+            )
+            await menu.start(self.context, channel=self.get_destination())
 
     async def send_cog_help(self, cog):
         embed = discord.Embed(
@@ -686,14 +696,23 @@ class EmbedHelp(commands.HelpCommand):
         for index, embed in enumerate(embeds, 1):
             embed.set_footer(text=f"Page {index} of {emb_l} | {end_note}")
 
-        menu = menus.MenuPages(
-            source=PreFormattedListSource(embeds),
-            check_embeds=True,
-            clear_reactions_after=True,
-        )
-        await menu.start(self.context, channel=self.get_destination())
+        if embeds:
+
+            menu = menus.MenuPages(
+                source=PreFormattedListSource(embeds),
+                check_embeds=True,
+                clear_reactions_after=True,
+            )
+            await menu.start(self.context, channel=self.get_destination())
 
     async def send_group_help(self, group):
+
+        try:
+            if not await group.can_run(self.context):
+                return
+        except commands.CommandError:
+            return
+
         embed = discord.Embed(title=group.qualified_name, colour=self.context.me.color)
         if group.help:
             embed.description = group.help
@@ -727,26 +746,33 @@ class EmbedHelp(commands.HelpCommand):
         for index, embed in enumerate(embeds, 1):
             embed.set_footer(text=f"Page {index} of {emb_l} | {end_note}")
 
-        menu = menus.MenuPages(
-            source=PreFormattedListSource(embeds),
-            check_embeds=True,
-            clear_reactions_after=True,
-        )
-        await menu.start(self.context, channel=self.get_destination())
+        if embeds:
+
+            menu = menus.MenuPages(
+                source=PreFormattedListSource(embeds),
+                check_embeds=True,
+                clear_reactions_after=True,
+            )
+            await menu.start(self.context, channel=self.get_destination())
 
     async def send_command_help(self, command):
-        embed = discord.Embed(
-            title=self.get_command_signature(command), colour=self.context.me.color
-        )
-        if command.help:
-            embed.description = command.help
+        try:
+            if await command.can_run(self.context):
+                embed = discord.Embed(
+                    title=self.get_command_signature(command),
+                    colour=self.context.me.color,
+                )
+                if command.help:
+                    embed.description = command.help
 
-        menu = menus.MenuPages(
-            source=PreFormattedListSource([embed]),
-            check_embeds=True,
-            clear_reactions_after=True,
-        )
-        await menu.start(self.context, channel=self.get_destination())
+                menu = menus.MenuPages(
+                    source=PreFormattedListSource([embed]),
+                    check_embeds=True,
+                    clear_reactions_after=True,
+                )
+                await menu.start(self.context, channel=self.get_destination())
+        except commands.CommandError:
+            pass
 
 
 class Salamander(commands.AutoShardedBot):
