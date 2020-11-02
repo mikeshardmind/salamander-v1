@@ -1089,6 +1089,7 @@ class RoleManagement(commands.Cog):
         self,
         ctx: SalamanderContext,
         roles: commands.Greedy[discord.Role],
+        *,
         settings: RoleSettingsConverter,
     ):
         """
