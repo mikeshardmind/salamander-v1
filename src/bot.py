@@ -928,8 +928,10 @@ class Salamander(commands.AutoShardedBot):
             (guild.id,),
         ).fetchone()
 
-        if row and member._roles.has(row[0]):
-            return True
+        if row:
+            mute_role_id = row[0]
+            if mute_role_id and member._roles.has(mute_role_id):
+                return True
 
         return False
 
