@@ -286,7 +286,7 @@ class Expression:
 
         if isinstance(die, NumberofDice):
             n = self._current_num_dice + die.quant
-            if n > 100:
+            if n > 1000:
                 raise DiceError("Whoops, too many dice here")
             self._current_num_dice = n
 
