@@ -1015,19 +1015,22 @@ class Salamander(commands.AutoShardedBot):
                 t.cancel()
 
             loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
+            # impl detail of cancelation...
+            loop.run_until_complete(asyncio.sleep(0.01))
             loop.run_until_complete(loop.shutdown_asyncgens())
 
             for task in tasks:
-                if task.cancelled():
-                    continue
-                if task.exception() is not None:
-                    loop.call_exception_handler(
-                        {
-                            "message": "Unhandled exception in task during shutdown.",
-                            "exception": task.exception(),
-                            "task": task,
-                        }
-                    )
+                try:
+                    if task.exception() is not None:
+                        loop.call_exception_handler(
+                            {
+                                "message": "Unhandled exception in task during shutdown.",
+                                "exception": task.exception(),
+                                "task": task,
+                            }
+                        )
+                except (asyncio.InvalidStateError, asyncio.CancelledError):
+                    pass
 
             loop.close()
             asyncio.set_event_loop(None)
