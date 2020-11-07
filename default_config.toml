@@ -2,7 +2,7 @@
 # you can copy it to config.toml to make modifications which will be used.
 
 no_serpent = false  # refers to the scheduling service
-no_basalisk = false  # refers to the filtering service
+no_basilisk = false  # refers to the filtering service
 
 [exts]
 core = [ "mod", "meta", "cleanup", "rolemanagement",]  # refers to module names in src/extensions

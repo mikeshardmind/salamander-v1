@@ -34,7 +34,7 @@ def get_conf() -> Optional[BehaviorFlags]:
     raw_data = toml.load(path)
 
     no_serpent = raw_data.pop("no_serpent", False)
-    no_basalisk = raw_data.pop("no_basalisk", False)
+    no_basilisk = raw_data.pop("no_basilisk", False)
 
     ext_dict = raw_data.pop("exts", None)
     about_text = raw_data.pop("about_text", None)
@@ -56,7 +56,7 @@ def get_conf() -> Optional[BehaviorFlags]:
 
     return BehaviorFlags(
         no_serpent=no_serpent,
-        no_basalisk=no_basalisk,
+        no_basilisk=no_basilisk,
         initial_exts=exts,
         about_text=about_text,
     )
