@@ -13,14 +13,18 @@
 #   limitations under the License.
 
 # -------------------------------------------------------------------------------
-# This file last updated at: 2020-10-2021 for Unicode Version 13.1
+# This file last updated at: 2020-11-06 for Unicode Version 13.1
 # based on the guidleines published by The Unicode Consortium (link below)
 # https://www.unicode.org/Public/13.0.0/ucd/emoji/emoji-variation-sequences.txt
 # See: http://www.unicode.org/reports/tr51/#emoji_data
 # for The Unicode Consortium's current guidelines for emojis
 # -------------------------------------------------------------------------------
+# This excludes emojis with a default Emoji_Presentation=yes
+# See: https://github.com/twitter/twemoji/issues/363
+# -------------------------------------------------------------------------------
 
-CHARS_REQUIRING_VARIATION = {
+#: Version without handling for twemoji kept for reference
+_VALID_VARIATION_16_CHARS = (
     "\u0023",
     "\u002A",
     "\u0030",
@@ -375,4 +379,361 @@ CHARS_REQUIRING_VARIATION = {
     "\U0001F6E9",
     "\U0001F6F0",
     "\U0001F6F3",
-}
+)
+
+CHARS_REQUIRING_VARIATION = (
+    # "\U00000023",  # twemoji exclusion
+    # "\U0000002a",  # twemoji exclusion
+    # "\U00000030",  # twemoji exclusion
+    # "\U00000031",  # twemoji exclusion
+    # "\U00000032",  # twemoji exclusion
+    # "\U00000033",  # twemoji exclusion
+    # "\U00000034",  # twemoji exclusion
+    # "\U00000035",  # twemoji exclusion
+    # "\U00000036",  # twemoji exclusion
+    # "\U00000037",  # twemoji exclusion
+    # "\U00000038",  # twemoji exclusion
+    # "\U00000039",  # twemoji exclusion
+    "\U000000a9",
+    "\U000000ae",
+    "\U0000203c",
+    "\U00002049",
+    "\U00002122",
+    "\U00002139",
+    "\U00002194",
+    "\U00002195",
+    "\U00002196",
+    "\U00002197",
+    "\U00002198",
+    "\U00002199",
+    "\U000021a9",
+    "\U000021aa",
+    # "\U0000231a",  # twemoji exclusion
+    # "\U0000231b",  # twemoji exclusion
+    "\U00002328",
+    "\U000023cf",
+    # "\U000023e9",  # twemoji exclusion
+    # "\U000023ea",  # twemoji exclusion
+    "\U000023ed",
+    "\U000023ee",
+    "\U000023ef",
+    "\U000023f1",
+    "\U000023f2",
+    # "\U000023f3",  # twemoji exclusion
+    "\U000023f8",
+    "\U000023f9",
+    "\U000023fa",
+    "\U000024c2",
+    "\U000025aa",
+    "\U000025ab",
+    "\U000025b6",
+    "\U000025c0",
+    "\U000025fb",
+    "\U000025fc",
+    # "\U000025fd",  # twemoji exclusion
+    # "\U000025fe",  # twemoji exclusion
+    "\U00002600",
+    "\U00002601",
+    "\U00002602",
+    "\U00002603",
+    "\U00002604",
+    "\U0000260e",
+    "\U00002611",
+    # "\U00002614",  # twemoji exclusion
+    # "\U00002615",  # twemoji exclusion
+    "\U00002618",
+    "\U0000261d",
+    "\U00002620",
+    "\U00002622",
+    "\U00002623",
+    "\U00002626",
+    "\U0000262a",
+    "\U0000262e",
+    "\U0000262f",
+    "\U00002638",
+    "\U00002639",
+    "\U0000263a",
+    "\U00002640",
+    "\U00002642",
+    # "\U00002648",  # twemoji exclusion
+    # "\U00002649",  # twemoji exclusion
+    # "\U0000264a",  # twemoji exclusion
+    # "\U0000264b",  # twemoji exclusion
+    # "\U0000264c",  # twemoji exclusion
+    # "\U0000264d",  # twemoji exclusion
+    # "\U0000264e",  # twemoji exclusion
+    # "\U0000264f",  # twemoji exclusion
+    # "\U00002650",  # twemoji exclusion
+    # "\U00002651",  # twemoji exclusion
+    # "\U00002652",  # twemoji exclusion
+    # "\U00002653",  # twemoji exclusion
+    "\U0000265f",
+    "\U00002660",
+    "\U00002663",
+    "\U00002665",
+    "\U00002666",
+    "\U00002668",
+    "\U0000267b",
+    "\U0000267e",
+    # "\U0000267f",  # twemoji exclusion
+    "\U00002692",
+    # "\U00002693",  # twemoji exclusion
+    "\U00002694",
+    "\U00002695",
+    "\U00002696",
+    "\U00002697",
+    "\U00002699",
+    "\U0000269b",
+    "\U0000269c",
+    "\U000026a0",
+    # "\U000026a1",  # twemoji exclusion
+    # "\U000026a7",  # twemoji exclusion
+    # "\U000026aa",  # twemoji exclusion
+    # "\U000026ab",  # twemoji exclusion
+    "\U000026b0",
+    "\U000026b1",
+    # "\U000026bd",  # twemoji exclusion
+    # "\U000026be",  # twemoji exclusion
+    # "\U000026c4",  # twemoji exclusion
+    # "\U000026c5",  # twemoji exclusion
+    "\U000026c8",
+    "\U000026cf",
+    "\U000026d1",
+    "\U000026d3",
+    # "\U000026d4",  # twemoji exclusion
+    "\U000026e9",
+    # "\U000026ea",  # twemoji exclusion
+    "\U000026f0",
+    "\U000026f1",
+    # "\U000026f2",  # twemoji exclusion
+    # "\U000026f3",  # twemoji exclusion
+    "\U000026f4",
+    # "\U000026f5",  # twemoji exclusion
+    "\U000026f7",
+    "\U000026f8",
+    "\U000026f9",
+    # "\U000026fa",  # twemoji exclusion
+    # "\U000026fd",  # twemoji exclusion
+    "\U00002702",
+    "\U00002708",
+    "\U00002709",
+    "\U0000270c",
+    "\U0000270d",
+    "\U0000270f",
+    "\U00002712",
+    "\U00002714",
+    "\U00002716",
+    "\U0000271d",
+    "\U00002721",
+    "\U00002733",
+    "\U00002734",
+    "\U00002744",
+    "\U00002747",
+    # "\U00002753",  # twemoji exclusion
+    # "\U00002757",  # twemoji exclusion
+    "\U00002763",
+    "\U00002764",
+    "\U000027a1",
+    "\U00002934",
+    "\U00002935",
+    "\U00002b05",
+    "\U00002b06",
+    "\U00002b07",
+    # "\U00002b1b",  # twemoji exclusion
+    # "\U00002b1c",  # twemoji exclusion
+    # "\U00002b50",  # twemoji exclusion
+    # "\U00002b55",  # twemoji exclusion
+    "\U00003030",
+    "\U0000303d",
+    "\U00003297",
+    "\U00003299",
+    # "\U0001f004",  # twemoji exclusion
+    "\U0001f170",
+    "\U0001f171",
+    "\U0001f17e",
+    "\U0001f17f",
+    "\U0001f202",
+    # "\U0001f21a",  # twemoji exclusion
+    # "\U0001f22f",  # twemoji exclusion
+    "\U0001f237",
+    # "\U0001f30d",  # twemoji exclusion
+    # "\U0001f30e",  # twemoji exclusion
+    # "\U0001f30f",  # twemoji exclusion
+    # "\U0001f315",  # twemoji exclusion
+    # "\U0001f31c",  # twemoji exclusion
+    "\U0001f321",
+    "\U0001f324",
+    "\U0001f325",
+    "\U0001f326",
+    "\U0001f327",
+    "\U0001f328",
+    "\U0001f329",
+    "\U0001f32a",
+    "\U0001f32b",
+    "\U0001f32c",
+    "\U0001f336",
+    # "\U0001f378",  # twemoji exclusion
+    "\U0001f37d",
+    # "\U0001f393",  # twemoji exclusion
+    "\U0001f396",
+    "\U0001f397",
+    "\U0001f399",
+    "\U0001f39a",
+    "\U0001f39b",
+    "\U0001f39e",
+    "\U0001f39f",
+    # "\U0001f3a7",  # twemoji exclusion
+    # "\U0001f3ac",  # twemoji exclusion
+    # "\U0001f3ad",  # twemoji exclusion
+    # "\U0001f3ae",  # twemoji exclusion
+    # "\U0001f3c2",  # twemoji exclusion
+    # "\U0001f3c4",  # twemoji exclusion
+    # "\U0001f3c6",  # twemoji exclusion
+    # "\U0001f3ca",  # twemoji exclusion
+    "\U0001f3cb",
+    "\U0001f3cc",
+    "\U0001f3cd",
+    "\U0001f3ce",
+    "\U0001f3d4",
+    "\U0001f3d5",
+    "\U0001f3d6",
+    "\U0001f3d7",
+    "\U0001f3d8",
+    "\U0001f3d9",
+    "\U0001f3da",
+    "\U0001f3db",
+    "\U0001f3dc",
+    "\U0001f3dd",
+    "\U0001f3de",
+    "\U0001f3df",
+    # "\U0001f3e0",  # twemoji exclusion
+    # "\U0001f3ed",  # twemoji exclusion
+    "\U0001f3f3",
+    "\U0001f3f5",
+    "\U0001f3f7",
+    # "\U0001f408",  # twemoji exclusion
+    # "\U0001f415",  # twemoji exclusion
+    # "\U0001f41f",  # twemoji exclusion
+    # "\U0001f426",  # twemoji exclusion
+    "\U0001f43f",
+    "\U0001f441",
+    # "\U0001f442",  # twemoji exclusion
+    # "\U0001f446",  # twemoji exclusion
+    # "\U0001f447",  # twemoji exclusion
+    # "\U0001f448",  # twemoji exclusion
+    # "\U0001f449",  # twemoji exclusion
+    # "\U0001f44d",  # twemoji exclusion
+    # "\U0001f44e",  # twemoji exclusion
+    # "\U0001f453",  # twemoji exclusion
+    # "\U0001f46a",  # twemoji exclusion
+    # "\U0001f47d",  # twemoji exclusion
+    # "\U0001f4a3",  # twemoji exclusion
+    # "\U0001f4b0",  # twemoji exclusion
+    # "\U0001f4b3",  # twemoji exclusion
+    # "\U0001f4bb",  # twemoji exclusion
+    # "\U0001f4bf",  # twemoji exclusion
+    # "\U0001f4cb",  # twemoji exclusion
+    # "\U0001f4da",  # twemoji exclusion
+    # "\U0001f4df",  # twemoji exclusion
+    # "\U0001f4e4",  # twemoji exclusion
+    # "\U0001f4e5",  # twemoji exclusion
+    # "\U0001f4e6",  # twemoji exclusion
+    # "\U0001f4ea",  # twemoji exclusion
+    # "\U0001f4eb",  # twemoji exclusion
+    # "\U0001f4ec",  # twemoji exclusion
+    # "\U0001f4ed",  # twemoji exclusion
+    # "\U0001f4f7",  # twemoji exclusion
+    # "\U0001f4f9",  # twemoji exclusion
+    # "\U0001f4fa",  # twemoji exclusion
+    # "\U0001f4fb",  # twemoji exclusion
+    "\U0001f4fd",
+    # "\U0001f508",  # twemoji exclusion
+    # "\U0001f50d",  # twemoji exclusion
+    # "\U0001f512",  # twemoji exclusion
+    # "\U0001f513",  # twemoji exclusion
+    "\U0001f549",
+    "\U0001f54a",
+    # "\U0001f550",  # twemoji exclusion
+    # "\U0001f551",  # twemoji exclusion
+    # "\U0001f552",  # twemoji exclusion
+    # "\U0001f553",  # twemoji exclusion
+    # "\U0001f554",  # twemoji exclusion
+    # "\U0001f555",  # twemoji exclusion
+    # "\U0001f556",  # twemoji exclusion
+    # "\U0001f557",  # twemoji exclusion
+    # "\U0001f558",  # twemoji exclusion
+    # "\U0001f559",  # twemoji exclusion
+    # "\U0001f55a",  # twemoji exclusion
+    # "\U0001f55b",  # twemoji exclusion
+    # "\U0001f55c",  # twemoji exclusion
+    # "\U0001f55d",  # twemoji exclusion
+    # "\U0001f55e",  # twemoji exclusion
+    # "\U0001f55f",  # twemoji exclusion
+    # "\U0001f560",  # twemoji exclusion
+    # "\U0001f561",  # twemoji exclusion
+    # "\U0001f562",  # twemoji exclusion
+    # "\U0001f563",  # twemoji exclusion
+    # "\U0001f564",  # twemoji exclusion
+    # "\U0001f565",  # twemoji exclusion
+    # "\U0001f566",  # twemoji exclusion
+    # "\U0001f567",  # twemoji exclusion
+    "\U0001f56f",
+    "\U0001f570",
+    "\U0001f573",
+    "\U0001f574",
+    "\U0001f575",
+    "\U0001f576",
+    "\U0001f577",
+    "\U0001f578",
+    "\U0001f579",
+    "\U0001f587",
+    "\U0001f58a",
+    "\U0001f58b",
+    "\U0001f58c",
+    "\U0001f58d",
+    "\U0001f590",
+    "\U0001f5a5",
+    "\U0001f5a8",
+    "\U0001f5b1",
+    "\U0001f5b2",
+    "\U0001f5bc",
+    "\U0001f5c2",
+    "\U0001f5c3",
+    "\U0001f5c4",
+    "\U0001f5d1",
+    "\U0001f5d2",
+    "\U0001f5d3",
+    "\U0001f5dc",
+    "\U0001f5dd",
+    "\U0001f5de",
+    "\U0001f5e1",
+    "\U0001f5e3",
+    "\U0001f5e8",
+    "\U0001f5ef",
+    "\U0001f5f3",
+    "\U0001f5fa",
+    # "\U0001f610",  # twemoji exclusion
+    # "\U0001f687",  # twemoji exclusion
+    # "\U0001f68d",  # twemoji exclusion
+    # "\U0001f691",  # twemoji exclusion
+    # "\U0001f694",  # twemoji exclusion
+    # "\U0001f698",  # twemoji exclusion
+    # "\U0001f6ad",  # twemoji exclusion
+    # "\U0001f6b2",  # twemoji exclusion
+    # "\U0001f6b9",  # twemoji exclusion
+    # "\U0001f6ba",  # twemoji exclusion
+    # "\U0001f6bc",  # twemoji exclusion
+    "\U0001f6cb",
+    "\U0001f6cd",
+    "\U0001f6ce",
+    "\U0001f6cf",
+    "\U0001f6e0",
+    "\U0001f6e1",
+    "\U0001f6e2",
+    "\U0001f6e3",
+    "\U0001f6e4",
+    "\U0001f6e5",
+    "\U0001f6e9",
+    "\U0001f6f0",
+    "\U0001f6f3",
+)
