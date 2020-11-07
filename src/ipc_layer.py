@@ -58,7 +58,7 @@ class ZMQHandler:
         self.topics = (
             "salamander",
             "broadcast",
-            "basalisk.gaze",
+            "basilisk.gaze",
             "notice.cache",
             "status.response",
             "status.check",

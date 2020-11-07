@@ -24,8 +24,8 @@ from discord.ext import commands
 from ...bot import Salamander, SalamanderContext
 from ...checks import admin_or_perms
 
-BASALISK = "basalisk"
-REFOCUS = "basalisk.refocus"
+BASILISK = "basilisk"
+REFOCUS = "basilisk.refocus"
 STATUS_CHECK = "status.check"
 STATUS_RESPONSE = "status.response"
 
@@ -79,7 +79,7 @@ class Filter(commands.Cog):
         if msg.content and (not msg.author.bot) and msg.guild:
             if msg.channel.permissions_for(msg.guild.me).manage_messages:
                 if self.check_enabled_in_guild(msg.guild.id):
-                    if await self.bot.check_basalisk(msg.content):
+                    if await self.bot.check_basilisk(msg.content):
                         await msg.delete()
 
     @commands.check_any(commands.is_owner(), admin_or_perms(manage_guild=True))
@@ -129,7 +129,7 @@ class Filter(commands.Cog):
             return (
                 topic == STATUS_RESPONSE
                 and recv_uuid == this_uuid
-                and component_name == BASALISK
+                and component_name == BASILISK
             )
 
         f = self.bot.wait_for("ipc_recv", check=matches, timeout=5)

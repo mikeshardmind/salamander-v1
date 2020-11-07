@@ -76,7 +76,7 @@ For now, it serves as a very minimal documentation of what's needed to get this 
 
 Currently, this requires [hydra](https://github.com/unified-moderation-network/hydra]) to be running.
 
-The filter is designed as an external service (see [basalisk](https://github.com/unified-moderation-network/hydra))
+The filter is designed as an external service (see [basilisk](https://github.com/unified-moderation-network/basilisk))
 though there may be an option to enable a local filter in the future.
 
 

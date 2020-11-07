@@ -47,8 +47,8 @@ from .utils import MainThreadSingletonMeta, format_list, only_once, pagify
 
 log = logging.getLogger("salamander")
 
-BASALISK_GAZE = "basalisk.gaze"
-BASALISK_OFFER = "basalisk.offer"
+BASILISK_GAZE = "basilisk.gaze"
+BASILISK_OFFER = "basilisk.offer"
 
 
 __all__ = ["setup_logging", "Salamander", "SalamanderContext"]
@@ -281,12 +281,12 @@ class BehaviorFlags:
     def __init__(
         self,
         *,
-        no_basalisk: bool = False,
+        no_basilisk: bool = False,
         no_serpent: bool = False,
         initial_exts: Sequence[str] = (),
         about_text: Optional[str] = None,
     ):
-        self.no_basalisk: bool = no_basalisk
+        self.no_basilisk: bool = no_basilisk
         self.no_serpent: bool = no_serpent
         self.initial_exts: Sequence[str] = initial_exts
         self.about_text: Final[Optional[str]] = about_text
@@ -801,7 +801,7 @@ class Salamander(commands.AutoShardedBot):
         for ext in self._behavior_flags.initial_exts:
             self.load_extension(ext)
 
-        if not self._behavior_flags.no_basalisk:
+        if not self._behavior_flags.no_basilisk:
             self.load_extension("src.extensions.filter")
 
     async def __aenter__(self) -> "Salamander":
@@ -855,7 +855,7 @@ class Salamander(commands.AutoShardedBot):
             if exc.args and (msg := exc.args[0]):
                 await ctx.send(msg)
 
-    async def check_basalisk(self, string: str) -> bool:
+    async def check_basilisk(self, string: str) -> bool:
         """
         Check whether or not something should be filtered
 
@@ -864,7 +864,7 @@ class Salamander(commands.AutoShardedBot):
         The default is no response, it's assumed to be fine.
 
         This prevents other features specific to this
-        component from failing over if basalisk is not in use or in a failed state.
+        component from failing over if basilisk is not in use or in a failed state.
         Status checks of other components will be handled later on.
 
         If anything blocks the loop for longer than the timeout,
@@ -872,18 +872,18 @@ class Salamander(commands.AutoShardedBot):
         but if anything blocks the loop for that long, there are larger issues.
         """
 
-        if self._behavior_flags.no_basalisk:
+        if self._behavior_flags.no_basilisk:
             return False
 
         this_uuid = uuid4().bytes
 
         def matches(*args) -> bool:
             topic, (recv_uuid, *_data) = args
-            return topic == BASALISK_GAZE and recv_uuid == this_uuid
+            return topic == BASILISK_GAZE and recv_uuid == this_uuid
 
         # This is an intentionally genererous timeout, won't be an issue.
         fut = self.wait_for("ipc_recv", check=matches, timeout=5)
-        self.ipc_put(BASALISK_OFFER, ((this_uuid, None), string))
+        self.ipc_put(BASILISK_OFFER, ((this_uuid, None), string))
         try:
             await fut
         except asyncio.TimeoutError:
