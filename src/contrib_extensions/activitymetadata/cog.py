@@ -37,25 +37,16 @@ from ...utils import (
 
 log = logging.getLogger("salamander.contrib_exts.activitymetadata")
 
-PRAGMAS = (
-    "PRAGMA foreign_keys=ON ",
-    "PRAGMA journal_mode = WAL",
-    "PRAGMA synchronous = FULL",
-)
-
 
 class MessageMetaTrack(commands.Cog):
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
-        self.conn = apsw.Connection("contrib_data/activitymetadata.db")
+        self.conn = self.bot._conn
         cursor = self.conn.cursor()
-
-        for pragma in PRAGMAS:
-            cursor.execute(pragma)
 
         cursor.execute(
             """
-            CREATE TABLE IF NOT EXISTS guild_settings (
+            CREATE TABLE IF NOT EXISTS contrib_activitymetadata_guild_settings (
                 guild_id INTEGER PRIMARY KEY NOT NULL,
                 max_days INTEGER DEFAULT 89,
                 enabled BOOLEAN DEFAULT false
@@ -65,10 +56,10 @@ class MessageMetaTrack(commands.Cog):
 
         cursor.execute(
             """
-            CREATE TABLE IF NOT EXISTS message_metadata (
+            CREATE TABLE IF NOT EXISTS contrib_activitymetadata_message_metadata (
                 message_id INTEGER PRIMARY KEY NOT NULL,
                 channel_id INTEGER NOT NULL,
-                guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id)
+                guild_id INTEGER NOT NULL REFERENCES contrib_activitymetadata_guild_settings(guild_id)
                     ON UPDATE CASCADE ON DELETE CASCADE,
                 user_id INTEGER NOT NULL,
                 created_at TEXT AS (
@@ -85,6 +76,13 @@ class MessageMetaTrack(commands.Cog):
         )
         self._deletions: Waterfall[int] = Waterfall(60, 500, self.delete_messages)
 
+    @staticmethod
+    def remove_tables_from_connection(conn: apsw.Connection):
+        cursor = conn.cursor()
+        with conn:
+            cursor.execute("""DROP TABLE contrib_activitymetadata_message_metadata""")
+            cursor.execute("""DROP TABLE contrib_activitymetadata_guild_settings""")
+
     async def add_messages(self, messages: Sequence[discord.Message]):
 
         with contextlib.closing(self.conn.cursor()) as cursor, self.conn:
@@ -92,12 +90,12 @@ class MessageMetaTrack(commands.Cog):
                 # not a full early exit, we still age out expired every minute
                 cursor.executemany(
                     """
-                    INSERT INTO message_metadata(
+                    INSERT INTO contrib_activitymetadata_message_metadata(
                         message_id, channel_id, guild_id, user_id
                     )
                     SELECT ?1, ?2, ?3, ?4
                     WHERE EXISTS(
-                        SELECT 1 from guild_settings WHERE guild_id = ?3 AND enabled
+                        SELECT 1 from contrib_activitymetadata_guild_settings WHERE guild_id = ?3 AND enabled
                     )
                     ON CONFLICT (message_id) DO NOTHING
                     """,
@@ -107,13 +105,13 @@ class MessageMetaTrack(commands.Cog):
                 )
             cursor.execute(
                 """
-                DELETE FROM message_metadata
+                DELETE FROM contrib_activitymetadata_message_metadata
                 WHERE created_at < (
                     SELECT DATETIME(
                         CURRENT_TIMESTAMP, CAST(0 - max_days as TEXT) || ' days'
                     )
-                    FROM guild_settings
-                    WHERE message_metadata.guild_id = guild_settings.guild_id
+                    FROM contrib_activitymetadata_guild_settings
+                    WHERE contrib_activitymetadata_message_metadata.guild_id = contrib_activitymetadata_guild_settings.guild_id
                 )
                 """
             )
@@ -126,7 +124,7 @@ class MessageMetaTrack(commands.Cog):
         with contextlib.closing(self.conn.cursor()) as cursor, self.conn:
             cursor.executemany(
                 """
-                DELETE FROM message_metadata WHERE message_id = ?
+                DELETE FROM contrib_activitymetadata_message_metadata WHERE message_id = ?
                 """,
                 tuple((mid,) for mid in message_ids),
             )
@@ -140,7 +138,7 @@ class MessageMetaTrack(commands.Cog):
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            DELETE FROM guild_settings WHERE guild_id = ?
+            DELETE FROM contrib_activitymetadata_guild_settings WHERE guild_id = ?
             """,
             (guild_id,),
         )  # FK handles rest
@@ -150,7 +148,7 @@ class MessageMetaTrack(commands.Cog):
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            DELETE FROM message_metadata
+            DELETE FROM contrib_activitymetadata_message_metadata
             WHERE guild_id = ? AND user_id = ?
             """,
             (guild_id, user_id),
@@ -161,7 +159,7 @@ class MessageMetaTrack(commands.Cog):
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            DELETE FROM message_metadata
+            DELETE FROM contrib_activitymetadata_message_metadata
             WHERE user_id = ?
             """,
             (user_id,),
@@ -203,7 +201,7 @@ class MessageMetaTrack(commands.Cog):
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            INSERT INTO guild_settings (guild_id, enabled)
+            INSERT INTO contrib_activitymetadata_guild_settings (guild_id, enabled)
             VALUES (?, ?)
             ON CONFLICT (guild_id)
             DO UPDATE SET enabled=excluded.enabled
@@ -221,7 +219,7 @@ class MessageMetaTrack(commands.Cog):
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            INSERT INTO guild_settings (guild_id, enabled)
+            INSERT INTO contrib_activitymetadata_guild_settings (guild_id, enabled)
             VALUES (?, ?)
             ON CONFLICT (guild_id)
             DO UPDATE SET enabled=excluded.enabled
@@ -244,7 +242,7 @@ class MessageMetaTrack(commands.Cog):
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            DELETE from message_metadata WHERE guild_id=?
+            DELETE from contrib_activitymetadata_message_metadata WHERE guild_id=?
             """,
             (ctx.guild.id),
         )
@@ -304,7 +302,7 @@ class MessageMetaTrack(commands.Cog):
 
         (is_enabled,) = cursor.execute(
             """
-            SELECT EXISTS(SELECT 1 FROM guild_settings WHERE guild_id=? AND enabled)
+            SELECT EXISTS(SELECT 1 FROM contrib_activitymetadata_guild_settings WHERE guild_id=? AND enabled)
             """,
             (ctx.guild.id,),
         ).fetchone()
@@ -355,7 +353,7 @@ class MessageMetaTrack(commands.Cog):
             (num,) = cursor.execute(
                 """
                 SELECT COUNT(*)
-                FROM message_metadata
+                FROM contrib_activitymetadata_message_metadata
                 WHERE guild_id = ? AND user_id = ? AND created_at > DATETIME(?)
                 """,
                 (ctx.guild.id, member.id, lc.isoformat()),
@@ -412,7 +410,7 @@ class MessageMetaTrack(commands.Cog):
                 CURRENT_TIMESTAMP,
                 CAST(0 - max_days as TEXT) || ' days'
             )
-            FROM guild_settings
+            FROM contrib_activitymetadata_guild_settings
             WHERE guild_id = ? AND enabled
             """,
             (member.guild.id,),
@@ -427,7 +425,7 @@ class MessageMetaTrack(commands.Cog):
             """
             SELECT
                 COUNT(*), MIN(created_at), MAX(created_at), channel_id
-            FROM message_metadata
+            FROM contrib_activitymetadata_message_metadata
             WHERE guild_id = ? AND user_id =? AND created_at > DATETIME(?)
             GROUP BY channel_id
             """,

@@ -35,7 +35,7 @@ log = logging.getLogger("salamander.contrib_exts.qotw")
 
 
 GUILD_SETTINGS_TABLE_CREATION_STATEMENT = """
-CREATE TABLE IF NOT EXISTS guild_settings (
+CREATE TABLE IF NOT EXISTS contrib_qotw_guild_settings (
     guild_id INTEGER PRIMARY KEY NOT NULL,
     channel_id INTEGER DEFAULT NULL,
     last_qotw_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS guild_settings (
 """
 
 CREATE_MEMBERS_TABLE_STATEMENT = """
-CREATE TABLE IF NOT EXISTS members (
-    guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id)
+CREATE TABLE IF NOT EXISTS contrib_qotw_members (
+    guild_id INTEGER NOT NULL REFERENCES contrib_qotw_guild_settings(guild_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
     user_id INTEGER NOT NULL,
     current_question TEXT DEFAULT NULL,
@@ -56,32 +56,26 @@ CREATE TABLE IF NOT EXISTS members (
 """
 
 CREATE_HISTORICAL_ALL = """
-CREATE TABLE IF NOT EXISTS all_history (
+CREATE TABLE IF NOT EXISTS contrib_qotw_all_history (
     guild_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     question TEXT NOT NULL,
     when_asked TEXT DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (guild_id, user_id) REFERENCES members (guild_id, user_id)
+    FOREIGN KEY (guild_id, user_id) REFERENCES contrib_qotw_members (guild_id, user_id)
         ON UPDATE CASCADE ON DELETE CASCADE
 )
 """
 
 SELECTED_QUESTION_HISTORY = """
-CREATE TABLE IF NOT EXISTS selected_history (
+CREATE TABLE IF NOT EXISTS contrib_qotw_selected_history (
     guild_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     question TEXT,
     when_selected TEXT DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (guild_id, user_id) REFERENCES members (guild_id, user_id)
+    FOREIGN KEY (guild_id, user_id) REFERENCES contrib_qotw_members (guild_id, user_id)
         ON UPDATE CASCADE ON DELETE CASCADE
 )
 """
-
-PRAGMAS = (
-    "PRAGMA foreign_keys=ON ",
-    "PRAGMA journal_mode = WAL",
-    "PRAGMA synchronous = FULL",
-)
 
 # The default here isn't wrong, but it is intentionally offset for math.
 
@@ -98,10 +92,9 @@ class QOTW(commands.Cog):
 
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
-        self.conn = apsw.Connection("contrib_data/qotw.db")
+        self.conn = self.bot._conn
         cursor = self.conn.cursor()
-        for pragma in PRAGMAS:
-            cursor.execute(pragma)
+
         for statement in (
             GUILD_SETTINGS_TABLE_CREATION_STATEMENT,
             CREATE_MEMBERS_TABLE_STATEMENT,
@@ -112,6 +105,15 @@ class QOTW(commands.Cog):
         cursor.close()
 
         self._loop: Optional[asyncio.Task] = None
+
+    @staticmethod
+    def remove_tables_from_connection(conn: apsw.Connection):
+        cursor = conn.cursor()
+        with conn:
+            cursor.execute("""DROP TABLE contrib_qotw_all_history""")
+            cursor.execute("""DROP TABLE contrib_qotw_selected_history""")
+            cursor.execute("""DROP TABLE contrib_qotw_members""")
+            cursor.execute("""DROP TABLE contrib_qotw_guild_settings""")
 
     def init(self):
         self._loop = asyncio.create_task(self.bg_loop())
@@ -135,7 +137,7 @@ class QOTW(commands.Cog):
                 for row in cursor.execute(
                     """
                     SELECT guild_id, channel_id, last_pinned_message_id
-                    FROM guild_settings
+                    FROM contrib_qotw_guild_settings
                     WHERE
                         channel_id IS NOT NULL
                         AND qotw_day=?
@@ -166,7 +168,7 @@ class QOTW(commands.Cog):
         questions = cursor.execute(
             """
             SELECT user_id, current_question, questions_since_select
-            FROM members
+            FROM contrib_qotw_members
             WHERE current_question IS NOT NULL AND guild_id=?
             """,
             (guild_id,),
@@ -175,7 +177,7 @@ class QOTW(commands.Cog):
         if not questions:
             cursor.execute(
                 """
-                INSERT INTO guild_settings (guild_id, last_qotw_at)
+                INSERT INTO contrib_qotw_guild_settings (guild_id, last_qotw_at)
                 VALUES (?, CURRENT_TIMESTAMP)
                 ON CONFLICT (guild_id)
                 DO UPDATE SET
@@ -212,7 +214,7 @@ class QOTW(commands.Cog):
         with self.conn:
             cursor.execute(
                 """
-                UPDATE members
+                UPDATE contrib_qotw_members
                 SET
                     questions_since_select = questions_since_select + 1
                 WHERE current_question IS NOT NULL AND guild_id=?
@@ -222,7 +224,7 @@ class QOTW(commands.Cog):
 
             cursor.execute(
                 """
-                UPDATE members
+                UPDATE contrib_qotw_members
                 SET questions_since_select = 1
                 WHERE guild_id = ? AND  user_id = ?
                 """,
@@ -230,13 +232,13 @@ class QOTW(commands.Cog):
             )
 
             cursor.execute(
-                """ UPDATE members SET current_question=NULL WHERE guild_id=?""",
+                """ UPDATE contrib_qotw_members SET current_question=NULL WHERE guild_id=?""",
                 (guild_id,),
             )
 
             cursor.execute(
                 """
-                INSERT INTO selected_history (guild_id, user_id, question)
+                INSERT INTO contrib_qotw_selected_history (guild_id, user_id, question)
                 VALUES (?,?,?)
                 """,
                 (guild_id, selected_m.id, selected_question),
@@ -244,7 +246,7 @@ class QOTW(commands.Cog):
 
             cursor.execute(
                 """
-                UPDATE guild_settings
+                UPDATE contrib_qotw_guild_settings
                 SET last_qotw_at = CURRENT_TIMESTAMP, last_pinned_message_id = :pin
                 WHERE guild_id = :guild_id
                 """,
@@ -271,7 +273,7 @@ class QOTW(commands.Cog):
 
         cursor.execute(
             """
-            INSERT INTO guild_settings (guild_id, channel_id)
+            INSERT INTO contrib_qotw_guild_settings (guild_id, channel_id)
             VALUES (?, ?)
             ON CONFLICT (guild_id)
             DO UPDATE SET channel_id=excluded.channel_id
@@ -292,7 +294,7 @@ class QOTW(commands.Cog):
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            UPDATE guild_settings
+            UPDATE contrib_qotw_guild_settings
             SET channel_id = NULL
             WHERE guild_id=?
             """,
@@ -307,7 +309,7 @@ class QOTW(commands.Cog):
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            INSERT INTO guild_settings (guild_id, qotw_day)
+            INSERT INTO contrib_qotw_guild_settings (guild_id, qotw_day)
             VALUES (?,?)
             ON CONFLICT (guild_id)
             DO UPDATE SET qotw_day=excluded.qotw_day
@@ -326,7 +328,7 @@ class QOTW(commands.Cog):
         row = cursor.execute(
             """
             SELECT channel_id, last_pinned_message_id
-            FROM guild_settings
+            FROM contrib_qotw_guild_settings
             WHERE
                 channel_id IS NOT NULL
                 AND guild_id = ?
@@ -355,7 +357,7 @@ class QOTW(commands.Cog):
         questions = cursor.execute(
             """
             SELECT user_id, current_question, questions_since_select
-            FROM members
+            FROM contrib_qotw_members
             WHERE current_question IS NOT NULL AND guild_id=?
             """,
             (ctx.guild.id,),
@@ -403,7 +405,7 @@ class QOTW(commands.Cog):
             params = (ctx.guild.id, ctx.author.id, question)
             cursor.execute(
                 """
-                INSERT INTO members (guild_id, user_id, current_question)
+                INSERT INTO contrib_qotw_members (guild_id, user_id, current_question)
                 VALUES (?,?,?)
                 ON CONFLICT (guild_id, user_id)
                 DO UPDATE SET current_question=excluded.current_question
@@ -412,7 +414,7 @@ class QOTW(commands.Cog):
             )
             cursor.execute(
                 """
-                INSERT INTO all_history (guild_id, user_id, question)
+                INSERT INTO contrib_qotw_all_history (guild_id, user_id, question)
                 VALUES(?,?,?)
                 """,
                 params,
@@ -433,7 +435,7 @@ class QOTW(commands.Cog):
 
         row = cursor.execute(
             """
-            SELECT channel_id FROM guild_settings WHERE guild_id = ?
+            SELECT channel_id FROM contrib_qotw_guild_settings WHERE guild_id = ?
             """,
             (ctx.guild.id,),
         ).fetchone()

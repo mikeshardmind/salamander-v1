@@ -103,7 +103,5 @@ template/
 *.db
 *.db-shm
 *.db-wal
-contrib_data/
 data/
-local_data/
 config.toml
