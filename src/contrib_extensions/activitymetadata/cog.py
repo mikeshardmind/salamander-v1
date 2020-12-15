@@ -88,6 +88,22 @@ class MessageMetaTrack(commands.Cog):
         with contextlib.closing(self.conn.cursor()) as cursor, self.conn:
             if messages:
                 # not a full early exit, we still age out expired every minute
+
+                tups = []
+                for m in messages:
+                    #  Not entirely sure the context in which this came up, let's log it in case it happens again
+                    try:
+                        # And we're splitting this up for a clear picture, since the AttributeError in question was on ?.id
+                        mid = m.id
+                        cid = m.channel.id
+                        gid = m.guild.id
+                        aid = m.author.id
+                        tups.append((mid, cid, gid, aid))
+                    except AttributeError as exc:
+                        log.exception(
+                            f"Issue during message metadata logging {m!r}", exc_info=exc
+                        )
+
                 cursor.executemany(
                     """
                     INSERT INTO contrib_activitymetadata_message_metadata(
@@ -99,9 +115,7 @@ class MessageMetaTrack(commands.Cog):
                     )
                     ON CONFLICT (message_id) DO NOTHING
                     """,
-                    tuple(
-                        (m.id, m.channel.id, m.guild.id, m.author.id) for m in messages
-                    ),
+                    tups,
                 )
             cursor.execute(
                 """
