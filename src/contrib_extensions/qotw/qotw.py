@@ -434,7 +434,7 @@ class QOTW(commands.Cog):
         else:
             return await ctx.send(
                 f"There are currently {len(filtered_questions)} questions.\n"
-                "You do not have a question submitted, but feel free to add one."
+                "You do not have a question submitted, but feel free to ask one."
             )
 
     @commands.guild_only()
