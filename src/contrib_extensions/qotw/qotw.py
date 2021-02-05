@@ -393,7 +393,7 @@ class QOTW(commands.Cog):
 
     @commands.guild_only()
     @commands.command()
-    async def qotodds(self, ctx: SalamanderContext):
+    async def qotwodds(self, ctx: SalamanderContext):
         """
         Get the current odds that your question is selected next.
         """
