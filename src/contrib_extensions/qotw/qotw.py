@@ -20,6 +20,7 @@ import contextlib
 import logging
 import random
 from datetime import datetime, timezone
+from fractions import Fraction
 from typing import Optional
 
 import apsw
@@ -225,15 +226,10 @@ class QOTW(commands.Cog):
             cursor.execute(
                 """
                 UPDATE contrib_qotw_members
-                SET questions_since_select = 1
+                SET questions_since_select = 1, current_question=NULL
                 WHERE guild_id = ? AND  user_id = ?
                 """,
                 (guild_id, selected_m.id),
-            )
-
-            cursor.execute(
-                """ UPDATE contrib_qotw_members SET current_question=NULL WHERE guild_id=?""",
-                (guild_id,),
             )
 
             cursor.execute(
@@ -347,6 +343,7 @@ class QOTW(commands.Cog):
 
         await self.handle_qotw(ctx.guild.id, channel_id, last_pinned_message_id)
 
+    @admin_or_perms(manage_messages=True)
     @commands.guild_only()
     @qotw_set.command(name="view")
     async def view_pending(self, ctx: SalamanderContext):
@@ -381,15 +378,64 @@ class QOTW(commands.Cog):
 
         embeds = []
 
-        for member, question, weight in filtered_questions:
+        n = len(filtered_questions)
+
+        for idx, (member, question, weight) in enumerate(filtered_questions, 1):
             em = embed_from_member(member)
-            em.add_field(name="Question", value=question, inline=False)
+            em.add_field(name=f"Question {idx} of {n}", value=question, inline=False)
             em.add_field(
-                name="Current odds of selection", value=f"{weight} out of {total}"
+                name="Current odds of selection", value=f"{Fraction(weight, total)}"
             )
+
             embeds.append(em)
 
         await ctx.list_menu(embeds)
+
+    @commands.guild_only()
+    @commands.command()
+    async def qotodds(self, ctx: SalamanderContext):
+        """
+        Get the current odds that your question is selected next.
+        """
+
+        cursor = self.conn.cursor()
+
+        questions = cursor.execute(
+            """
+            SELECT user_id, current_question, questions_since_select
+            FROM contrib_qotw_members
+            WHERE current_question IS NOT NULL AND guild_id=?
+            """,
+            (ctx.guild.id,),
+        ).fetchall()
+
+        total = 0
+        user_has_question = False
+        user_question_weight = 0
+
+        filtered_questions = []
+
+        for user_id, question, weight in questions:
+
+            if m := ctx.guild.get_member(user_id):
+                filtered_questions.append((m, question, weight))
+                total += weight
+                if ctx.author.id == user_id:
+                    user_has_question = True
+                    user_question_weight = weight
+
+        if not filtered_questions:
+            return await ctx.send("There are no questions currently queued up, feel free to ask one.")
+        elif user_has_question:
+            return await ctx.send(
+                f"There are currently {len(filtered_questions)} questions.\n"
+                f"Your question currently has a {Fraction(user_question_weight, total)} chance of being selected."
+            )
+        else:
+            return await ctx.send(
+                f"There are currently {len(filtered_questions)} questions.\n"
+                "You do not have a question submitted, but feel free to add one."
+            )
 
     @commands.guild_only()
     @commands.command()
