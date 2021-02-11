@@ -381,7 +381,17 @@ class MessageMetaTrack(commands.Cog):
                 embed.description = self.get_formatted_activity_for_member(member)
                 embeds.append(embed)
 
-        await ctx.list_menu(embeds, timeout=600, wait=True)
+        if not embeds:
+            return await ctx.send("No members with that few messages.")
+        elif len(embeds) == 1:
+            await ctx.send("There is one member with that few messages.")
+            await ctx.send(embed=embeds[0])
+        else:
+            await ctx.send(
+                f"There are {len(embeds)} members with that few messages, I'm opening a menu with them."
+            )
+            menu = await ctx.list_menu(embeds, timeout=600, wait=True)
+            await menu.message.delete()
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @mod()
@@ -407,7 +417,17 @@ class MessageMetaTrack(commands.Cog):
             return embed
 
         embeds = [embedder(m) for m in actual_role.members]
-        await ctx.list_menu(embeds, timeout=600, wait=True)
+        if not embeds:
+            return await ctx.send("No members with that few messages.")
+        elif len(embeds) == 1:
+            await ctx.send("There is one member with that few messages.")
+            await ctx.send(embed=embeds[0])
+        else:
+            await ctx.send(
+                f"There are {len(embeds)} members with that few messages, I'm opening a menu with them."
+            )
+            menu = await ctx.list_menu(embeds, timeout=600, wait=True)
+            await menu.message.delete()
 
     @less_than.error
     @activity_for_role.error
