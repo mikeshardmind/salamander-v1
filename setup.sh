@@ -4,7 +4,7 @@ mkdir -p contrib_data
 mkdir -p wheels
 sqlite3 salamander.db < schema.sql
 python3.8 -m pip install -U wheel setuptools pip
-python3.8 -m pip install -Ur requirements.txt --upgrade-strategy eager --use-feature=2020-resolver
+python3.8 -m pip install -Ur requirements.txt --upgrade-strategy eager
 
 if [ ! -f wheels/apsw-3.34.1.post1-cp38-cp38*.whl ]; then
   git clone https://github.com/rogerbinns/apsw/
