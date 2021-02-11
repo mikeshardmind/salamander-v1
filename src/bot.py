@@ -154,6 +154,7 @@ class SalamanderContext(commands.Context):
         *,
         timeout: float = 180,
         alt_destination: Optional[discord.abc.Messageable] = None,
+        wait: bool = False,
     ) -> menus.Menu:
         """
         Returns the started menu,
@@ -166,7 +167,7 @@ class SalamanderContext(commands.Context):
             clear_reactions_after=True,
             timeout=timeout,
         )
-        await menu.start(self, channel=alt_destination or self.channel)
+        await menu.start(self, channel=alt_destination or self.channel, wait=wait)
         return menu
 
     async def prompt(

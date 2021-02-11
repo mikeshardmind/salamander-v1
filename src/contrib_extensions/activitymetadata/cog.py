@@ -347,6 +347,7 @@ class MessageMetaTrack(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send_help()
 
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @as_group.command(name="<")
     async def less_than(self, ctx, number: int, period: TimedeltaConverter):
         """
@@ -357,6 +358,8 @@ class MessageMetaTrack(commands.Cog):
         cutoff = ctx.message.created_at - period.delta
 
         cursor = self.conn.cursor()
+
+        embeds = []
 
         for member in ctx.guild.members:
             if member.bot:
@@ -375,13 +378,12 @@ class MessageMetaTrack(commands.Cog):
 
             if num < number:
                 embed = embed_from_member(member)
-                msg = self.get_formatted_activity_for_member(member)
+                embed.description = self.get_formatted_activity_for_member(member)
+                embeds.append(embed)
 
-                await ctx.send(embed=embed)
-                await ctx.send_paged(msg)
-            else:
-                await asyncio.sleep(1)
+        await ctx.list_menu(embeds, timeout=600, wait=True)
 
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @mod()
     @commands.command("activityinrole")
     async def activity_for_role(self, ctx: SalamanderContext, role: str):
@@ -399,21 +401,24 @@ class MessageMetaTrack(commands.Cog):
 
         actual_role = roles[0]
 
-        for member in actual_role.members:
+        def embedder(m: discord.Member) -> discord.Embed:
+            embed = embed_from_member(m)
+            embed.description = self.get_formatted_activity_for_member(m)
+            return embed
 
-            embed = embed_from_member(member)
-            msg = self.get_formatted_activity_for_member(member)
+        embeds = [embedder(m) for m in actual_role.members]
+        await ctx.list_menu(embeds, timeout=600, wait=True)
 
-            await ctx.send(embed=embed)
-            await ctx.send_paged(msg)
-
+    @less_than.error
     @activity_for_role.error
-    async def ignore_extra_role_hanlder(self, ctx, exc):
+    async def activity_for_role_error_hanlder(self, ctx, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
                 "You've given me what appears to be more than 1 role. "
                 "If your role name has spaces in it, quote it."
             )
+        elif isinstance(exc, commands.MaxConcurrencyReached):
+            await ctx.send("A mod is using this currently already.")
 
     def get_formatted_activity_for_member(self, member: discord.Member) -> str:
 
