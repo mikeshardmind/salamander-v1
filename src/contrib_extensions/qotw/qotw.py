@@ -425,7 +425,9 @@ class QOTW(commands.Cog):
                     user_question_weight = weight
 
         if not filtered_questions:
-            return await ctx.send("There are no questions currently queued up, feel free to ask one.")
+            return await ctx.send(
+                "There are no questions currently queued up, feel free to ask one."
+            )
         elif user_has_question:
             return await ctx.send(
                 f"There are currently {len(filtered_questions)} questions.\n"
