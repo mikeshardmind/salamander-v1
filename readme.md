@@ -91,7 +91,7 @@ Many of these are build-time but not run-time dependencies, and if you intend to
 make build-essential libssl-dev zlib1g-dev libbz2-dev
 libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev
 xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
-libgdbm-dev uuid-dev python3-openssl git libhyperscan5 libhyperscan-dev
+libgdbm-dev uuid-dev python3-openssl git libhyperscan5 libhyperscan-dev sqlite3
 ```
 
 
