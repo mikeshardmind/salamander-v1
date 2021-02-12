@@ -242,10 +242,14 @@ class RoleManagement(commands.Cog):
 
         Example Usage:
 
+        ```
         [p]massrole user Sinbad --add RoleToGive "Role with spaces to give"
         --remove RoleToRemove "some other role to remove" Somethirdrole
+        ```
 
+        ```
         [p]massrole user LoudMouthedUser ProfaneUser --add muted
+        ```
 
         For role operations based on role membership, permissions had, or whether someone is a bot
         (or even just add to/remove from all) see `[p]massrole search` and `[p]massrole modify`
@@ -773,11 +777,13 @@ class RoleManagement(commands.Cog):
 
         Example usage:
 
+        ```
         [p]bulkrolebind
         \N{DIGIT ONE}\N{VARIATION SELECTOR-16}\N{COMBINING ENCLOSING KEYCAP}
         "Role One"
         \N{DIGIT TWO}\N{VARIATION SELECTOR-16}\N{COMBINING ENCLOSING KEYCAP}
         Role-two
+        ```
         """
 
         pairs = emoji_role_pairs.pairs
@@ -846,7 +852,7 @@ class RoleManagement(commands.Cog):
         Binds a role to a reaction on a message.
 
         The role is only given if the criteria for it are met.
-        Make sure you configure the other settings for a role in [p]roleset
+        Make sure you configure the other settings for a role using `[p]roleset`
         """
 
         if not await self.all_are_valid_roles(ctx, role, detailed=True):
