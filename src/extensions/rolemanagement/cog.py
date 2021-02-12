@@ -756,7 +756,6 @@ class RoleManagement(commands.Cog):
     @commands.bot_has_guild_permissions(manage_roles=True)
     @admin_or_perms(manage_guild=True, manage_roles=True)
     @commands.guild_only()
-    @admin_or_perms(manage_guild=True, manage_roles=True)
     @commands.command(name="bulkrolebind")
     async def bulk_role_bind_command(
         self,
@@ -777,7 +776,7 @@ class RoleManagement(commands.Cog):
         Example usage:
 
         ```
-        [p]bulkrolebind
+        [p]bulkrolebind channel-id message-id
         \N{DIGIT ONE}\N{VARIATION SELECTOR-16}\N{COMBINING ENCLOSING KEYCAP} "Role One"
         \N{DIGIT TWO}\N{VARIATION SELECTOR-16}\N{COMBINING ENCLOSING KEYCAP} Role-two
         ```
