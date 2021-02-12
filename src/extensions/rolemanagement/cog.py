@@ -243,8 +243,7 @@ class RoleManagement(commands.Cog):
         Example Usage:
 
         ```
-        [p]massrole user Sinbad --add RoleToGive "Role with spaces to give"
-        --remove RoleToRemove "some other role to remove" Somethirdrole
+        [p]massrole user Sinbad --add RoleToGive "Role with spaces to give" --remove RoleToRemove "some other role to remove" Somethirdrole
         ```
 
         ```
@@ -779,10 +778,8 @@ class RoleManagement(commands.Cog):
 
         ```
         [p]bulkrolebind
-        \N{DIGIT ONE}\N{VARIATION SELECTOR-16}\N{COMBINING ENCLOSING KEYCAP}
-        "Role One"
-        \N{DIGIT TWO}\N{VARIATION SELECTOR-16}\N{COMBINING ENCLOSING KEYCAP}
-        Role-two
+        \N{DIGIT ONE}\N{VARIATION SELECTOR-16}\N{COMBINING ENCLOSING KEYCAP} "Role One"
+        \N{DIGIT TWO}\N{VARIATION SELECTOR-16}\N{COMBINING ENCLOSING KEYCAP} Role-two
         ```
         """
 
