@@ -81,7 +81,7 @@ class EmojiRolePairConverter(NamedTuple):
     @classmethod
     async def convert(cls, ctx: SalamanderContext, argument: str):
 
-        chunks = shlex.split(argument)
+        chunks = [c.strip() for c in shlex.split(argument.strip())]
         if not chunks:
             raise BadArgument("Must provide at least one pair.")
         if len(chunks) % 2:
@@ -105,7 +105,6 @@ class EmojiRolePairConverter(NamedTuple):
             pairs_gen.close()
 
         return cls(pairs)
-
 
 class ComplexActionConverter(NamedTuple):
     """
