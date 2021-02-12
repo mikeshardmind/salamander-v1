@@ -564,8 +564,19 @@ class Mod(commands.Cog):
                 "If your role name has spaces in it, quote it."
             )
 
+    @commands.Cog.listener("on_member_update")
+    async def member_verification_hatch(
+        self, before: discord.Member, after: discord.Member
+    ):
+
+        if before.pending and not after.pending:
+            await self.mute_dodge_check(after)
+
     @commands.Cog.listener("on_member_join")
     async def mute_dodge_check(self, member: discord.Member):
+
+        if member.pending:
+            return
 
         cursor = self.bot._conn.cursor()
 

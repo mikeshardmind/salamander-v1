@@ -18,7 +18,6 @@ import asyncio
 import csv
 import io
 import logging
-from datetime import datetime, timedelta
 from typing import Dict, Iterator, List, Optional, Set, Union
 
 import discord
@@ -52,39 +51,6 @@ log = logging.getLogger("salamander.extensions.rolemanagement")
 class RoleManagement(commands.Cog):
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
-
-    @staticmethod
-    def verification_level_issue(member: discord.Member) -> bool:
-        """
-        Returns True if assigning a role to this user would
-        bypass verification level settings
-
-        prevents react roles from bypassing time limits.
-
-        It's exceptionally dumb that users can react while
-        restricted by verification level, but that's Discord.
-        They block reacting to blocked users, but interacting
-        with entire guilds by reaction before hand? A-OK. *eyerolls*
-
-        Can't check the email/2FA, blame discord for allowing people to react with above.
-        """
-        guild: discord.Guild = member.guild
-        now = datetime.utcnow()
-        level: int = guild.verification_level.value
-
-        if member.top_role.is_default():
-
-            if level >= 2 and member.created_at + timedelta(minutes=5) > now:  # medium
-                return True
-
-            if level >= 3:  # high
-                if (
-                    not member.joined_at
-                    or member.joined_at + timedelta(minutes=10) > now
-                ):
-                    return True
-
-        return False
 
     async def all_are_valid_roles(
         self, ctx, *roles: discord.Role, detailed: bool = False
@@ -586,8 +552,19 @@ class RoleManagement(commands.Cog):
 
         update_member_sticky(self.bot._conn, g.id, before.id, gained, lost)
 
+    @commands.Cog.listener("on_member_update")
+    async def member_verification_hatch(
+        self, before: discord.Member, after: discord.Member
+    ):
+
+        if before.pending and not after.pending:
+            await self.on_member_join(after)
+
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
+
+        if member.pending:
+            return
 
         guild = member.guild
         if not guild.me.guild_permissions.manage_roles:
@@ -622,9 +599,6 @@ class RoleManagement(commands.Cog):
         member = guild.get_member(payload.user_id)
 
         if member is None or member.bot:
-            return
-
-        if self.verification_level_issue(member):
             return
 
         if self.bot.member_is_considered_muted(member):
