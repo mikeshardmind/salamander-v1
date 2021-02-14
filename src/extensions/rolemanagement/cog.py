@@ -18,6 +18,7 @@ import asyncio
 import csv
 import io
 import logging
+import re
 from typing import Dict, Iterator, List, Optional, Set, Union
 
 import discord
@@ -46,6 +47,16 @@ from .db_abstractions import (
 )
 
 log = logging.getLogger("salamander.extensions.rolemanagement")
+
+
+EMOJI_REGEX: re.Pattern = re.compile(r"<(?:a?):(?:[a-zA-Z0-9_]{2,32}):([0-9]{18,22})>$")
+
+
+def normalize_emoji(s: str) -> str:
+    if m := EMOJI_REGEX.match(s):
+        return m.group(1)
+    else:
+        return strip_variation_selectors(s)
 
 
 class RoleManagement(commands.Cog):
@@ -796,20 +807,15 @@ class RoleManagement(commands.Cog):
         _emoji: Optional[Union[discord.Emoji, str]]
 
         for emoji, role in pairs.items():
-
+            eid = normalize_emoji(emoji)
             _emoji = discord.utils.find(lambda e: str(e) == emoji, self.bot.emojis)
-            if _emoji is None:
-                try:
-                    await ctx.message.add_reaction(
-                        add_variation_selectors_to_emojis(emoji)
-                    )
-                except discord.HTTPException:
-                    raise UserFeedbackError(custom_message=f"No such emoji {emoji}")
-                else:
-                    _emoji = emoji
-                    eid = strip_variation_selectors(emoji)
-            else:
-                eid = str(_emoji.id)
+
+            try:
+                await ctx.message.add_reaction(
+                    add_variation_selectors_to_emojis(emoji)
+                )
+            except discord.HTTPException:
+                raise UserFeedbackError(custom_message=f"No such emoji {emoji}")
 
             if not any(str(r) == emoji for r in message.reactions):
                 try:
@@ -859,23 +865,16 @@ class RoleManagement(commands.Cog):
         except discord.HTTPException:
             raise UserFeedbackError(custom_message="No such message")
 
-        _emoji: Optional[Union[discord.Emoji, str]]
+        eid = normalize_emoji(emoji)
 
-        _emoji = discord.utils.find(lambda e: str(e) == emoji, self.bot.emojis)
-        if _emoji is None:
-            try:
-                await ctx.message.add_reaction(emoji)
-            except discord.HTTPException:
-                raise UserFeedbackError(custom_message="No such emoji")
-            else:
-                _emoji = emoji
-                eid = strip_variation_selectors(emoji)
-        else:
-            eid = str(_emoji.id)
+        try:
+            await ctx.message.add_reaction(emoji)
+        except discord.HTTPException:
+            raise UserFeedbackError(custom_message="No such emoji")
 
         if not any(str(r) == emoji for r in message.reactions):
             try:
-                await message.add_reaction(_emoji)
+                await message.add_reaction(emoji)
             except discord.HTTPException:
                 raise UserFeedbackError(
                     custom_message="Hmm, that message couldn't be reacted to"
@@ -1042,7 +1041,7 @@ class RoleManagement(commands.Cog):
             return
 
         ReactionRoleRecord.remove_entry(
-            self.bot._conn, msgid, strip_variation_selectors(emoji)
+            self.bot._conn, msgid, normalize_emoji(emoji)
         )
         await ctx.send("Done.")
 
