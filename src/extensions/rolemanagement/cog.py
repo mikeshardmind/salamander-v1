@@ -966,8 +966,8 @@ class RoleManagement(commands.Cog):
         else:
 
             await ctx.send(
-                "This role is neither self assignable not self removable. "
-                "This rolebind will be essentiall useless without changing that. "
+                "This role is neither self assignable nor self removable. "
+                "This rolebind will be essentially useless without changing that. "
                 "Would you like me to make it self assignable? (Options are yes or no)"
             )
 
