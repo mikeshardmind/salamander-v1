@@ -588,7 +588,7 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
                 INSERT INTO member_settings (guild_id, user_id, is_admin)
                 VALUES (?,?,?)
                 ON CONFLICT (guild_id, user_id)
-                DO UPDATE SET is_admin=excluded.is_mod
+                DO UPDATE SET is_admin=excluded.is_admin
                 """,
                 tuple((guild_id, uid, val) for uid in user_ids),
             )
