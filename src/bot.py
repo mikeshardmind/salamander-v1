@@ -686,7 +686,9 @@ class EmbedHelp(commands.HelpCommand):
 
         for command in filtered:
             embed = add_field(
-                embed, self.get_command_signature(command), (command.short_doc or "...").replace("[p]", self.context.clean_prefix),
+                embed,
+                self.get_command_signature(command),
+                (command.short_doc or "...").replace("[p]", self.context.clean_prefix),
             )
 
         if embed.fields:  # needed in case the very last add field rolled it over
@@ -736,7 +738,9 @@ class EmbedHelp(commands.HelpCommand):
                 embed = add_field(
                     embed,
                     self.get_command_signature(command),
-                    (command.short_doc or "...").replace("[p]", self.context.clean_prefix),
+                    (command.short_doc or "...").replace(
+                        "[p]", self.context.clean_prefix
+                    ),
                 )
 
         if embed.fields:  # needed in case the very last add field rolled it over
@@ -764,7 +768,9 @@ class EmbedHelp(commands.HelpCommand):
                     colour=self.context.me.color,
                 )
                 if command.help:
-                    embed.description = command.help.replace("[p]", self.context.clean_prefix)
+                    embed.description = command.help.replace(
+                        "[p]", self.context.clean_prefix
+                    )
 
                 menu = menus.MenuPages(
                     source=PreFormattedListSource([embed]),

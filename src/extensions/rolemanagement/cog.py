@@ -811,9 +811,7 @@ class RoleManagement(commands.Cog):
             _emoji = discord.utils.find(lambda e: str(e) == emoji, self.bot.emojis)
 
             try:
-                await ctx.message.add_reaction(
-                    add_variation_selectors_to_emojis(emoji)
-                )
+                await ctx.message.add_reaction(add_variation_selectors_to_emojis(emoji))
             except discord.HTTPException:
                 raise UserFeedbackError(custom_message=f"No such emoji {emoji}")
 
@@ -1040,9 +1038,7 @@ class RoleManagement(commands.Cog):
         if not await self.all_are_valid_roles(ctx, role, detailed=True):
             return
 
-        ReactionRoleRecord.remove_entry(
-            self.bot._conn, msgid, normalize_emoji(emoji)
-        )
+        ReactionRoleRecord.remove_entry(self.bot._conn, msgid, normalize_emoji(emoji))
         await ctx.send("Done.")
 
     @commands.bot_has_guild_permissions(manage_roles=True)

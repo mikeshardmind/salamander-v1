@@ -89,6 +89,14 @@ class Meta(commands.Cog):
                 custom_message="You cannot configure more than 5 custom prefixes."
             )
 
+        if prefix.startswith("/"):
+            raise UserFeedbackError(
+                custom_message=(
+                    "Prefixes may not start with `/` "
+                    "to avoid conflicting with discord integrated /commands"
+                )
+            )
+
         for special_char_sequence in ("*", "`", "_", "~", "|", ">>>", "'", '"', "\\"):
             if special_char_sequence in prefix:
                 raise UserFeedbackError(

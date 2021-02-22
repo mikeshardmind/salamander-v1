@@ -106,6 +106,7 @@ class EmojiRolePairConverter(NamedTuple):
 
         return cls(pairs)
 
+
 class ComplexActionConverter(NamedTuple):
     """
     --has-all roles
