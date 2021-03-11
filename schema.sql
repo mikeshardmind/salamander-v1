@@ -75,10 +75,7 @@ CREATE TABLE IF NOT EXISTS member_settings (
 	PRIMARY KEY (user_id, guild_id)
 );
 
--- username, discrim, and nick at time of action are stored in the DB rather than payload.
--- This allows this specific information to be stripped from the db without the DB needing understanding of
--- the discord specific payload related to information about the mod action itself,
--- not the moderation target (for use in displays)
+
 CREATE TABLE IF NOT EXISTS mod_log (
 	mod_action TEXT NOT NULL,
 	mod_id INTEGER NOT NULL,
