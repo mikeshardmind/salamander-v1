@@ -47,6 +47,55 @@ CREATE TABLE IF NOT EXISTS guild_prefixes (
 	PRIMARY KEY (guild_id, prefix)
 );
 
+-- This can be merged into the above in a future version,
+-- we're doing this for the few current users of a beta to be able to give feedback
+-- without this next set of changes wrecking them entirely.
+-- adding constraints on the db side to prep the schema for architecture changes
+-- This is only to avoid consistency issues, frontend should still check each of these conditions
+-- individually to get a specific failure case to present to end users
+--  The set Markdown with specific meaning
+--  { "*", "`", "_", "~", "|", ">>>", "'", '"', "\" }
+-- The set of disallowed string prefixes for specific reasons:
+-- "/" slash commands
+-- Additionally, any prefix above 15 characters or which constains <...> will be rejected 
+BEGIN;
+CREATE TABLE IF NOT EXISTS guild_prefixes_constraint_migration (
+	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id),
+	prefix TEXT NOT NULL CHECK(
+		length(prefix) < 16
+		AND NOT prefix LIKE '%<%>%'
+		AND NOT prefix LIKE '/%' 
+		AND NOT prefix LIKE '%\*%' ESCAPE '\'
+		AND NOT prefix LIKE '%\%'
+		AND NOT prefix LIKE '%`%'
+		AND NOT prefix LIKE '%\_%' ESCAPE '\'
+		AND NOT prefix LIKE '%~%'
+		AND NOT prefix LIKE '%|%'
+		AND NOT prefix LIKE '%>>>%'
+		AND NOT prefix LIKE '%''%'
+		AND NOT prefix LIKE '%"%'
+	),
+	PRIMARY KEY (guild_id, prefix)
+);
+
+INSERT INTO guild_prefixes_constraint_migration 
+	SELECT * FROM guild_prefixes
+	WHERE 
+		NOT prefix LIKE '%<%>%'
+		AND NOT prefix LIKE '/%' 
+		AND NOT prefix LIKE '%\*%' ESCAPE '\'
+		AND NOT prefix LIKE '%\%'
+		AND NOT prefix LIKE '%`%'
+		AND NOT prefix LIKE '%\_%' ESCAPE '\'
+		AND NOT prefix LIKE '%~%'
+		AND NOT prefix LIKE '%|%'
+		AND NOT prefix LIKE '%>>>%'
+		AND NOT prefix LIKE '%''%'
+		AND NOT prefix LIKE '%"%';
+DROP TABLE guild_prefixes;
+ALTER TABLE guild_prefixes_constraint_migration RENAME TO guild_prefixes;
+COMMIT;
+
 
 -- anon: represents whether the user_id was intentionally set to an invalid snowflake to keep referential integrity
 -- This is not used outside of requests from discord to remove a deleted user.
