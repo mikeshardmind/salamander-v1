@@ -22,52 +22,6 @@ import discord
 
 from .utils import MainThreadSingletonMeta as Singleton
 
-##########################################################################################
-# Schema for modlog in db                                                                #
-##########################################################################################
-#   CREATE TABLE IF NOT EXISTS mod_log (                                                 #
-#   	mod_action TEXT NOT NULL,                                                        #
-#   	mod_id INTEGER NOT NULL,                                                         #
-#   	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id)                    #
-#   		ON UPDATE CASCADE ON DELETE CASCADE,                                         #
-#   	target_id INTEGER NOT NULL,                                                      #
-#   	created_at DEFAULT CURRENT_TIMESTAMP,                                            #
-#       reason TEXT,                                                                     #
-#   	username_at_action TEXT,                                                         #
-#   	discrim_at_action TEXT,                                                          #
-#   	nick_at_action TEXT,                                                             #
-#   	FOREIGN KEY (mod_id, guild_id) REFERENCES member_settings (user_id, guild_id)    #
-#   		ON UPDATE CASCADE ON DELETE RESTRICT,                                        #
-#   	FOREIGN KEY (target_id, guild_id) REFERENCES member_settings (user_id, guild_id) #
-#   		ON UPDATE CASCADE ON DELETE RESTRICT                                         #
-#   );                                                                                   #
-##########################################################################################
-#   Referenced Table: member_settings                                                    #
-##########################################################################################
-#   CREATE TABLE IF NOT EXISTS member_settings (                                         #
-#   	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id)                    #
-#   		ON UPDATE CASCADE ON DELETE CASCADE,                                         #
-#   	user_id INTEGER NOT NULL REFERENCES user_settings(user_id)                       #
-#   		ON UPDATE CASCADE ON DELETE CASCADE,                                         #
-#   	is_blacklisted BOOLEAN DEFAULT false,                                            #
-#   	is_mod BOOLEAN DEFAULT false,                                                    #
-#   	is_admin BOOLEAN DEFAULT false,                                                  #
-#   	PRIMARY KEY (user_id, guild_id)                                                  #
-#   );                                                                                   #
-##########################################################################################
-# Referenced Table: user_settings                                                        #
-##########################################################################################
-#   CREATE TABLE IF NOT EXISTS user_settings (                                           #
-#   	user_id INTEGER PRIMARY KEY NOT NULL,                                            #
-#   	is_bot_vip BOOLEAN DEFAULT false,                                                #
-#   	is_network_admin BOOLEAN DEFAULT false,                                          #
-#   	timezone TEXT DEFAULT NULL,                                                      #
-#   	timezone_is_public BOOLEAN DEFAULT false,                                        #
-#   	is_blacklisted BOOLEAN DEFAULT false,                                            #
-#   	anon DEFAULT false                                                               #
-#   );                                                                                   #
-##########################################################################################
-
 # Statements which get used for multiple functions here
 
 INSERT_USER_ID = """

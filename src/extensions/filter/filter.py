@@ -76,11 +76,15 @@ class Filter(commands.Cog):
     @commands.Cog.listener("on_message")
     async def on_message(self, msg: discord.Message):
 
-        if msg.content and (not msg.author.bot) and msg.guild:
-            if msg.channel.permissions_for(msg.guild.me).manage_messages:
-                if self.check_enabled_in_guild(msg.guild.id):
-                    if await self.bot.check_basilisk(msg.content):
-                        await msg.delete()
+        if (
+            msg.content
+            and (not msg.author.bot)
+            and msg.guild
+            and msg.channel.permissions_for(msg.guild.me).manage_messages
+            and self.check_enabled_in_guild(msg.guild.id)
+            and await self.bot.check_basilisk(msg.content)
+        ):
+            await msg.delete()
 
     @commands.check_any(commands.is_owner(), admin_or_perms(manage_guild=True))
     @commands.group(name="filterset")

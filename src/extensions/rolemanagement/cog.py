@@ -74,7 +74,7 @@ class RoleManagement(commands.Cog):
 
         # Author allowed
 
-        if not guild.owner == author:
+        if guild.owner != author:
             auth_top = author.top_role
             if not (
                 all(auth_top > role for role in roles)
@@ -93,16 +93,16 @@ class RoleManagement(commands.Cog):
                 raise UserFeedbackError(custom_message="I can't manage roles.")
             return False
 
-        if not guild.me == guild.owner:
+        if guild.me != guild.owner:
             bot_top = guild.me.top_role
-            if not all(bot_top > role for role in roles):
+            if any(bot_top <= role for role in roles):
                 if detailed:
                     raise UserFeedbackError(
                         custom_message="I can't give away roles which are not below my top role."
                     )
                 return False
 
-        # Sanity check on managed roles
+        # We can't assign managed roles
         if any(role.managed for role in roles):
             if detailed:
                 raise UserFeedbackError(
@@ -318,10 +318,7 @@ class RoleManagement(commands.Cog):
                 ret_str = ""
                 for i, m in enumerate(memberset, 1):
                     ret_str += m.mention
-                    if i % size == 0:
-                        ret_str += "\n"
-                    else:
-                        ret_str += " "
+                    ret_str += "\n" if i % size == 0 else " "
                 return ret_str
 
             description = chunker(members)
@@ -342,6 +339,7 @@ class RoleManagement(commands.Cog):
             members[i : (i + chunk_size)] for i in range(0, len(members), chunk_size)
         ]
 
+        fmt = "%Y-%m-%d"
         for part, chunk in enumerate(chunks, 1):
 
             csvf = io.StringIO()
@@ -352,7 +350,6 @@ class RoleManagement(commands.Cog):
                 "Joined Server",
                 "Joined Discord",
             ]
-            fmt = "%Y-%m-%d"
             writer = csv.DictWriter(csvf, fieldnames=fieldnames)
             writer.writeheader()
             for member in chunk:
@@ -815,7 +812,7 @@ class RoleManagement(commands.Cog):
             except discord.HTTPException:
                 raise UserFeedbackError(custom_message=f"No such emoji {emoji}")
 
-            if not any(str(r) == emoji for r in message.reactions):
+            if all(str(r) != emoji for r in message.reactions):
                 try:
                     await message.add_reaction(_emoji)
                 except discord.HTTPException:
@@ -1349,13 +1346,15 @@ class RoleManagement(commands.Cog):
         actual_role = roles[0]
         rid = actual_role.id
 
-        if RoleSettings.from_databse(self.bot._conn, rid, ctx.guild.id).self_removable:
-            await self.update_roles_atomically(who=ctx.author, remove=[actual_role])
-            await ctx.send("Done.")
-        else:
+        if not RoleSettings.from_databse(
+            self.bot._conn, rid, ctx.guild.id
+        ).self_removable:
             raise UserFeedbackError(
                 custom_message=f"You aren't allowed to remove `{actual_role}` from yourself {ctx.author.mention}!`"
             )
+
+        await self.update_roles_atomically(who=ctx.author, remove=[actual_role])
+        await ctx.send("Done.")
 
     def build_messages_for_react_role(
         self, guild: discord.Guild, use_embeds=True

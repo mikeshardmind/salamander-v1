@@ -42,7 +42,7 @@ SELECT mute_role FROM guild_settings WHERE guild_id = ?
 """
 
 
-def kick_sanity_check(
+def kick_soundness_check(
     bot_user: discord.Member, mod: discord.Member, target: discord.Member
 ):
 
@@ -65,7 +65,7 @@ def kick_sanity_check(
     if target.guild.owner == target:
         raise HierarchyException(custom_message="You can't kick the owner of a server.")
 
-    if not mod.guild.owner == mod:
+    if mod.guild.owner != mod:
         if target.top_role == mod.top_role:
             raise HierarchyException(
                 custom_message="You can't kick someone with the same top role as you."
@@ -76,7 +76,7 @@ def kick_sanity_check(
                 custom_message="You can't kick someone with a higher top role than you."
             )
 
-    if not bot_user.guild.owner == bot_user:
+    if bot_user.guild.owner != bot_user:
         if target.top_role == bot_user.top_role:
             raise HierarchyException(
                 custom_message="I can't kick someone with the same top role as me."
@@ -88,7 +88,7 @@ def kick_sanity_check(
             )
 
 
-def ban_sanity_check(
+def ban_soundness_check(
     bot_user: discord.Member, mod: discord.Member, target: discord.Member,
 ):
 
@@ -111,7 +111,7 @@ def ban_sanity_check(
     if target.guild.owner == target:
         raise HierarchyException(custom_message="You can't ban the owner of a server.")
 
-    if not mod.guild.owner == mod:
+    if mod.guild.owner != mod:
         if target.top_role == mod.top_role:
             raise HierarchyException(
                 custom_message="You can't ban someone with the same top role as you."
@@ -122,7 +122,7 @@ def ban_sanity_check(
                 custom_message="You can't ban someone with a higher top role than you."
             )
 
-    if not bot_user.guild.owner == bot_user:
+    if bot_user.guild.owner != bot_user:
         if target.top_role == bot_user.top_role:
             raise HierarchyException(
                 custom_message="I can't ban someone with the same top role as me."
@@ -134,7 +134,7 @@ def ban_sanity_check(
             )
 
 
-def mute_sanity_check(
+def mute_soundness_check(
     bot_user: discord.Member, mod: discord.Member, target: discord.Member,
 ):
 
@@ -152,7 +152,7 @@ def mute_sanity_check(
     if target.guild.owner == target:
         raise HierarchyException(custom_message="You can't mute the owner of a guild.")
 
-    if not mod.guild.owner == mod:
+    if mod.guild.owner != mod:
         if target.top_role == mod.top_role:
             raise HierarchyException(
                 custom_message="You can't mute someone with the same top role as you."
@@ -163,7 +163,7 @@ def mute_sanity_check(
                 custom_message="You can't mute someone with a higher top role than you."
             )
 
-    if not bot_user.guild.owner == bot_user:
+    if bot_user.guild.owner != bot_user:
         if target.top_role == bot_user.top_role:
             raise HierarchyException(
                 custom_message="I can't mute someone with the same top role as me."
@@ -194,7 +194,7 @@ class Mod(commands.Cog):
     ):
         """ Kick a member without removing messages """
 
-        kick_sanity_check(bot_user=ctx.me, mod=ctx.author, target=who)
+        kick_soundness_check(bot_user=ctx.me, mod=ctx.author, target=who)
         await who.kick(
             reacon=f"User kicked by command. (Authorizing mod: {ctx.author}({ctx.author.id})"
         )
@@ -215,7 +215,7 @@ class Mod(commands.Cog):
 
         if member := who.member:
 
-            ban_sanity_check(bot_user=ctx.me, mod=ctx.author, target=member)
+            ban_soundness_check(bot_user=ctx.me, mod=ctx.author, target=member)
             await member.ban(
                 reason=f"User banned by command. (Authorizing mod: {ctx.author}({ctx.author.id})",
                 delete_message_days=0,
@@ -265,7 +265,7 @@ class Mod(commands.Cog):
                     custom_message="The mute role for this server appears to have been deleted."
                 )
 
-            mute_sanity_check(bot_user=guild.me, mod=mod, target=target)
+            mute_soundness_check(bot_user=guild.me, mod=mod, target=target)
 
             removed_role_ids = []
             intended_state = [mute_role]

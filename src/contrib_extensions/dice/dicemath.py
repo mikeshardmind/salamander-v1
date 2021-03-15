@@ -212,10 +212,9 @@ class NumberofDice:
         if self._kd_expr:
             if self.keep_high < self.quant:
                 filtered = sorted(choices, reverse=True)[: self.keep_high]
-                return sum(filtered), choices
             else:
                 filtered = sorted(choices)[: self.keep_low]
-                return sum(filtered), choices
+            return sum(filtered), choices
         return sum(choices), choices
 
     def full_verbose_roll(self) -> Tuple[int, str]:
@@ -272,13 +271,14 @@ class Expression:
     def __repr__(self):
         if self._components:
             return "<Dice Expression '%s'>" % " ".join(
-                [ROPS.get(c, str(c)) for c in self._components]
+                ROPS.get(c, str(c)) for c in self._components
             )
+
         else:
             return "<Empty Dice Expression>"
 
     def __str__(self):
-        return " ".join([ROPS.get(c, str(c)) for c in self._components])
+        return " ".join(ROPS.get(c, str(c)) for c in self._components)
 
     def add_dice(self, die: Union[NumberofDice, int]):
         if len(self._components) % 2:

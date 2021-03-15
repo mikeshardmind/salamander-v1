@@ -32,7 +32,6 @@ PRAGMA journal_size_limit = 3072;
 -- Filter via basalisk's networkwide settings: 1
 CREATE TABLE IF NOT EXISTS guild_settings (
 	guild_id INTEGER PRIMARY KEY NOT NULL,
-	is_blacklisted BOOLEAN DEFAULT false,
 	mute_role INTEGER DEFAULT NULL,
 	timezone TEXT DEFAULT 'America/New_York',
 	mod_log_channel INTEGER DEFAULT NULL,
