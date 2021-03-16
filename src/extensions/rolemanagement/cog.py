@@ -178,6 +178,8 @@ class RoleManagement(commands.Cog):
             minimum_perms = discord.Permissions()
             minimum_perms.update(**{x: True for x in query["hasperm"]})
 
+        # FIXME: Turn this into an object formed from the query and have the converter return that.
+        # Object should have a filter method
         def mfilter(m: discord.Member) -> bool:
             if query["bots"] and not m.bot:
                 return False

@@ -1056,12 +1056,12 @@ class Salamander(commands.AutoShardedBot):
 
             for task in tasks:
                 try:
-                    if task.exception() is not None:
+                    if (exc := task.exception()) is not None:
                         loop.call_exception_handler(
                             {
                                 "message": "Unhandled exception in task during shutdown.",
                                 "exception": task.exception(),
-                                "task": task,
+                                "task": exc,
                             }
                         )
                 except (asyncio.InvalidStateError, asyncio.CancelledError):
