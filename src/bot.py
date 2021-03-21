@@ -251,13 +251,14 @@ class SalamanderContext(commands.Context):
     async def safe_send(self, content: str, **kwargs):
         if kwargs.pop("file", None):
             raise TypeError("Safe send is incompatible with sending a file.")
-        if len(content) > 2000:
-            fp = io.BytesIO(content.encode())
-            return await self.send(
-                file=discord.File(fp, filename="message.txt"), **kwargs
-            )
-        else:
+
+        if len(content) <= 2000:
             return await self.send(content, **kwargs)
+
+        fp = io.BytesIO(content.encode())
+        return await self.send(
+            file=discord.File(fp, filename="message.txt"), **kwargs
+        )
 
 
 _CT = TypeVar("_CT", bound=SalamanderContext)
@@ -312,9 +313,8 @@ class BehaviorFlags:
             "src.extensions.rolemanagement",
         )
 
-        if __debug__:
-            if jishaku is not None:
-                exts = exts + ("jishaku",)
+        if __debug__ and jishaku is not None:
+            exts = exts + ("jishaku",)
 
         return cls(no_serpent=True, initial_exts=exts)
 
