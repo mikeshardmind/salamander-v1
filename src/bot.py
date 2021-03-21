@@ -256,9 +256,7 @@ class SalamanderContext(commands.Context):
             return await self.send(content, **kwargs)
 
         fp = io.BytesIO(content.encode())
-        return await self.send(
-            file=discord.File(fp, filename="message.txt"), **kwargs
-        )
+        return await self.send(file=discord.File(fp, filename="message.txt"), **kwargs)
 
 
 _CT = TypeVar("_CT", bound=SalamanderContext)
