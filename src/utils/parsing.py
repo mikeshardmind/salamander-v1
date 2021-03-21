@@ -15,9 +15,10 @@
 
 from __future__ import annotations
 
+import math
 import re
 from datetime import timedelta
-from typing import Final, Optional
+from typing import Final, Optional, Union
 
 from dateutil.relativedelta import relativedelta
 
@@ -62,4 +63,27 @@ def parse_relativedelta(argument: str) -> Optional[relativedelta]:
         params = {k: int(v) for k, v in matches.groupdict().items() if v}
         if params:
             return relativedelta(None, None, **params)  # The Nones are to satisfy mypy
+    return None
+
+
+def parse_positive_number(
+    argument: str, upper_bound: Union[int, float] = 18446744073709551615
+) -> Optional[int]:
+    """
+    Parse a positive number with an inclusive upper bound
+    """
+    lexical_length = math.floor(math.log(upper_bound + 1, 10) + 1)
+
+    if m := re.match(r"([0-9]{1,%s})$" % lexical_length, argument):
+        if 0 < (val := int(m.group(1))) <= upper_bound:
+            return val
+
+    return None
+
+
+def parse_snowflake(argument: str) -> Optional[int]:
+
+    if m := re.match(r"([0-9]{7,20})$", argument):
+        return int(m.group(1))
+
     return None

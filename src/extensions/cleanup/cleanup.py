@@ -17,13 +17,15 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, timedelta
+from typing import Optional
 
 import discord
 from discord.ext import commands
 
-from ...bot import SalamanderContext
+from ...bot import SalamanderContext, UserFeedbackError
 from ...checks import admin, mod_or_perms
 from ...utils import Waterfall
+from ...utils.parsing import parse_positive_number, parse_snowflake
 
 log = logging.getLogger("salamander.extensions.cleanup")
 
@@ -124,13 +126,26 @@ class Cleanup(commands.Cog):
 
     @commands.bot_has_guild_permissions(manage_messages=True, read_message_history=True)
     @mod_or_perms(manage_messages=True)
-    @commands.command()
-    async def cleanup(self, ctx: SalamanderContext, number_or_strategy: int):
-        """ Cleanup some messages """  # TODO: strategy support
+    @commands.group()
+    async def cleanup(self, ctx: SalamanderContext):
+        """ Message cleanup tools """
 
-        if number_or_strategy > 100:
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help()
+
+    @cleanup.command(name="number")
+    async def cleanup_number(self, ctx: SalamanderContext, number):
+        """ Cleanup some number of messages within the last 10 days. """
+
+        limit = parse_positive_number(number, 1e7)
+        if not limit:
+            raise UserFeedbackError(
+                custom_message="You must provide a positive number of 1 million or less."
+            )
+
+        if limit > 100:
             confirm = await ctx.prompt(
-                f"Are you sure you want to delete up to {number_or_strategy} messages?",
+                f"Are you sure you want to delete up to {limit} messages?",
                 options=("yes", "no"),
                 timeout=30,
                 delete_on_return=True,
@@ -138,23 +153,139 @@ class Cleanup(commands.Cog):
             if confirm == "no":
                 return
 
+        await self._cleanup(ctx, limit=limit)
+
+    @cleanup.command(name="before")
+    async def cleanup_before(self, ctx: SalamanderContext, before):
+        """ Cleanup messages before a specific message ID within the last 10 days. """
+
+        snowflake = parse_snowflake(before)
+        if not snowflake:
+            raise UserFeedbackError(
+                custom_message="That did not look like a valid message ID."
+            )
+
+        before_obj = discord.Object(id=snowflake)
+        if before_obj.created_at < ctx.message.created_at - timedelta(days=10):
+            raise UserFeedbackError(
+                custom_message="This message is older than the 10 day cutoff."
+            )
+
+        confirm = await ctx.prompt(
+            "Are you sure you want to delete all the messages before this ID within the last 10 days?",
+            options=("yes", "no"),
+            timeout=30,
+            delete_on_return=True,
+        )
+
+        if confirm == "no":
+            return
+
+        await self._cleanup(ctx, before=before_obj)
+
+    @cleanup.command(name="after")
+    async def cleanup_after(self, ctx: SalamanderContext, after):
+        """ Cleanup all messages after a specific message ID within the last 10 days. """
+
+        snowflake = parse_snowflake(after)
+        if not snowflake:
+            raise UserFeedbackError(
+                custom_message="That did not look like a valid message ID."
+            )
+
+        after_obj = discord.Object(id=snowflake)
+        if after_obj.created_at < ctx.message.created_at - timedelta(days=10):
+            raise UserFeedbackError(
+                custom_message="This message is older than the 10 day cutoff."
+            )
+
+        confirm = await ctx.prompt(
+            "Are you sure you want to delete all the messages after the provided message ID?",
+            options=("yes", "no"),
+            timeout=30,
+            delete_on_return=True,
+        )
+
+        if confirm == "no":
+            return
+
+        await self._cleanup(ctx, after=after_obj)
+
+    @cleanup.command(name="between")
+    async def cleanup_between(self, ctx: SalamanderContext, first, second):
+        """
+        Cleanup messages between two provided message IDs within the last 10 days.
+        """
+
+        snowflake = parse_snowflake(first)
+        if not snowflake:
+            raise UserFeedbackError(
+                custom_message="The first provided ID did not look like a valid message ID."
+            )
+
+        first_obj = discord.Object(id=snowflake)
+        if first_obj.created_at < ctx.message.created_at - timedelta(days=10):
+            raise UserFeedbackError(
+                custom_message="The first provided message ID is older than the 10 day cutoff."
+            )
+
+        snowflake = parse_snowflake(first)
+        if not snowflake:
+            raise UserFeedbackError(
+                custom_message="The second provided ID did not look like a valid message ID."
+            )
+
+        second_obj = discord.Object(id=snowflake)
+        if second_obj.created_at < ctx.message.created_at - timedelta(days=10):
+            raise UserFeedbackError(
+                custom_message="The second provided message ID is older than the 10 day cutoff."
+            )
+
+        if second.obj.created_at < first_obj.created_at:
+            raise UserFeedbackError(
+                custom_message="The first message ID provided should be the earlier one. (Not continuing in case of accidental misuse.)"
+            )
+
+        confirm = await ctx.prompt(
+            "Are you sure you want to delete all the messages between the provided message IDs?",
+            options=("yes", "no"),
+            timeout=30,
+            delete_on_return=True,
+        )
+
+        if confirm == "no":
+            return
+
+        await self._cleanup(ctx, before=second_obj, after=first_obj)
+
+    async def _cleanup(
+        self,
+        ctx: SalamanderContext,
+        *,
+        limit: Optional[int] = None,
+        before: Optional[discord.Snowflake] = None,
+        after: Optional[discord.Snowflake] = None,
+    ):
+
         # I think waterfall use might make sense here? IDK --Liz
         # Maybe, but I get the feeling it won't feel responsive enough. -- Sinbad
 
         to_delete = [ctx.message]
 
-        cutoff = ctx.message.created_at - timedelta(days=10)
+        before = before or ctx.message
+        cutoff = (
+            after.created_at if after else ctx.message.created_at - timedelta(days=10)
+        )
 
-        # Strategy might go in params here
         # Don't use after param, changes API behavior. Can add oldest_first=False,
         # but this will increase the needed underlying api calls.
-        async for message in ctx.history(limit=number_or_strategy, before=ctx.message):
-            # Strategy support goes here
+        async for message in ctx.history(limit=limit, before=before):
 
             if message.created_at < cutoff:
                 break
 
-            to_delete.append(message)
+            if not message.pinned:
+                to_delete.append(message)
 
             if len(to_delete) == 100:
                 await ctx.channel.delete_messages(to_delete)
