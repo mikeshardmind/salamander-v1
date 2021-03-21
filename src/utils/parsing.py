@@ -17,10 +17,15 @@ from __future__ import annotations
 
 import math
 import re
+import sys
 from datetime import timedelta
 from typing import Final, Optional, Union
 
 from dateutil.relativedelta import relativedelta
+
+#: It sucks to have a mathematically sound solution fail on an implementation detail of floats
+_2EPSILON: Final[float] = sys.float_info.epsilon * 2
+
 
 TIMEDELTA_RE_STRING: Final[str] = r"\s?".join(
     [
@@ -72,7 +77,17 @@ def parse_positive_number(
     """
     Parse a positive number with an inclusive upper bound
     """
-    lexical_length = math.floor(math.log(upper_bound + 1, 10) + 1)
+    # Additionally, if it causes an issue by going over in any larger case,
+    # it still gets handled reasonably.
+    #
+    # python3.9 adds math.nextafter(float, towards) which would be more correct here,
+    # but ultimately not needed
+    # Trivial failure case of the pure solution below.
+    #
+    # prior: int(math.log(upper_bound, 10)) + 1
+    # failure case: upper_bound = 1000
+
+    lexical_length = int(math.log(upper_bound, 10) + _2EPSILON) + 1
 
     if m := re.match(r"([0-9]{1,%s})$" % lexical_length, argument):
         if 0 < (val := int(m.group(1))) <= upper_bound:
