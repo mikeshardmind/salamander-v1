@@ -38,6 +38,16 @@ CREATE TABLE IF NOT EXISTS guild_settings (
 	feature_flags INTEGER DEFAULT 0
 );
 
+-- annoyance filters
+-- These are behavioral things to be dealt with automatically.
+CREATE TABLE IF NOT EXISTS annoyance_filter_settings (
+	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id),
+	mods_immune BOOLEAN DEFAULT false,
+	admins_immune BOOLEAN DEFAULT false,
+	remove_apngs BOOLEAN DEFAULT false,
+	remove_excessive_html_elements BOOLEAN DEFAULT false
+);
+
 
 -- Primary key here is a cute way of getting both a 
 -- covering index and a unique constraint for (guild_id, prefix) as a two in one.
@@ -57,7 +67,7 @@ CREATE TABLE IF NOT EXISTS guild_prefixes (
 --  { "*", "`", "_", "~", "|", ">>>", "'", '"', "\" }
 -- The set of disallowed string prefixes for specific reasons:
 -- "/" slash commands
--- Additionally, any prefix above 15 characters or which constains <...> will be rejected 
+-- Additionally, any prefix above 15 characters or which constains <...> will be rejected
 BEGIN;
 CREATE TABLE IF NOT EXISTS guild_prefixes_constraint_migration (
 	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id),
