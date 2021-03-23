@@ -61,12 +61,14 @@ async def search_filter(
         members.intersection_update(any_set)
         await asyncio.sleep(0)
 
-    filter_obj = _non_set_filter(query)
+    if filter_obj := _non_set_filter(query):
 
-    return {m async for m in _member_yielder(members) if filter_obj(m)}
+        return {m async for m in _member_yielder(members) if filter_obj(m)}
+
+    return members
 
 
-def _non_set_filter(query: dict) -> Callable[[discord.Member], bool]:
+def _non_set_filter(query: dict) -> Optional[Callable[[discord.Member], bool]]:
     """
     This could be unironically imporved by use of exec
     to create a more optimal function.
@@ -77,6 +79,8 @@ def _non_set_filter(query: dict) -> Callable[[discord.Member], bool]:
 
     As it stands, we collect the conditions as a
     list of lambdas then check that all apply, which is better than it previously was.
+
+    Returns None if there are no applicable conditions in the query.
     """
 
     minimum_perms: Optional[discord.Permissions] = None
@@ -123,6 +127,9 @@ def _non_set_filter(query: dict) -> Callable[[discord.Member], bool]:
 
     if below_role := query["below"]:
         conditions.append(lambda m: m.top_role < below_role)
+
+    if not conditions:
+        return None
 
     def actual_filter(m: discord.Member) -> bool:
 
