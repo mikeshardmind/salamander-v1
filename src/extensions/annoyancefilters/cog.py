@@ -118,7 +118,7 @@ class AnnoyanceFilters(commands.Cog):
 
         emoji_count = len(EMOJI_REGEX.findall(content))
         content_length = len(content)
-        escaped_length = discord.utils.escape_markdown(content, as_needed=True)
+        escaped_length = len(discord.utils.escape_markdown(content, as_needed=True))
         num_nodes = emoji_count + escaped_length - content_length
         return num_nodes >= 200
 
