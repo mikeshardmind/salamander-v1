@@ -19,7 +19,7 @@ import csv
 import io
 import logging
 import re
-from typing import Dict, Iterator, List, Optional, Set, Union
+from typing import Dict, Iterator, List, Optional, Union
 
 import discord
 from discord.ext import commands
@@ -45,6 +45,7 @@ from .db_abstractions import (
     get_member_sticky,
     update_member_sticky,
 )
+from .member_search import search_filter as member_search_filter
 
 log = logging.getLogger("salamander.extensions.rolemanagement")
 
@@ -148,96 +149,6 @@ class RoleManagement(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send_help()
 
-    def search_filter(self, members: set, query: dict) -> set:
-        """
-        Reusable
-        """
-
-        if query["everyone"]:
-            return members
-
-        all_set: Set[discord.Member] = set()
-        if query["all"]:
-            first, *rest = query["all"]
-            all_set = set(first.members)
-            for other_role in rest:
-                all_set &= set(other_role.members)
-
-        none_set: Set[discord.Member] = set()
-        if query["none"]:
-            for role in query["none"]:
-                none_set.update(role.members)
-
-        any_set: Set[discord.Member] = set()
-        if query["any"]:
-            for role in query["any"]:
-                any_set.update(role.members)
-
-        minimum_perms: Optional[discord.Permissions] = None
-        if query["hasperm"]:
-            minimum_perms = discord.Permissions()
-            minimum_perms.update(**{x: True for x in query["hasperm"]})
-
-        # FIXME: Turn this into an object formed from the query and have the converter return that.
-        # Object should have a filter method
-        def mfilter(m: discord.Member) -> bool:
-            if query["bots"] and not m.bot:
-                return False
-
-            if query["humans"] and m.bot:
-                return False
-
-            if query["any"] and m not in any_set:
-                return False
-
-            if query["all"] and m not in all_set:
-                return False
-
-            if query["none"] and m in none_set:
-                return False
-
-            if query["hasperm"] and not m.guild_permissions.is_superset(minimum_perms):
-                return False
-
-            if query["anyperm"] and not any(
-                bool(value and perm in query["anyperm"])
-                for perm, value in iter(m.guild_permissions)
-            ):
-                return False
-
-            if query["notperm"] and any(
-                bool(value and perm in query["notperm"])
-                for perm, value in iter(m.guild_permissions)
-            ):
-                return False
-
-            if query["noroles"] and len(m.roles) != 1:
-                return False
-
-            # 0 is a valid option for these, everyone role not counted, ._roles doesnt include everyone
-            if query["quantity"] is not None and len(m._roles) != query["quantity"]:
-                return False
-
-            if query["lt"] is not None and len(m._roles) >= query["lt"]:
-                return False
-
-            if query["gt"] is not None and len(m._roles) <= query["gt"]:
-                return False
-
-            top_role = m.top_role
-
-            if query["above"] and top_role <= query["above"]:
-                return False
-
-            if query["below"] and top_role >= query["below"]:
-                return False
-
-            return True
-
-        members = {m for m in members if mfilter(m)}
-
-        return members
-
     @admin_or_perms(manage_roles=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
     @mrole.command(name="user")
@@ -312,7 +223,7 @@ class RoleManagement(commands.Cog):
 
         members = set(ctx.guild.members)
         query = _query.parsed
-        members = self.search_filter(members, query)
+        members = await member_search_filter(members, query)
 
         if len(members) < 50 and not query["csv"]:
 
@@ -420,7 +331,7 @@ class RoleManagement(commands.Cog):
             return
 
         members = set(ctx.guild.members)
-        members = self.search_filter(members, query)
+        members = await member_search_filter(members, query)
 
         if len(members) > 100:
             await ctx.send(
