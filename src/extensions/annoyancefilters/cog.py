@@ -27,7 +27,7 @@ from ...checks import admin_or_perms
 # left in it's own file for peace of source code
 from .emoji_constants import DISCORD_EMOJIS
 
-EMOJI_REGEX = re.compile("|".join(DISCORD_EMOJIS))
+EMOJI_REGEX = re.compile("|".join(re.escape(s) for s in DISCORD_EMOJIS))
 
 # Discord doesn't do anything clever and check attachment mime type,
 # renaming a .png to .nothing will result in it uploaded without an attempt at render.
@@ -118,8 +118,8 @@ class AnnoyanceFilters(commands.Cog):
 
         emoji_count = len(EMOJI_REGEX.findall(content))
         content_length = len(content)
-        escaped_length = len(discord.utils.escape_markdown(content, as_needed=True))
-        num_nodes = emoji_count + escaped_length - content_length
+        escaped_length = len(discord.utils.escape_markdown(content))
+        num_nodes = emoji_count + (escaped_length - content_length) / 2
         return num_nodes >= 200
 
     async def check_attachments_for_apngs(
@@ -167,14 +167,14 @@ class AnnoyanceFilters(commands.Cog):
 
         if settings.remove_excessive_html_elements:
             if message.content and self.check_excessive_elements(message.content):
-                await message.delete(reason="Annoyance filter (too many elements)")
+                await message.delete()
                 return
 
         if settings.remove_apngs:
             if message.attachments and await self.check_attachments_for_apngs(
                 *message.attachments
             ):
-                await message.delete(reason="Annoyance filter (had apng attachment)")
+                await message.delete()
                 return
 
     @commands.Cog.listener()
@@ -201,9 +201,7 @@ class AnnoyanceFilters(commands.Cog):
                 member_id = raw_payload.data.get("member", {}).get("id", None)
                 if not member_id:
                     await self.bot.http.delete_message(
-                        channel.id,
-                        raw_payload.message_id,
-                        reason="Annoyance filter (too many elements) on edit.",
+                        channel.id, raw_payload.message_id
                     )
 
                 if not (
@@ -217,9 +215,7 @@ class AnnoyanceFilters(commands.Cog):
                     )
                 ):
                     await self.bot.http.delete_message(
-                        channel.id,
-                        raw_payload.message_id,
-                        reason="Annoyance filter (too many elements) on edit.",
+                        channel.id, raw_payload.message_id
                     )
 
     @admin_or_perms(manage_messages=True, manage_guild=True)
@@ -247,14 +243,14 @@ class AnnoyanceFilters(commands.Cog):
     async def disable(self, ctx: SalamanderContext):
         """ Disable annoyance filtering for this server. """
 
-        self.set_guild_settings(ctx.guild_id, GuildSettings())
+        self.set_guild_settings(ctx.guild.id, GuildSettings())
         await ctx.send("No longer filtering for annoyances.")
 
     @top_level_group.command(name="view")
     async def view_settings(self, ctx: SalamanderContext):
         """ Get info about the current settings. """
 
-        settings = self.get_guild_settings(ctx.guild_id)
+        settings = self.get_guild_settings(ctx.guild.id)
 
         if not (settings.remove_apngs or settings.remove_excessive_html_elements):
             await ctx.send(
