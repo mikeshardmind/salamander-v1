@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Union
 
 import discord
@@ -105,6 +106,12 @@ class Meta(commands.Cog):
         if prefix.startswith((f"<@{ctx.me.id}>", f"<@!{ctx.me.id}>")):
             raise UserFeedbackError(
                 custom_message="You don't need to configure mentions as a prefix."
+            )
+
+        if re.search(r"<.*>", prefix):
+            raise UserFeedbackError(
+                custom_message="Prefixes should not contain both < and > "
+                " to avoid conflicts with how Discord represents mentions internally."
             )
 
         if len(prefix) > 15:

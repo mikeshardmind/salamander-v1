@@ -90,8 +90,9 @@ CREATE TABLE IF NOT EXISTS guild_prefixes_constraint_migration (
 
 INSERT INTO guild_prefixes_constraint_migration 
 	SELECT * FROM guild_prefixes
-	WHERE 
-		NOT prefix LIKE '%<%>%'
+	WHERE
+		length(prefix) < 16
+		AND NOT prefix LIKE '%<%>%'
 		AND NOT prefix LIKE '/%' 
 		AND NOT prefix LIKE '%\*%' ESCAPE '\'
 		AND NOT prefix LIKE '%\%'

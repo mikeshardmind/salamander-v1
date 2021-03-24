@@ -94,6 +94,8 @@ xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
 libgdbm-dev uuid-dev python3-openssl git libhyperscan5 libhyperscan-dev sqlite3
 ```
 
+Note: minimum sqlite version of 3.35.x (recommended 3.35.2 for included fixes), this may require installing sqlite from source
+
 
 2. Install (or preferably, build with optimizations enabled) python3.8
 

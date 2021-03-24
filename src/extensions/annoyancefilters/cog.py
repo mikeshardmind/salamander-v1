@@ -74,7 +74,7 @@ class AnnoyanceFilters(commands.Cog):
         res = cursor.execute(
             """
             SELECT mods_immune, admins_immune, remove_apngs, remove_excessive_html_elements
-            FROM annoyance_filters
+            FROM annoyance_filter_settings
             WHERE guild_id = ?
             """,
             (guild_id,),
@@ -96,7 +96,7 @@ class AnnoyanceFilters(commands.Cog):
             """
             INSERT INTO guild_settings (guild_id) VALUES (:guild_id)
                 ON CONFLICT (guild_id) DO NOTHING;
-            INSERT INTO annoyance_filters (
+            INSERT INTO annoyance_filter_settings (
                 guild_id, mods_immune, admins_immune, remove_apngs, remove_excessive_html_elements
             ) VALUES (:guild_id, :mods_immune, :admins_immune, :remove_apngs, :remove_excessive_html_elements);
             """,
