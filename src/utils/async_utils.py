@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from typing import (
     Awaitable,
@@ -33,16 +34,22 @@ _T = TypeVar("_T")
 __all__ = ("Waterfall",)
 
 
+log = logging.getLogger("salamander.utils.async_utils")
+
+
 class Waterfall(Generic[_T]):
     def __init__(
         self,
         max_wait: float,
         max_quantity: int,
         async_callback: Callable[[Sequence[_T]], Awaitable],
+        *,
+        max_wait_finalize: int = 3,
     ):
         asyncio.get_running_loop()
         self.queue = asyncio.Queue()  # type: asyncio.Queue[_T]
         self.max_wait: float = max_wait
+        self.max_wait_finalize: int = 3
         self.max_quantity: int = max_quantity
         self.callback: Callable[[Sequence[_T]], Awaitable] = async_callback
         self.task: Optional[asyncio.Task] = None
@@ -78,38 +85,57 @@ class Waterfall(Generic[_T]):
         self.queue.put_nowait(item)
 
     async def _loop(self):
-        while self._alive:
-            queue_items: Sequence[_T] = []
-            iter_start = time.monotonic()
+        try:
 
-            while (this_max_wait := (time.monotonic() - iter_start)) < self.max_wait:
-                try:
-                    n = await asyncio.wait_for(self.queue.get(), this_max_wait)
-                except asyncio.TimeoutError:
-                    continue
-                else:
-                    queue_items.append(n)
-                if len(queue_items) >= self.max_quantity:
-                    break
+            while self._alive:
+                queue_items: Sequence[_T] = []
+                iter_start = time.monotonic()
 
-                if not queue_items:
-                    continue
+                while (
+                    this_max_wait := (time.monotonic() - iter_start)
+                ) < self.max_wait:
+                    try:
+                        n = await asyncio.wait_for(self.queue.get(), this_max_wait)
+                    except asyncio.TimeoutError:
+                        continue
+                    else:
+                        queue_items.append(n)
+                    if len(queue_items) >= self.max_quantity:
+                        break
 
-            num_items = len(queue_items)
+                    if not queue_items:
+                        continue
 
-            asyncio.create_task(self.callback(queue_items))
+                num_items = len(queue_items)
 
-            for _ in range(num_items):
-                self.queue.task_done()
+                asyncio.create_task(self.callback(queue_items))
 
-        # Don't stop entirely until we clear the remainder of the queue
+                for _ in range(num_items):
+                    self.queue.task_done()
 
+        except asyncio.CancelledError:
+            log.debug("Recieved waterfall cancellation.")
+        finally:
+            f = asyncio.create_task(
+                self._finalize(), name="salamander.waterfall.finalizer"
+            )
+            try:
+                await asyncio.wait_for(f, timeout=self.max_wait_finalize)
+            except asyncio.TimeoutError:
+                log.info("Max wait during waterfall finalization occurred.")
+
+    async def _finalize(self):
+
+        # WARNING: Do not allow an async context switch before the gather below
+
+        self._alive = False
         remaining_items: Sequence[_T] = []
 
         while not self.queue.empty():
             try:
                 ev = self.queue.get_nowait()
             except asyncio.QueueEmpty:
+                # we should never hit this, asyncio queues know their size reliably when used appropriately.
                 break
 
             remaining_items.append(ev)
@@ -125,10 +151,21 @@ class Waterfall(Generic[_T]):
             remaining_items[p : p + self.max_quantity]
             for p in range(0, num_remaining, self.max_quantity)
         ):
-            fut = asyncio.create_task(self.callback(chunk))
+            fut = asyncio.create_task(
+                self.callback(chunk), name="salamander.waterfall.finalizing_task"
+            )
             pending_futures.append(fut)
 
-        await asyncio.gather(*pending_futures)
+        gathered = asyncio.create_task(
+            asyncio.gather(*pending_futures),
+            name="salamander.waterfall.finalizing_task",
+        )
+
+        try:
+            await asyncio.wait_for(gathered, timeout=self.max_wait_finalize)
+        except asyncio.TimeoutError:
+            for task in pending_futures:
+                task.cancel()
 
         for _ in range(num_remaining):
             self.queue.task_done()

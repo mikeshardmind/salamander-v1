@@ -17,13 +17,26 @@ from __future__ import annotations
 
 import asyncio
 import io
+import linecache
 import logging
 import re
 import signal
 import sys
+import traceback
 from logging.handlers import RotatingFileHandler
 from types import TracebackType
-from typing import Any, Callable, Final, List, Optional, Sequence, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Final,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+)
 from uuid import uuid4
 
 try:
@@ -57,6 +70,9 @@ __all__ = ["setup_logging", "Salamander", "SalamanderContext"]
 @only_once
 def setup_logging():
     log = logging.getLogger("salamander")
+    log.setLevel(logging.INFO)
+    if __debug__:
+        log.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(sys.stdout)
     rotating_file_handler = RotatingFileHandler(
         "salamander.log", maxBytes=10000000, backupCount=5
@@ -1041,15 +1057,84 @@ class Salamander(commands.AutoShardedBot):
         finally:
             fut.remove_done_callback(stop_when_done)
             # allow outstanding non-discord tasks a brief moment to clean themselves up
-            loop.run_until_complete(asyncio.sleep(2))
+            loop.run_until_complete(asyncio.sleep(0.05))
 
-            tasks = {t for t in asyncio.all_tasks(loop) if not t.done()}
+            tasks: Set[asyncio.Task] = {
+                t for t in asyncio.all_tasks(loop) if not t.done()
+            }
             for t in tasks:
-                t.cancel()
+                if not t.get_name().startswith("salamander.waterfall"):
+                    # Waterfall has a few named tasks that should be allowed to clean up.
+                    # If these tasks are already in progress because the waterfall was closing before we
+                    # reached cancellation here, we should (try to) allow them to finish.
+                    t.cancel()
 
-            loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
-            # impl detail of cancelation...
-            loop.run_until_complete(asyncio.sleep(0.01))
+            # as an implementation detail, any canceled tasks don't actually cancel until the event loop cycles to them
+            # asyncio.sleep(0) causes an async context switch (good)
+            # but is also considered complete at the same time.
+            loop.run_until_complete(asyncio.sleep(0))
+
+            # At this point, anything that wasn't excluded from cancellation should be properly cancelled.
+            # While we want to allow pending tasks the time they need to finish, there's a practical upper limit on this.
+
+            async def limited_finalization():
+                done, pending = await asyncio.wait(tasks, timeout=3)
+
+                if not pending:
+                    log.debug("Clean shutdown accomplished.")
+                    return
+
+                # done, pending should both be sets of tasks here,
+                # asyncio.wait uses ensure_future for wrapping which returns futures unchanged.
+                # tasks are instances of futures.
+                # all below task method use should be safe.
+
+                if log.getEffectiveLevel() > logging.DEBUG:
+                    # If we're running in production,
+                    # We really just want to log indicator of issue and
+                    # issue location and continue as graceful a shutdown as possible.
+                    for task in pending:
+                        name = task.get_name()
+                        coro = task.get_coro()
+                        log.warning(
+                            "Task %s wrapping coro %r did not exit properly", name, coro
+                        )
+                else:
+
+                    for task in pending:
+                        name = task.get_name()
+                        coro = task.get_coro()
+
+                        extracted_list = []
+
+                        checked = set()
+
+                        for f in task.get_stack():
+                            lineno = f.f_lineno
+                            co = f.f_code
+                            filename = co.co_filename
+                            name = co.co_name
+                            if filename not in checked:
+                                checked.add(filename)
+                                linecache.checkcache(filename)
+                            line = linecache.getline(filename, lineno, f.f_globals)
+                            extracted_list.append((filename, lineno, name, line))
+
+                        log.warning(
+                            "Task %s wrapping coro %r did not exit properly", name, coro
+                        )
+                        if extracted_list:
+                            stack = traceback.StackSummary.from_list(
+                                extracted_list
+                            ).format()
+                            log.debug(
+                                "Task %r wrapping coro %r stack info:\n%s",
+                                name,
+                                coro,
+                                stack,
+                            )
+
+            loop.run_until_complete(limited_finalization())
             loop.run_until_complete(loop.shutdown_asyncgens())
 
             for task in tasks:

@@ -144,8 +144,8 @@ class MessageMetaTrack(commands.Cog):
             )
 
     def cog_unload(self):
-        asyncio.create_task(self._waterfall.stop(wait=True))
-        asyncio.create_task(self._deletions.stop(wait=True))
+        asyncio.create_task(self._waterfall.stop())
+        asyncio.create_task(self._deletions.stop())
 
     @commands.Cog.listener("salamander_data_deletion_guild")
     async def guild_data_drop(self, guild_id: int):
