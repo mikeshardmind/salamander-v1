@@ -182,9 +182,222 @@ class Mod(commands.Cog):
         self.bot: Salamander = bot
         self._mute_locks: Dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
         self._bgloop = asyncio.create_task(self.background_loop())
+        self.antispam: Dict[int, commands.cooldowns.CooldownMapping] = {}
 
     def cog_unload(self):
         self._bgloop.cancel()
+
+    @commands.guild_only()
+    @commands.group()
+    async def antimentionspam(self, ctx: SalamanderContext):
+        """
+        Configuration settings for AntiMentionSpam
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help()
+
+    @admin_or_perms(manage_guild=True)
+    @antimentionspam.command(name="max")
+    async def set_max_mentions(self, ctx: SalamanderContext, number: int):
+        """
+        Sets the maximum number of mentions allowed in a message.
+        A setting of 0 disables this check.
+        """
+        cursor = self.bot._conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO guild_settings(guild_id) VALUES (:guild_id)
+            ON CONFLICT (guild_id) DO NOTHING;
+            INSERT INTO antimentionspam_settings (guild_id, max_mentions)
+            VALUES (:guild_id, :number)
+            ON CONFLICT (guild_id)
+            DO UPDATE SET
+                max_mentions=excluded.max_mentions;
+            """,
+            {"guild_id": ctx.guild.id, "number": number},
+        )
+
+        message = (
+            f"Max mentions set to {number}"
+            if number > 0
+            else "Mention filtering has been disabled"
+        )
+        await ctx.send(message)
+
+    @admin_or_perms(manage_guild=True)
+    @antimentionspam.command(name="maxinterval")
+    async def set_max_interval_mentions(
+        self, ctx: SalamanderContext, number: int, seconds: int
+    ):
+        """
+        Sets the maximum number of mentions allowed in a time period.
+        Setting either to 0 will disable this check.
+        """
+        if number == 0 or seconds == 0:
+            number = seconds = 0
+
+        cursor = self.bot._conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO guild_settings(guild_id) VALUES (:guild_id)
+            ON CONFLICT (guild_id) DO NOTHING;
+            INSERT INTO antimentionspam_settings
+                (guild_id, max_mentions_interval, interval_length)
+            VALUES (:guild_id, :number, :seconds)
+            ON CONFLICT (guild_id)
+            DO UPDATE SET
+                max_mentions_interval=excluded.max_mentions_interval,
+                interval_length=excluded.interval_length;
+            """,
+            {"guild_id": ctx.guild.id, "number": number, "seconds": seconds},
+        )
+
+        message = (
+            f"Max mentions set to {number} per {seconds}"
+            if number > 0 or seconds > 0
+            else "Mention interval filtering has been disabled"
+        )
+        self.antispam[ctx.guild.id] = commands.CooldownMapping.from_cooldown(
+            number, seconds, commands.BucketType.member
+        )
+        await ctx.send(message)
+
+    @admin_or_perms(manage_guild=True)
+    @antimentionspam.command(name="autobantoggle")
+    async def autobantoggle(self, ctx: SalamanderContext, enabled: bool = None):
+        """
+        Toggle automatic ban for spam (default off)
+        """
+        cursor = self.bot._conn.cursor()
+
+        if enabled is None:
+            (enabled,) = cursor.execute(
+                """
+                INSERT INTO guild_settings(guild_id) VALUES (:guild_id)
+                ON CONFLICT (guild_id) DO NOTHING;
+                INSERT INTO antimentionspam_settings(guild_id) VALUES (:guild_id)
+                ON CONFLICT (guild_id) DO NOTHING;
+                UPDATE antimentionspam_settings
+                SET ban=NOT ban
+                    WHERE guild_id=:guild_id
+                RETURNING ban;
+                """,
+                {"guild_id": ctx.guild.id},
+            ).fetchone()
+        else:
+            cursor.execute(
+                """
+                INSERT INTO guild_settings(guild_id) VALUES (:guild_id)
+                ON CONFLICT (guild_id) DO NOTHING;
+                INSERT INTO antimentionspam_settings(guild_id, ban)
+                    VALUES (:guild_id, :ban)
+                ON CONFLICT (guild_id)
+                DO UPDATE SET ban=excluded.ban;
+                """,
+                {"guild_id": ctx.guild.id, "ban": enabled},
+            )
+
+        await ctx.send(f"Autoban mention spammers: {enabled}")
+
+    @admin_or_perms(manage_guild=True)
+    @antimentionspam.command(name="warnmsg")
+    async def warnmessage(self, ctx: SalamanderContext, *, msg: str):
+        """
+        Sets the warn message. Not providing one turns it off.
+        """
+        cursor = self.bot._conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO guild_settings(guild_id) VALUES (:guild_id)
+            ON CONFLICT (guild_id) DO NOTHING;
+            INSERT INTO antimentionspam_settings(guild_id, warn_message)
+                VALUES (:guild_id, :msg)
+            ON CONFLICT (guild_id)
+            DO UPDATE SET warn_message=excluded.warn_message;
+            """,
+            {"guild_id": ctx.guild.id, "msg": msg},
+        )
+
+        await ctx.send("Warn message set." if msg else "Warn message disabled.")
+
+    @admin_or_perms(manage_guild=True)
+    @antimentionspam.command(name="singlebantoggle")
+    async def singlebantog(self, ctx: SalamanderContext, enabled: bool = None):
+        """
+        Sets if single message limits allow a ban
+        Default: False (interval threshold exceeding is required)
+        """
+        cursor = self.bot._conn.cursor()
+
+        if enabled is None:
+            (enabled,) = cursor.execute(
+                """
+                INSERT INTO guild_settings(guild_id) VALUES (:guild_id)
+                ON CONFLICT (guild_id) DO NOTHING;
+                INSERT INTO antimentionspam_settings(guild_id) VALUES (:guild_id)
+                ON CONFLICT (guild_id) DO NOTHING;
+                UPDATE antimentionspam_settings
+                SET ban_single=NOT ban_single
+                    WHERE guild_id=:guild_id
+                RETURNING ban_single;
+                """,
+                {"guild_id": ctx.guild.id},
+            ).fetchone()
+        else:
+            cursor.execute(
+                """
+                INSERT INTO guild_settings(guild_id) VALUES (:guild_id)
+                ON CONFLICT (guild_id) DO NOTHING;
+                INSERT INTO antimentionspam_settings(guild_id, ban_single)
+                    VALUES (:guild_id, :ban)
+                ON CONFLICT (guild_id)
+                DO UPDATE SET ban_single=excluded.ban_single;
+                """,
+                {"guild_id": ctx.guild.id, "ban": enabled},
+            )
+
+        await ctx.send(f"Ban from single message settings: {enabled}")
+
+    @admin_or_perms(manage_guild=True)
+    @antimentionspam.command(name="mutetoggle")
+    async def mute_toggle(self, ctx: SalamanderContext, enabled: bool = None):
+        """
+        Sets if a mute should be applied on exceeding limits set.
+        """
+
+        cursor = self.bot._conn.cursor()
+
+        if enabled is None:
+            (enabled,) = cursor.execute(
+                """
+                INSERT INTO guild_settings(guild_id) VALUES (:guild_id)
+                ON CONFLICT (guild_id) DO NOTHING;
+                INSERT INTO antimentionspam_settings(guild_id) VALUES (:guild_id)
+                ON CONFLICT (guild_id) DO NOTHING;
+                UPDATE antimentionspam_settings
+                SET mute=NOT mute
+                    WHERE guild_id=:guild_id
+                RETURNING mute;
+                """,
+                {"guild_id": ctx.guild.id},
+            ).fetchone()
+        else:
+            cursor.execute(
+                """
+                INSERT INTO guild_settings(guild_id) VALUES (:guild_id)
+                ON CONFLICT (guild_id) DO NOTHING;
+                INSERT INTO antimentionspam_settings(guild_id, mute)
+                    VALUES (:guild_id, :ban)
+                ON CONFLICT (guild_id)
+                DO UPDATE SET mute=excluded.mute;
+                """,
+                {"guild_id": ctx.guild.id, "mute": enabled},
+            )
+
+        await ctx.send(f"Mute on exceeding set limits: {enabled}")
 
     @mod_or_perms(kick_members=True)
     @commands.bot_has_guild_permissions(kick_members=True)
@@ -647,3 +860,152 @@ class Mod(commands.Cog):
     async def too_many_consistency(self, ctx, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send("That didn't look like a single user to me.")
+
+    async def mention_punish(
+        self, message: discord.Message, settings: tuple, single_message: bool = False
+    ):
+        """
+        Handles the appropriate action on the author of a message based on settings.
+
+        Parameters
+        ----------
+        message: discord.Message
+        settings: tuple
+            row from database
+        single_message: bool
+        """
+        guild = message.guild
+        target = message.author
+        channel = message.channel
+
+        _limit, _thresh, _secs, warnmsg, mute, mute_duration, ban, ban_single = settings
+
+        mute = mute and not ban
+        ban = ban and (ban_single or not single_message)
+
+        if ban and guild.me.guild_permissions.ban_members:
+            await guild.ban(
+                discord.Object(id=target.id), reason="Mention Spam (Automated ban)",
+            )
+            self.bot.modlog.member_ban(guild.me, target, "Mention Spam (Automated ban)")
+
+        if warnmsg and channel.permissions_for(guild.me).send_messages:
+            try:
+                await message.channel.send(
+                    f"{target.mention}: {warnmsg}",
+                    allowed_mentions=discord.AllowedMentions(users=True),
+                )
+            except discord.HTTPException:
+                pass
+
+        if mute:
+
+            if mute_duration:
+                expiration = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(
+                    minutes=mute_duration
+                )
+            else:
+                expiration = None
+
+            await self.mute_user_logic(
+                mod=guild.me,
+                target=target,
+                reason="Mention Spam (Automated mute)",
+                audit_reason="Mention Spam (Automated mute)",
+                expiration=expiration,
+            )
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message) -> None:
+        guild = message.guild
+        author = message.author
+        channel = message.channel
+
+        if not message.mentions:
+            return
+
+        if (
+            author.bot
+            or message.guild is None
+            or (author == guild.owner or author.top_role >= guild.me.top_role)
+            or await self.bot.is_owner(author)
+        ):
+            return
+
+        priv = self.bot.privlevel_manager
+        if priv.member_is_mod(guild.id, author.id) or priv.member_is_admin(
+            guild.id, author.id
+        ):
+            return
+
+        cursor = self.bot._conn.cursor()
+
+        row = cursor.execute(
+            """
+            SELECT
+                max_mentions_single,
+                max_mentions_interval,
+                interval_length,
+                warn_message,
+                mute,
+                mute_duration,
+                ban,
+                ban_single
+            FROM antimentionspam_settings WHERE guild_id=?
+            """,
+            (guild.id,),
+        ).fetchone()
+
+        if not row:
+            return
+
+        (
+            limit,
+            thresh,
+            secs,
+            _warn_message,
+            _mute,
+            _mute_duration,
+            _ban,
+            _ban_single,
+        ) = row
+
+        if thresh > 0 and secs > 0:
+            if guild.id not in self.antispam:
+                self.antispam[guild.id] = commands.CooldownMapping.from_cooldown(
+                    thresh, secs, commands.BucketType.member
+                )
+
+            for _ in message.mentions:
+                if self.antispam[guild.id].update_rate_limit(message):
+                    await self.mention_punish(message, row)
+                    break
+
+        if len(message.mentions) >= limit > 0:
+            await self.mention_punish(message, row, single_message=True)
+
+            if not channel.permissions_for(guild.me).manage_messages:
+                if channel.permissions_for(guild.me).send_messages:
+                    await channel.send(
+                        f"Would have deleted message from {author.mention} "
+                        f"for exceeding configured mention limit of: {limit}",
+                        allowed_mentions=discord.AllowedMentions(users=True),
+                    )
+                return
+
+            try:
+                await message.delete()
+            except discord.HTTPException:
+                if channel.permissions_for(guild.me).send_messages:
+                    await channel.send(
+                        f"Attempt to delete message from {author.mention} "
+                        f"for exceeding configured mention limit of: {limit} failed.",
+                        allowed_mentions=discord.AllowedMentions(users=True),
+                    )
+            else:
+                if channel.permissions_for(guild.me).send_messages:
+                    await channel.send(
+                        f"Deleted message from {author.mention} "
+                        f"for exceeding configured mention limit of: {limit}",
+                        allowed_mentions=discord.AllowedMentions(users=True),
+                    )

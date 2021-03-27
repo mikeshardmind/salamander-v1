@@ -45,7 +45,26 @@ CREATE TABLE IF NOT EXISTS annoyance_filter_settings (
 	mods_immune BOOLEAN DEFAULT false,
 	admins_immune BOOLEAN DEFAULT false,
 	remove_apngs BOOLEAN DEFAULT false,
-	remove_excessive_html_elements BOOLEAN DEFAULT false
+	remove_excessive_html_elements BOOLEAN DEFAULT false,
+	PRIMARY KEY (guild_id)
+);
+
+
+-- 0 indicates inactive
+-- interval length is seconds
+-- mute duration is minutes, 
+-- with 0 combined with an active mute indicating a non-temporary mute
+CREATE TABLE IF NOT EXISTS antimentionspam_settings (
+	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id),
+	max_mentions_single INTEGER DEFAULT 0,
+	max_mentions_interval INTEGER DEFAULT 0,
+	interval_length INTEGER DEFAULT 0,
+	warn_message TEXT DEFAULT '',
+	mute BOOLEAN DEFAULT FALSE,
+	mute_duration INTEGER DEFAULT 0,
+	ban BOOLEAN DEFAULT FALSE,
+	ban_single BOOLEAN DEFAULT FALSE,
+	PRIMARY KEY (guild_id)
 );
 
 
