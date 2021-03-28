@@ -90,9 +90,7 @@ class ZMQHandler:
     async def recv_loop(self):
         while True:
             payload = await self.sub_socket.recv()
-            topic, message = msgpack.unpackb(
-                payload, strict_map_key=False, use_list=False
-            )
+            topic, message = msgpack.unpackb(payload, strict_map_key=False, use_list=False)
             if topic in self.topics:
                 await self.recieved_queue.put((topic, message))
 

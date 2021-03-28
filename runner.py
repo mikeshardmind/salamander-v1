@@ -43,10 +43,7 @@ def get_conf() -> Optional[BehaviorFlags]:
         exts = tuple(
             (
                 *(f"src.extensions.{name}" for name in ext_dict.pop("core", ())),
-                *(
-                    f"src.contrib_extensions.{name}"
-                    for name in ext_dict.pop("contrib", ())
-                ),
+                *(f"src.contrib_extensions.{name}" for name in ext_dict.pop("contrib", ())),
                 *(f"src.local_extensions.{name}" for name in ext_dict.pop("local", ())),
                 *ext_dict.pop("global", ()),
             )

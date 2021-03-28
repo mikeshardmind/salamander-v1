@@ -48,9 +48,7 @@ class MainThreadSingletonMeta(type):
     def __call__(cls, *args, **kwargs):
 
         if threading.current_thread() is not threading.main_thread():
-            raise RuntimeError(
-                "This class may only be instantiated from the main thread"
-            )
+            raise RuntimeError("This class may only be instantiated from the main thread")
 
         if cls not in cls._instances:
             instance = super().__call__(*args, **kwargs)

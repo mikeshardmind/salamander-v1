@@ -56,9 +56,7 @@ class RoleSyntaxConverter(NamedTuple):
 
     @classmethod
     async def convert(cls, ctx: SalamanderContext, argument: str):
-        parser = NoExitParser(
-            description="Role management syntax help", add_help=False, allow_abbrev=True
-        )
+        parser = NoExitParser(description="Role management syntax help", add_help=False, allow_abbrev=True)
         parser.add_argument("--add", nargs="*", dest="add", default=[])
         parser.add_argument("--remove", nargs="*", dest="remove", default=[])
         try:
@@ -94,9 +92,7 @@ class EmojiRolePairConverter(NamedTuple):
             for maybe_emoji, maybe_role in pairs_gen:
 
                 if maybe_emoji in pairs:
-                    raise BadArgument(
-                        "You can't provide the same emoji multiple times."
-                    )
+                    raise BadArgument("You can't provide the same emoji multiple times.")
 
                 role = await _RoleConverter.convert(ctx, maybe_role)
 
@@ -137,9 +133,7 @@ class ComplexActionConverter(NamedTuple):
         parser.add_argument("--has-any", nargs="*", dest="any", default=[])
         parser.add_argument("--has-all", nargs="*", dest="all", default=[])
         parser.add_argument("--has-none", nargs="*", dest="none", default=[])
-        parser.add_argument(
-            "--has-no-roles", action="store_true", default=False, dest="noroles"
-        )
+        parser.add_argument("--has-no-roles", action="store_true", default=False, dest="noroles")
         parser.add_argument("--has-perms", nargs="*", dest="hasperm", default=[])
         parser.add_argument("--any-perm", nargs="*", dest="anyperm", default=[])
         parser.add_argument("--not-perm", nargs="*", dest="notperm", default=[])
@@ -151,15 +145,9 @@ class ComplexActionConverter(NamedTuple):
         parser.add_argument("--above", dest="above", type=str, default=None)
         parser.add_argument("--below", dest="below", type=str, default=None)
         hum_or_bot = parser.add_mutually_exclusive_group()
-        hum_or_bot.add_argument(
-            "--only-humans", action="store_true", default=False, dest="humans"
-        )
-        hum_or_bot.add_argument(
-            "--only-bots", action="store_true", default=False, dest="bots"
-        )
-        hum_or_bot.add_argument(
-            "--everyone", action="store_true", default=False, dest="everyone"
-        )
+        hum_or_bot.add_argument("--only-humans", action="store_true", default=False, dest="humans")
+        hum_or_bot.add_argument("--only-bots", action="store_true", default=False, dest="bots")
+        hum_or_bot.add_argument("--everyone", action="store_true", default=False, dest="everyone")
 
         try:
             vals = vars(parser.parse_args(shlex.split(argument)))
@@ -200,10 +188,7 @@ class ComplexActionConverter(NamedTuple):
 
         for attr in ("hasperm", "anyperm", "notperm"):
 
-            vals[attr] = [
-                i.replace("_", " ").lower().replace(" ", "_").replace("server", "guild")
-                for i in vals[attr]
-            ]
+            vals[attr] = [i.replace("_", " ").lower().replace(" ", "_").replace("server", "guild") for i in vals[attr]]
             if any(perm not in dir(discord.Permissions) for perm in vals[attr]):
                 raise BadArgument("You gave an invalid permission")
 
@@ -238,30 +223,20 @@ class ComplexSearchConverter(NamedTuple):
         parser.add_argument("--has-any", nargs="*", dest="any", default=[])
         parser.add_argument("--has-all", nargs="*", dest="all", default=[])
         parser.add_argument("--has-none", nargs="*", dest="none", default=[])
-        parser.add_argument(
-            "--has-no-roles", action="store_true", default=False, dest="noroles"
-        )
+        parser.add_argument("--has-no-roles", action="store_true", default=False, dest="noroles")
         parser.add_argument("--has-perms", nargs="*", dest="hasperm", default=[])
         parser.add_argument("--any-perm", nargs="*", dest="anyperm", default=[])
         parser.add_argument("--not-perm", nargs="*", dest="notperm", default=[])
         parser.add_argument("--csv", action="store_true", default=False)
-        parser.add_argument(
-            "--has-exactly-nroles", dest="quantity", type=int, default=None
-        )
+        parser.add_argument("--has-exactly-nroles", dest="quantity", type=int, default=None)
         parser.add_argument("--has-more-than-nroles", dest="gt", type=int, default=None)
         parser.add_argument("--has-less-than-nroles", dest="lt", type=int, default=None)
         parser.add_argument("--above", dest="above", type=str, default=None)
         parser.add_argument("--below", dest="below", type=str, default=None)
         hum_or_bot = parser.add_mutually_exclusive_group()
-        hum_or_bot.add_argument(
-            "--only-humans", action="store_true", default=False, dest="humans"
-        )
-        hum_or_bot.add_argument(
-            "--only-bots", action="store_true", default=False, dest="bots"
-        )
-        hum_or_bot.add_argument(
-            "--everyone", action="store_true", default=False, dest="everyone"
-        )
+        hum_or_bot.add_argument("--only-humans", action="store_true", default=False, dest="humans")
+        hum_or_bot.add_argument("--only-bots", action="store_true", default=False, dest="bots")
+        hum_or_bot.add_argument("--everyone", action="store_true", default=False, dest="everyone")
         try:
             vals = vars(parser.parse_args(shlex.split(argument)))
         except Exception:
@@ -298,10 +273,7 @@ class ComplexSearchConverter(NamedTuple):
 
         for attr in ("hasperm", "anyperm", "notperm"):
 
-            vals[attr] = [
-                i.replace("_", " ").lower().replace(" ", "_").replace("server", "guild")
-                for i in vals[attr]
-            ]
+            vals[attr] = [i.replace("_", " ").lower().replace(" ", "_").replace("server", "guild") for i in vals[attr]]
             if any(perm not in dir(discord.Permissions) for perm in vals[attr]):
                 raise BadArgument("You gave an invalid permission")
 
@@ -315,9 +287,7 @@ class RoleSettingsConverter(NamedTuple):
 
     @classmethod
     async def convert(cls, ctx, arg):
-        parser = NoExitParser(
-            description="Bulk role setting syntax help", add_help=False
-        )
+        parser = NoExitParser(description="Bulk role setting syntax help", add_help=False)
 
         for name in ("sticky", "selfrem", "selfadd"):
             add_bool_arg(parser, name)
@@ -325,12 +295,7 @@ class RoleSettingsConverter(NamedTuple):
         try:
             parsed = parser.parse_args(shlex.split(arg))
         except Exception:
-            raise BadArgument(
-                "Settings:\n"
-                "    --(no-)selfadd\n"
-                "    --(no-)selfrem\n"
-                "    --(no-)sticky"
-            )
+            raise BadArgument("Settings:\n" "    --(no-)selfadd\n" "    --(no-)selfrem\n" "    --(no-)sticky")
 
         return cls(parsed.selfadd, parsed.selfrem, parsed.sticky)
 

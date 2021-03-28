@@ -57,27 +57,19 @@ def admin():
         if ctx.guild:
             if ctx.guild.owner == ctx.author:
                 return True
-            return ctx.bot.privlevel_manager.member_is_admin(
-                ctx.guild.id, ctx.author.id
-            )
+            return ctx.bot.privlevel_manager.member_is_admin(ctx.guild.id, ctx.author.id)
         return False
 
     return commands.check(predicate)
 
 
 def mod_or_perms(**perms):
-    return commands.check_any(
-        commands.has_guild_permissions(**perms), mod(), owner_in_guild()
-    )
+    return commands.check_any(commands.has_guild_permissions(**perms), mod(), owner_in_guild())
 
 
 def admin_or_perms(**perms):
-    return commands.check_any(
-        commands.has_guild_permissions(**perms), admin(), owner_in_guild()
-    )
+    return commands.check_any(commands.has_guild_permissions(**perms), admin(), owner_in_guild())
 
 
 def guildowner_or_perms(**perms):
-    return commands.check_any(
-        commands.has_guild_permissions(**perms), guildowner(), owner_in_guild()
-    )
+    return commands.check_any(commands.has_guild_permissions(**perms), guildowner(), owner_in_guild())

@@ -39,9 +39,7 @@ TIMEDELTA_RE_STRING: Final[str] = r"\s?".join(
 
 RELATIVEDELTA_RE_STRING: Final[str] = r"\s?".join(
     [
-        r"((?P<years>\d+?)\s?(years?|y))?"
-        r"((?P<months>\d+?)\s?(months?|mo))?"
-        r"((?P<weeks>\d+?)\s?(weeks?|w))?",
+        r"((?P<years>\d+?)\s?(years?|y))?" r"((?P<months>\d+?)\s?(months?|mo))?" r"((?P<weeks>\d+?)\s?(weeks?|w))?",
         r"((?P<days>\d+?)\s?(days?|d))?",
         r"((?P<hours>\d+?)\s?(hours?|hrs|hr?))?",
         r"((?P<minutes>\d+?)\s?(minutes?|mins?|m(?!o)))?",  # prevent matching "months"
@@ -71,9 +69,7 @@ def parse_relativedelta(argument: str) -> Optional[relativedelta]:
     return None
 
 
-def parse_positive_number(
-    argument: str, upper_bound: Union[int, float] = 18446744073709551615
-) -> Optional[int]:
+def parse_positive_number(argument: str, upper_bound: Union[int, float] = 18446744073709551615) -> Optional[int]:
     """
     Parse a positive number with an inclusive upper bound
     """

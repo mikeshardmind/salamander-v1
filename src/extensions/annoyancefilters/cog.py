@@ -82,9 +82,7 @@ class AnnoyanceFilters(commands.Cog):
 
         cursor.close()
 
-        self._settings_cache[guild_id] = settings = (
-            GuildSettings(*res) if res else GuildSettings()
-        )
+        self._settings_cache[guild_id] = settings = GuildSettings(*res) if res else GuildSettings()
         return settings
 
     def set_guild_settings(self, guild_id: int, settings: GuildSettings):
@@ -122,9 +120,7 @@ class AnnoyanceFilters(commands.Cog):
         num_nodes = emoji_count + (escaped_length - content_length) / 2
         return num_nodes >= 200
 
-    async def check_attachments_for_apngs(
-        self, *attachments: discord.Attachment
-    ) -> bool:
+    async def check_attachments_for_apngs(self, *attachments: discord.Attachment) -> bool:
         """
         Discord doesn't animate apngs, this leads to people abusing them.
 
@@ -156,12 +152,8 @@ class AnnoyanceFilters(commands.Cog):
 
         settings = self.get_guild_settings(guild.id)
 
-        if (
-            settings.mods_immune
-            and self.bot.priv_handler.member_is_mod(guild.id, message.author.id)
-        ) or (
-            settings.admins_immune
-            and self.bot.priv_handler.member_is_admin(guild.id, message.author.id)
+        if (settings.mods_immune and self.bot.priv_handler.member_is_mod(guild.id, message.author.id)) or (
+            settings.admins_immune and self.bot.priv_handler.member_is_admin(guild.id, message.author.id)
         ):
             return
 
@@ -171,9 +163,7 @@ class AnnoyanceFilters(commands.Cog):
                 return
 
         if settings.remove_apngs:
-            if message.attachments and await self.check_attachments_for_apngs(
-                *message.attachments
-            ):
+            if message.attachments and await self.check_attachments_for_apngs(*message.attachments):
                 await message.delete()
                 return
 
@@ -193,30 +183,17 @@ class AnnoyanceFilters(commands.Cog):
 
         if content := raw_payload.data.get("content", None):
             settings = self.get_guild_settings(guild.id)
-            if (
-                settings.remove_excessive_html_elements
-                and self.check_excessive_elements(content)
-            ):
+            if settings.remove_excessive_html_elements and self.check_excessive_elements(content):
 
                 member_id = raw_payload.data.get("member", {}).get("id", None)
                 if not member_id:
-                    await self.bot.http.delete_message(
-                        channel.id, raw_payload.message_id
-                    )
+                    await self.bot.http.delete_message(channel.id, raw_payload.message_id)
 
                 if not (
-                    (
-                        settings.mods_immune
-                        and self.bot.priv_handler.member_is_mod(guild.id, member_id)
-                    )
-                    or (
-                        settings.admins_immune
-                        and self.bot.priv_handler.member_is_admin(guild.id, member_id)
-                    )
+                    (settings.mods_immune and self.bot.priv_handler.member_is_mod(guild.id, member_id))
+                    or (settings.admins_immune and self.bot.priv_handler.member_is_admin(guild.id, member_id))
                 ):
-                    await self.bot.http.delete_message(
-                        channel.id, raw_payload.message_id
-                    )
+                    await self.bot.http.delete_message(channel.id, raw_payload.message_id)
 
     @admin_or_perms(manage_messages=True, manage_guild=True)
     @commands.group(name="annoyancefilter")
@@ -228,7 +205,7 @@ class AnnoyanceFilters(commands.Cog):
 
     @top_level_group.command(name="enablerecommended")
     async def enable_recommended(self, ctx: SalamanderContext):
-        """ Quickly enable the recommended filter settings:
+        """Quickly enable the recommended filter settings:
 
         The recommended settings are to filter out messages from non-admins (mods not exempt)
         that contain too many markdown elements for discord to display properly or that
@@ -253,9 +230,7 @@ class AnnoyanceFilters(commands.Cog):
         settings = self.get_guild_settings(ctx.guild.id)
 
         if not (settings.remove_apngs or settings.remove_excessive_html_elements):
-            await ctx.send(
-                "Filtering for discord specific issues with content is not enabled in this server."
-            )
+            await ctx.send("Filtering for discord specific issues with content is not enabled in this server.")
             return
 
         parts = []
@@ -268,8 +243,7 @@ class AnnoyanceFilters(commands.Cog):
 
         elif settings.remove_apngs:
             parts.append(
-                "Currently filtering messages that may contain hidden content due "
-                "to a long time discord bug."
+                "Currently filtering messages that may contain hidden content due " "to a long time discord bug."
             )
 
         elif settings.remove_excessive_html_elements:
@@ -325,9 +299,7 @@ class AnnoyanceFilters(commands.Cog):
         if not (elements or apng):
 
             self.set_guild_settings(ctx.guild.id, GuildSettings())
-            await ctx.send(
-                "Ok, that's all of the available annoyance filters at this time."
-            )
+            await ctx.send("Ok, that's all of the available annoyance filters at this time.")
             return
 
         resp = await ctx.prompt(

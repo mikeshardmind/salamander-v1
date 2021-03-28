@@ -32,7 +32,9 @@ class NoSuchRecord(Exception):
 
 
 def get_member_sticky(
-    conn: apsw.Connection, guild_id: int, member_id: int,
+    conn: apsw.Connection,
+    guild_id: int,
+    member_id: int,
 ) -> Sequence[int]:
 
     cursor = conn.cursor()
@@ -142,9 +144,7 @@ class ReactionRoleRecord(NamedTuple):
             )
 
     @classmethod
-    def from_raw_reaction(
-        cls, conn: apsw.Connection, payload: discord.RawReactionActionEvent
-    ):
+    def from_raw_reaction(cls, conn: apsw.Connection, payload: discord.RawReactionActionEvent):
         emoji = payload.emoji
         if emoji.is_custom_emoji():
             eid = str(emoji.id)
@@ -237,9 +237,7 @@ class RoleSettings(NamedTuple):
         ]
 
     @staticmethod
-    def bulk_remove_exclusivity(
-        conn: apsw.Connection, guild_id: int, role_ids: Iterable[int]
-    ):
+    def bulk_remove_exclusivity(conn: apsw.Connection, guild_id: int, role_ids: Iterable[int]):
 
         with contextlib.closing(conn.cursor()) as cursor, conn:
             cursor.executemany(
@@ -251,9 +249,7 @@ class RoleSettings(NamedTuple):
             )
 
     @staticmethod
-    def bulk_add_exclusivity(
-        conn: apsw.Connection, guild_id: int, role_ids: Iterable[int]
-    ):
+    def bulk_add_exclusivity(conn: apsw.Connection, guild_id: int, role_ids: Iterable[int]):
 
         ids = list(set(role_ids))
         ids.sort()
@@ -291,15 +287,11 @@ class RoleSettings(NamedTuple):
             )
 
     @staticmethod
-    def bulk_update_bools(
-        conn: apsw.Connection, guild_id: int, *role_ids: int, **kwargs: bool
-    ):
+    def bulk_update_bools(conn: apsw.Connection, guild_id: int, *role_ids: int, **kwargs: bool):
 
         for k in kwargs:
             if k not in ("self_assignable", "self_removable", "sticky"):
-                raise RuntimeError(
-                    f"WTF happened here, abort, bad unsafe query construction, bad key: {k}"
-                )
+                raise RuntimeError(f"WTF happened here, abort, bad unsafe query construction, bad key: {k}")
 
         if not kwargs:
             return
@@ -323,10 +315,7 @@ class RoleSettings(NamedTuple):
                 ON CONFLICT (role_id)
                 DO UPDATE SET {safe_update_set}
                 """,
-                tuple(
-                    {"role_id": role_id, "guild_id": guild_id, **kwargs}
-                    for role_id in role_ids
-                ),
+                tuple({"role_id": role_id, "guild_id": guild_id, **kwargs} for role_id in role_ids),
             )
 
     def set_self_removable(self, conn: apsw.Connection, val: bool):
@@ -390,9 +379,7 @@ class RoleSettings(NamedTuple):
             )
 
     @staticmethod
-    def set_req_any(
-        conn: apsw.Connection, guild_id: int, role_id: int, *req_role_ids: int
-    ):
+    def set_req_any(conn: apsw.Connection, guild_id: int, role_id: int, *req_role_ids: int):
         total_role_ids = {
             role_id,
             *req_role_ids,
@@ -427,9 +414,7 @@ class RoleSettings(NamedTuple):
             )
 
     @staticmethod
-    def set_req_all(
-        conn: apsw.Connection, guild_id: int, role_id: int, *req_role_ids: int
-    ):
+    def set_req_all(conn: apsw.Connection, guild_id: int, role_id: int, *req_role_ids: int):
         total_role_ids = {
             role_id,
             *req_role_ids,

@@ -40,14 +40,8 @@ class Note(NamedTuple):
         )
         author = ctx.guild.get_member(self.mod_id)
         subject = ctx.guild.get_member(self.target_id)
-        a_str = (
-            f"{author} ({self.mod_id})" if author else f"Unknown Author ({self.mod_id})"
-        )
-        s_str = (
-            f"{subject} ({self.target_id})"
-            if subject
-            else f"Unknown Subject ({self.target_id})"
-        )
+        a_str = f"{author} ({self.mod_id})" if author else f"Unknown Author ({self.mod_id})"
+        s_str = f"{subject} ({self.target_id})" if subject else f"Unknown Subject ({self.target_id})"
         e.add_field(name="Note Author", value=a_str)
         e.add_field(name="Note Subject", value=s_str)
         return e
@@ -152,16 +146,17 @@ class ModNotes(commands.Cog):
 
     @mod()
     @commands.command()
-    async def makemodnote(
-        self, ctx: SalamanderContext, who: StrictMemberConverter, *, note: str
-    ):
+    async def makemodnote(self, ctx: SalamanderContext, who: StrictMemberConverter, *, note: str):
         """ Make a note about a user """
 
         if not who.id:
             raise UserFeedbackError(custom_message="That didn't look like a user or ID")
 
         self.insert(
-            mod_id=ctx.author.id, target_id=who.id, note=note, guild_id=ctx.guild.id,
+            mod_id=ctx.author.id,
+            target_id=who.id,
+            note=note,
+            guild_id=ctx.guild.id,
         )
         await ctx.send("Note created.")
 
@@ -180,10 +175,7 @@ class ModNotes(commands.Cog):
         if not who.id:
             raise UserFeedbackError(custom_message="That didn't look like a user or ID")
 
-        notes = [
-            n.embed(ctx)
-            for n in self.find_by_member(member_id=who.id, guild_id=ctx.guild.id)
-        ]
+        notes = [n.embed(ctx) for n in self.find_by_member(member_id=who.id, guild_id=ctx.guild.id)]
         if not notes:
             return await ctx.send("No mod notes about this user")
         mx = len(notes)

@@ -71,9 +71,7 @@ class MessageMetaTrack(commands.Cog):
             """
         )
 
-        self._waterfall: Waterfall[discord.Message] = Waterfall(
-            60, 500, self.add_messages
-        )
+        self._waterfall: Waterfall[discord.Message] = Waterfall(60, 500, self.add_messages)
         self._deletions: Waterfall[int] = Waterfall(60, 500, self.delete_messages)
 
     @staticmethod
@@ -100,9 +98,7 @@ class MessageMetaTrack(commands.Cog):
                         aid = m.author.id
                         tups.append((mid, cid, gid, aid))
                     except AttributeError as exc:
-                        log.exception(
-                            f"Issue during message metadata logging {m!r}", exc_info=exc
-                        )
+                        log.exception(f"Issue during message metadata logging {m!r}", exc_info=exc)
 
                 cursor.executemany(
                     """
@@ -247,9 +243,7 @@ class MessageMetaTrack(commands.Cog):
     async def drop(self, ctx: SalamanderContext):
         """ Drop the data for this guild """
 
-        confirm = await ctx.prompt(
-            "Are you sure? (yes/no)", options=("yes", "no"), timeout=30
-        )
+        confirm = await ctx.prompt("Are you sure? (yes/no)", options=("yes", "no"), timeout=30)
         if confirm != "yes":
             return
 
@@ -265,9 +259,7 @@ class MessageMetaTrack(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @owner_in_guild()
     @atrackset.command(name="retro")
-    async def retroactive_filler(
-        self, ctx: SalamanderContext, period: TimedeltaConverter
-    ):
+    async def retroactive_filler(self, ctx: SalamanderContext, period: TimedeltaConverter):
         """ (very slow, use with care) """
 
         await ctx.send("This may take a while, I'll let you know when it's done.")
@@ -322,9 +314,7 @@ class MessageMetaTrack(commands.Cog):
         ).fetchone()
 
         if not is_enabled:
-            raise UserFeedbackError(
-                custom_message="Activity tracking is not enabled for this server."
-            )
+            raise UserFeedbackError(custom_message="Activity tracking is not enabled for this server.")
 
         if not who.member:
             raise UserFeedbackError(custom_message="No matching member?")
@@ -387,9 +377,7 @@ class MessageMetaTrack(commands.Cog):
             await ctx.send("There is one member with that few messages.")
             await ctx.send(embed=embeds[0])
         else:
-            await ctx.send(
-                f"There are {len(embeds)} members with that few messages, I'm opening a menu with them."
-            )
+            await ctx.send(f"There are {len(embeds)} members with that few messages, I'm opening a menu with them.")
             menu = await ctx.list_menu(embeds, timeout=600, wait=True)
             await menu.message.delete()
 
@@ -423,9 +411,7 @@ class MessageMetaTrack(commands.Cog):
             await ctx.send("There is one member with that few messages.")
             await ctx.send(embed=embeds[0])
         else:
-            await ctx.send(
-                f"There are {len(embeds)} members with that few messages, I'm opening a menu with them."
-            )
+            await ctx.send(f"There are {len(embeds)} members with that few messages, I'm opening a menu with them.")
             menu = await ctx.list_menu(embeds, timeout=600, wait=True)
             await menu.message.delete()
 
@@ -434,8 +420,7 @@ class MessageMetaTrack(commands.Cog):
     async def activity_for_role_error_hanlder(self, ctx, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
-                "You've given me what appears to be more than 1 role. "
-                "If your role name has spaces in it, quote it."
+                "You've given me what appears to be more than 1 role. " "If your role name has spaces in it, quote it."
             )
         elif isinstance(exc, commands.MaxConcurrencyReached):
             await ctx.send("A mod is using this currently already.")
@@ -474,9 +459,7 @@ class MessageMetaTrack(commands.Cog):
         if member.joined_at > expiration:
             since = f"since joining this server on {member.joined_at:%B %d, %Y}"
         else:
-            since = (
-                f"since the cutoff date for stored metadata ({expiration:%B %d, %Y})"
-            )
+            since = f"since the cutoff date for stored metadata ({expiration:%B %d, %Y})"
 
         if not data:
             return f"{member.mention} has not sent any messages that I've seen {since}."
@@ -499,9 +482,7 @@ class MessageMetaTrack(commands.Cog):
                     if lat == ear:
                         parts.append(f"{number} messages in {channel.mention} on {ear}")
                     else:
-                        parts.append(
-                            f"{number} messages in {channel.mention} between {ear} and {lat}"
-                        )
+                        parts.append(f"{number} messages in {channel.mention} between {ear} and {lat}")
 
         if total != 1:
             parts.insert(0, f"{member.mention} has sent {total} messages {since}.")

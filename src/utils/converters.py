@@ -24,9 +24,7 @@ from discord.ext import commands
 from .formatting import humanize_timedelta
 from .parsing import parse_timedelta
 
-_discord_member_converter_instance: Final[
-    commands.MemberConverter
-] = commands.MemberConverter()
+_discord_member_converter_instance: Final[commands.MemberConverter] = commands.MemberConverter()
 _id_regex: Final[re.Pattern] = re.compile(r"([0-9]{15,21})$")
 _mention_regex: Final[re.Pattern] = re.compile(r"<@!?([0-9]{15,21})>$")
 _role_mention_regex: Final[re.Pattern] = re.compile(r"^<@&([0-9]{15,21})>$")
@@ -65,9 +63,7 @@ class Weekday:
             if argument in opts:
                 return cls(number)
 
-        raise commands.BadArgument(
-            message="I didn't understand that input as a day of the week"
-        )
+        raise commands.BadArgument(message="I didn't understand that input as a day of the week")
 
 
 class TimedeltaConverter(NamedTuple):
@@ -127,9 +123,7 @@ class StrictMemberConverter(NamedTuple):
         if re_match := (_id_regex.match(argument) or _mention_regex.match(argument)):
             uid = int(re_match.group(1))
 
-            member = guild.get_member(uid) or next(
-                (m for m in ctx.message.mentions if m.id == uid), None
-            )
+            member = guild.get_member(uid) or next((m for m in ctx.message.mentions if m.id == uid), None)
 
             if member:
                 return cls(argument, member, uid)
@@ -156,11 +150,7 @@ class StrictMemberConverter(NamedTuple):
         elif len(argument) > 5 and argument[-5] == "#":
             name, _hash, discrim = argument.rpartition("#")
             member = next(
-                (
-                    m
-                    for m in guild.members
-                    if m.name == name and m.discriminator == discrim
-                ),
+                (m for m in guild.members if m.name == name and m.discriminator == discrim),
                 None,
             )
             if member:

@@ -46,8 +46,7 @@ class Cleanup(commands.Cog):
         """
 
         resp = await ctx.prompt(
-            "Are you sure you want to remove all messages "
-            "from any user who cannot see this channel? (yes, no)",
+            "Are you sure you want to remove all messages " "from any user who cannot see this channel? (yes, no)",
             options=("yes", "no"),
             timeout=30,
             delete_on_return=True,
@@ -56,9 +55,7 @@ class Cleanup(commands.Cog):
         if resp != "yes":
             return
 
-        informational = await ctx.send(
-            "This may take a while, I'll inform you when it is done."
-        )
+        informational = await ctx.send("This may take a while, I'll inform you when it is done.")
 
         lock = asyncio.Lock()
 
@@ -120,9 +117,7 @@ class Cleanup(commands.Cog):
     @removegone.error
     async def concurrency_fail(self, ctx, exc):
         if isinstance(exc, commands.MaxConcurrencyReached):
-            await ctx.send(
-                "That command is already running for a channel in this server."
-            )
+            await ctx.send("That command is already running for a channel in this server.")
 
     @commands.bot_has_guild_permissions(manage_messages=True, read_message_history=True)
     @mod_or_perms(manage_messages=True)
@@ -139,9 +134,7 @@ class Cleanup(commands.Cog):
 
         limit = parse_positive_number(number, 1e7)
         if not limit:
-            raise UserFeedbackError(
-                custom_message="You must provide a positive number of 1 million or less."
-            )
+            raise UserFeedbackError(custom_message="You must provide a positive number of 1 million or less.")
 
         if limit > 100:
             confirm = await ctx.prompt(
@@ -161,15 +154,11 @@ class Cleanup(commands.Cog):
 
         snowflake = parse_snowflake(before)
         if not snowflake:
-            raise UserFeedbackError(
-                custom_message="That did not look like a valid message ID."
-            )
+            raise UserFeedbackError(custom_message="That did not look like a valid message ID.")
 
         before_obj = discord.Object(id=snowflake)
         if before_obj.created_at < ctx.message.created_at - timedelta(days=10):
-            raise UserFeedbackError(
-                custom_message="This message is older than the 10 day cutoff."
-            )
+            raise UserFeedbackError(custom_message="This message is older than the 10 day cutoff.")
 
         confirm = await ctx.prompt(
             "Are you sure you want to delete all the messages before this ID within the last 10 days?",
@@ -189,15 +178,11 @@ class Cleanup(commands.Cog):
 
         snowflake = parse_snowflake(after)
         if not snowflake:
-            raise UserFeedbackError(
-                custom_message="That did not look like a valid message ID."
-            )
+            raise UserFeedbackError(custom_message="That did not look like a valid message ID.")
 
         after_obj = discord.Object(id=snowflake)
         if after_obj.created_at < ctx.message.created_at - timedelta(days=10):
-            raise UserFeedbackError(
-                custom_message="This message is older than the 10 day cutoff."
-            )
+            raise UserFeedbackError(custom_message="This message is older than the 10 day cutoff.")
 
         confirm = await ctx.prompt(
             "Are you sure you want to delete all the messages after the provided message ID?",
@@ -219,27 +204,19 @@ class Cleanup(commands.Cog):
 
         snowflake = parse_snowflake(first)
         if not snowflake:
-            raise UserFeedbackError(
-                custom_message="The first provided ID did not look like a valid message ID."
-            )
+            raise UserFeedbackError(custom_message="The first provided ID did not look like a valid message ID.")
 
         first_obj = discord.Object(id=snowflake)
         if first_obj.created_at < ctx.message.created_at - timedelta(days=10):
-            raise UserFeedbackError(
-                custom_message="The first provided message ID is older than the 10 day cutoff."
-            )
+            raise UserFeedbackError(custom_message="The first provided message ID is older than the 10 day cutoff.")
 
         snowflake = parse_snowflake(first)
         if not snowflake:
-            raise UserFeedbackError(
-                custom_message="The second provided ID did not look like a valid message ID."
-            )
+            raise UserFeedbackError(custom_message="The second provided ID did not look like a valid message ID.")
 
         second_obj = discord.Object(id=snowflake)
         if second_obj.created_at < ctx.message.created_at - timedelta(days=10):
-            raise UserFeedbackError(
-                custom_message="The second provided message ID is older than the 10 day cutoff."
-            )
+            raise UserFeedbackError(custom_message="The second provided message ID is older than the 10 day cutoff.")
 
         if second.obj.created_at < first_obj.created_at:
             raise UserFeedbackError(
@@ -273,9 +250,7 @@ class Cleanup(commands.Cog):
         to_delete = [ctx.message]
 
         before = before or ctx.message
-        cutoff = (
-            after.created_at if after else ctx.message.created_at - timedelta(days=10)
-        )
+        cutoff = after.created_at if after else ctx.message.created_at - timedelta(days=10)
 
         # Don't use after param, changes API behavior. Can add oldest_first=False,
         # but this will increase the needed underlying api calls.

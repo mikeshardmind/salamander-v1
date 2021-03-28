@@ -35,9 +35,7 @@ async def _member_yielder(
         yield member
 
 
-async def search_filter(
-    members: Set[discord.Member], query: dict
-) -> Set[discord.Member]:
+async def search_filter(members: Set[discord.Member], query: dict) -> Set[discord.Member]:
     """
     Reusable filter
     """
@@ -98,18 +96,10 @@ def _non_set_filter(query: dict) -> Optional[Callable[[discord.Member], bool]]:
         conditions.append(lambda m: m.guild_permissions.is_superset(minimum_perms))
 
     if any_perm_list := query["anyperm"]:
-        conditions.append(
-            lambda m: any(
-                value and perm in any_perm_list for perm, value in m.guild_permissions
-            )
-        )
+        conditions.append(lambda m: any(value and perm in any_perm_list for perm, value in m.guild_permissions))
 
     if not_perm_list := query["notperm"]:
-        conditions.append(
-            lambda m: not any(
-                value and perm in not_perm_list for perm, value in m.guild_permissions
-            )
-        )
+        conditions.append(lambda m: not any(value and perm in not_perm_list for perm, value in m.guild_permissions))
 
     if query["noroles"]:
         conditions.append(lambda m: not m._roles)

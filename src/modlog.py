@@ -77,13 +77,16 @@ class ModlogHandler(metaclass=Singleton):
             guild_id = mod.guild.id
 
             cursor.executemany(
-                INSERT_USER_ID, ((target.id,), (mod.id,)),
+                INSERT_USER_ID,
+                ((target.id,), (mod.id,)),
             )
             cursor.execute(
-                INSERT_OR_IGNORE_GUILD, (guild_id,),
+                INSERT_OR_IGNORE_GUILD,
+                (guild_id,),
             )
             cursor.executemany(
-                INSERT_MEMBER_IDS, ((target.id, guild_id), (mod.id, guild_id)),
+                INSERT_MEMBER_IDS,
+                ((target.id, guild_id), (mod.id, guild_id)),
             )
             cursor.execute(
                 BASIC_MODLOG_INSERT,
@@ -105,13 +108,16 @@ class ModlogHandler(metaclass=Singleton):
             guild_id = mod.guild.id
 
             cursor.executemany(
-                INSERT_USER_ID, ((target.id,), (mod.id,)),
+                INSERT_USER_ID,
+                ((target.id,), (mod.id,)),
             )
             cursor.execute(
-                INSERT_OR_IGNORE_GUILD, (guild_id,),
+                INSERT_OR_IGNORE_GUILD,
+                (guild_id,),
             )
             cursor.executemany(
-                INSERT_MEMBER_IDS, ((target.id, guild_id), (mod.id, guild_id)),
+                INSERT_MEMBER_IDS,
+                ((target.id, guild_id), (mod.id, guild_id)),
             )
             cursor.execute(
                 BASIC_MODLOG_INSERT,
@@ -132,13 +138,16 @@ class ModlogHandler(metaclass=Singleton):
             guild_id = mod.guild.id
 
             cursor.executemany(
-                INSERT_USER_ID, ((target.id,), (mod.id,)),
+                INSERT_USER_ID,
+                ((target.id,), (mod.id,)),
             )
             cursor.execute(
-                INSERT_OR_IGNORE_GUILD, (guild_id,),
+                INSERT_OR_IGNORE_GUILD,
+                (guild_id,),
             )
             cursor.executemany(
-                INSERT_MEMBER_IDS, ((target.id, guild_id), (mod.id, guild_id)),
+                INSERT_MEMBER_IDS,
+                ((target.id, guild_id), (mod.id, guild_id)),
             )
             cursor.execute(
                 BASIC_MODLOG_INSERT,
@@ -159,13 +168,16 @@ class ModlogHandler(metaclass=Singleton):
             guild_id = mod.guild.id
 
             cursor.executemany(
-                INSERT_USER_ID, ((target.id,), (mod.id,)),
+                INSERT_USER_ID,
+                ((target.id,), (mod.id,)),
             )
             cursor.execute(
-                INSERT_OR_IGNORE_GUILD, (guild_id,),
+                INSERT_OR_IGNORE_GUILD,
+                (guild_id,),
             )
             cursor.executemany(
-                INSERT_MEMBER_IDS, ((target.id, guild_id), (mod.id, guild_id)),
+                INSERT_MEMBER_IDS,
+                ((target.id, guild_id), (mod.id, guild_id)),
             )
             cursor.execute(
                 BASIC_MODLOG_INSERT,
@@ -181,20 +193,21 @@ class ModlogHandler(metaclass=Singleton):
                 ),
             )
 
-    def member_tempmuted(
-        self, mod: discord.Member, target: discord.Member, reason: str
-    ):
+    def member_tempmuted(self, mod: discord.Member, target: discord.Member, reason: str):
         with contextlib.closing(self._conn.cursor()) as cursor, self._conn:
             guild_id = mod.guild.id
 
             cursor.executemany(
-                INSERT_USER_ID, ((target.id,), (mod.id,)),
+                INSERT_USER_ID,
+                ((target.id,), (mod.id,)),
             )
             cursor.execute(
-                INSERT_OR_IGNORE_GUILD, (guild_id,),
+                INSERT_OR_IGNORE_GUILD,
+                (guild_id,),
             )
             cursor.executemany(
-                INSERT_MEMBER_IDS, ((target.id, guild_id), (mod.id, guild_id)),
+                INSERT_MEMBER_IDS,
+                ((target.id, guild_id), (mod.id, guild_id)),
             )
             cursor.execute(
                 BASIC_MODLOG_INSERT,
@@ -216,13 +229,16 @@ class ModlogHandler(metaclass=Singleton):
             guild_id = mod.guild.id
             cursor.execute(INSERT_USER_ID, (target_id,))
             cursor.executemany(
-                INSERT_USER_ID, ((target_id,), (mod.id,)),
+                INSERT_USER_ID,
+                ((target_id,), (mod.id,)),
             )
             cursor.execute(
-                INSERT_OR_IGNORE_GUILD, (guild_id,),
+                INSERT_OR_IGNORE_GUILD,
+                (guild_id,),
             )
             cursor.executemany(
-                INSERT_MEMBER_IDS, ((target_id, guild_id), (mod.id, guild_id)),
+                INSERT_MEMBER_IDS,
+                ((target_id, guild_id), (mod.id, guild_id)),
             )
             cursor.execute(
                 BASIC_MODLOG_INSERT,

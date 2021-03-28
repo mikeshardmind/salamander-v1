@@ -225,15 +225,11 @@ class NumberofDice:
             if self.keep_high < self.quant:
                 choices.sort(reverse=True)
                 choices = choices[: self.keep_high]
-                parts.append(
-                    f"-> Highest {self.keep_high} " f"({', '.join(map(str, choices))})"
-                )
+                parts.append(f"-> Highest {self.keep_high} " f"({', '.join(map(str, choices))})")
             else:
                 choices.sort()
                 choices = choices[: self.keep_low]
-                parts.append(
-                    f"-> Lowest {self.keep_low} " f"({', '.join(map(str, choices))})"
-                )
+                parts.append(f"-> Lowest {self.keep_low} " f"({', '.join(map(str, choices))})")
 
         total = sum(choices)
         parts.append(f"-> ({total})")
@@ -270,9 +266,7 @@ class Expression:
 
     def __repr__(self):
         if self._components:
-            return "<Dice Expression '%s'>" % " ".join(
-                ROPS.get(c, str(c)) for c in self._components
-            )
+            return "<Dice Expression '%s'>" % " ".join(ROPS.get(c, str(c)) for c in self._components)
 
         else:
             return "<Empty Dice Expression>"

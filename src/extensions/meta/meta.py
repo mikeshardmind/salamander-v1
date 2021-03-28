@@ -63,15 +63,10 @@ class Meta(commands.Cog):
         if prefixes:
             em = discord.Embed(title="Configured Prefixes", color=ctx.me.color)
             em.set_footer(text="You can also start your command by mentioning me.")
-            em.description = "\n".join(
-                f"{index}. `{prefix}`" for index, prefix in enumerate(prefixes, 1)
-            )
+            em.description = "\n".join(f"{index}. `{prefix}`" for index, prefix in enumerate(prefixes, 1))
             await ctx.send(embed=em)
         else:
-            await ctx.send(
-                "There are no configured extra prefixes in this server, "
-                "but using a mention will work."
-            )
+            await ctx.send("There are no configured extra prefixes in this server, " "but using a mention will work.")
 
     @prefix.command(name="add", ignore_extra=True)
     async def prefix_add(self, ctx: SalamanderContext, prefix: str):
@@ -86,27 +81,20 @@ class Meta(commands.Cog):
 
         current_prefixes = self.bot.prefix_manager.get_guild_prefixes(ctx.guild.id)
         if len(current_prefixes) >= 5:
-            raise UserFeedbackError(
-                custom_message="You cannot configure more than 5 custom prefixes."
-            )
+            raise UserFeedbackError(custom_message="You cannot configure more than 5 custom prefixes.")
 
         if prefix.startswith("/"):
             raise UserFeedbackError(
                 custom_message=(
-                    "Prefixes may not start with `/` "
-                    "to avoid conflicting with discord integrated /commands"
+                    "Prefixes may not start with `/` " "to avoid conflicting with discord integrated /commands"
                 )
             )
 
         for special_char_sequence in ("*", "`", "_", "~", "|", ">>>", "'", '"', "\\"):
             if special_char_sequence in prefix:
-                raise UserFeedbackError(
-                    custom_message=f"Prefixes may not contain {special_char_sequence}"
-                )
+                raise UserFeedbackError(custom_message=f"Prefixes may not contain {special_char_sequence}")
         if prefix.startswith((f"<@{ctx.me.id}>", f"<@!{ctx.me.id}>")):
-            raise UserFeedbackError(
-                custom_message="You don't need to configure mentions as a prefix."
-            )
+            raise UserFeedbackError(custom_message="You don't need to configure mentions as a prefix.")
 
         if re.search(r"<.*>", prefix):
             raise UserFeedbackError(
@@ -131,15 +119,11 @@ class Meta(commands.Cog):
         Multi-word prefixes should also be quoted.
         """
         if prefix.startswith((f"<@{ctx.me.id}>", f"<@!{ctx.me.id}>")):
-            raise UserFeedbackError(
-                custom_message="I won't remove mentioning me as a prefix"
-            )
+            raise UserFeedbackError(custom_message="I won't remove mentioning me as a prefix")
 
         current_prefixes = self.bot.prefix_manager.get_guild_prefixes(ctx.guild.id)
         if prefix not in current_prefixes:
-            raise UserFeedbackError(
-                custom_message="That isn't a current prefix, so there's nothing to remove."
-            )
+            raise UserFeedbackError(custom_message="That isn't a current prefix, so there's nothing to remove.")
 
         self.bot.prefix_manager.remove_guild_prefixes(ctx.guild.id, prefix)
         await ctx.send("Prefix removed.")
@@ -149,8 +133,7 @@ class Meta(commands.Cog):
     async def prefix_addremove_too_many_args(self, ctx: SalamanderContext, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
-                "I can only add one prefix at a time. "
-                "If you intended that as a singular prefix, please quote it."
+                "I can only add one prefix at a time. " "If you intended that as a singular prefix, please quote it."
             )
 
     @admin_or_perms(manage_guild=True)

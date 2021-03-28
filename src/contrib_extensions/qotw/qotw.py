@@ -153,9 +153,7 @@ class QOTW(commands.Cog):
                 if isinstance(t, Exception):
                     log.exception("Error in something: ", exc_info=t)
 
-    async def handle_qotw(
-        self, guild_id: int, channel_id: int, last_pinned_message_id: int
-    ):
+    async def handle_qotw(self, guild_id: int, channel_id: int, last_pinned_message_id: int):
 
         guild = self.bot.get_guild(guild_id)
         if guild is None:
@@ -190,9 +188,7 @@ class QOTW(commands.Cog):
 
         def gen_(question_list):
             for (mid, cq, qss) in question_list:
-                if mem := guild.get_member(
-                    mid
-                ):  # ensure we only ask questions for people still here.
+                if mem := guild.get_member(mid):  # ensure we only ask questions for people still here.
                     for i in range(qss):
                         yield (mem, cq)
 
@@ -203,9 +199,7 @@ class QOTW(commands.Cog):
             old_m = await channel.fetch_message(last_pinned_message_id)
             await old_m.unpin()
 
-        new_m = await channel.send(
-            f"**New Question of the Week** {selected_m.mention} asks:\n\n{selected_question}"
-        )
+        new_m = await channel.send(f"**New Question of the Week** {selected_m.mention} asks:\n\n{selected_question}")
 
         last_pin = None
         with contextlib.suppress(discord.HTTPException):
@@ -260,9 +254,7 @@ class QOTW(commands.Cog):
     @admin_or_perms(manage_messages=True)
     @commands.guild_only()
     @qotw_set.command(name="channel")
-    async def qotw_set_channel(
-        self, ctx: SalamanderContext, *, channel: discord.TextChannel
-    ):
+    async def qotw_set_channel(self, ctx: SalamanderContext, *, channel: discord.TextChannel):
         """ Sets the channel for QOTW """
 
         cursor = self.conn.cursor()
@@ -383,9 +375,7 @@ class QOTW(commands.Cog):
         for idx, (member, question, weight) in enumerate(filtered_questions, 1):
             em = embed_from_member(member)
             em.add_field(name=f"Question {idx} of {n}", value=question, inline=False)
-            em.add_field(
-                name="Current odds of selection", value=f"{Fraction(weight, total)}"
-            )
+            em.add_field(name="Current odds of selection", value=f"{Fraction(weight, total)}")
 
             embeds.append(em)
 
@@ -425,9 +415,7 @@ class QOTW(commands.Cog):
                     user_question_weight = weight
 
         if not filtered_questions:
-            return await ctx.send(
-                "There are no questions currently queued up, feel free to ask one."
-            )
+            return await ctx.send("There are no questions currently queued up, feel free to ask one.")
         elif user_has_question:
             return await ctx.send(
                 f"There are currently {len(filtered_questions)} questions.\n"
@@ -443,9 +431,7 @@ class QOTW(commands.Cog):
     @commands.command()
     async def ask(self, ctx: SalamanderContext, *, question: str):
         if len(question) > 1500:
-            return await ctx.send(
-                "Please ask a shorter question (max 1500 characters)."
-            )
+            return await ctx.send("Please ask a shorter question (max 1500 characters).")
 
         cursor = self.conn.cursor()
 
@@ -468,9 +454,7 @@ class QOTW(commands.Cog):
                 params,
             )
 
-        await ctx.send(
-            "Your submitted question for the next QOTW has been set.", delete_after=15
-        )
+        await ctx.send("Your submitted question for the next QOTW has been set.", delete_after=15)
         await asyncio.sleep(10)
         try:
             await ctx.message.delete()

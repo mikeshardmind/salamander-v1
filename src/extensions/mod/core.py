@@ -42,23 +42,17 @@ SELECT mute_role FROM guild_settings WHERE guild_id = ?
 """
 
 
-def kick_soundness_check(
-    bot_user: discord.Member, mod: discord.Member, target: discord.Member
-):
+def kick_soundness_check(bot_user: discord.Member, mod: discord.Member, target: discord.Member):
 
     if target == mod:
         raise UserFeedbackError(
-            custom_message=(
-                "You can't kick yourself, "
-                "but Discord does have an option to leave servers."
-            )
+            custom_message=("You can't kick yourself, " "but Discord does have an option to leave servers.")
         )
 
     if target == bot_user:
         raise UserFeedbackError(
             custom_message=(
-                "I can't kick myself from the server. "
-                "If you don't want me here, use the leave command instead."
+                "I can't kick myself from the server. " "If you don't want me here, use the leave command instead."
             )
         )
 
@@ -67,44 +61,34 @@ def kick_soundness_check(
 
     if mod.guild.owner != mod:
         if target.top_role == mod.top_role:
-            raise HierarchyException(
-                custom_message="You can't kick someone with the same top role as you."
-            )
+            raise HierarchyException(custom_message="You can't kick someone with the same top role as you.")
 
         if target.top_role > mod.top_role:
-            raise HierarchyException(
-                custom_message="You can't kick someone with a higher top role than you."
-            )
+            raise HierarchyException(custom_message="You can't kick someone with a higher top role than you.")
 
     if bot_user.guild.owner != bot_user:
         if target.top_role == bot_user.top_role:
-            raise HierarchyException(
-                custom_message="I can't kick someone with the same top role as me."
-            )
+            raise HierarchyException(custom_message="I can't kick someone with the same top role as me.")
 
         if target.top_role >= bot_user.top_role:
-            raise HierarchyException(
-                custom_message="I can't kick someone with a higher top role than me."
-            )
+            raise HierarchyException(custom_message="I can't kick someone with a higher top role than me.")
 
 
 def ban_soundness_check(
-    bot_user: discord.Member, mod: discord.Member, target: discord.Member,
+    bot_user: discord.Member,
+    mod: discord.Member,
+    target: discord.Member,
 ):
 
     if target == mod:
         raise UserFeedbackError(
-            custom_message=(
-                "You can't ban yourself, "
-                "but Discord does have an option to leave servers."
-            )
+            custom_message=("You can't ban yourself, " "but Discord does have an option to leave servers.")
         )
 
     if target == bot_user:
         raise UserFeedbackError(
             custom_message=(
-                "I can't ban myself from the server. "
-                "If you don't want me here, use the leave command instead."
+                "I can't ban myself from the server. " "If you don't want me here, use the leave command instead."
             )
         )
 
@@ -113,29 +97,23 @@ def ban_soundness_check(
 
     if mod.guild.owner != mod:
         if target.top_role == mod.top_role:
-            raise HierarchyException(
-                custom_message="You can't ban someone with the same top role as you."
-            )
+            raise HierarchyException(custom_message="You can't ban someone with the same top role as you.")
 
         if target.top_role > mod.top_role:
-            raise HierarchyException(
-                custom_message="You can't ban someone with a higher top role than you."
-            )
+            raise HierarchyException(custom_message="You can't ban someone with a higher top role than you.")
 
     if bot_user.guild.owner != bot_user:
         if target.top_role == bot_user.top_role:
-            raise HierarchyException(
-                custom_message="I can't ban someone with the same top role as me."
-            )
+            raise HierarchyException(custom_message="I can't ban someone with the same top role as me.")
 
         if target.top_role >= bot_user.top_role:
-            raise HierarchyException(
-                custom_message="I can't ban someone with a higher top role than me."
-            )
+            raise HierarchyException(custom_message="I can't ban someone with a higher top role than me.")
 
 
 def mute_soundness_check(
-    bot_user: discord.Member, mod: discord.Member, target: discord.Member,
+    bot_user: discord.Member,
+    mod: discord.Member,
+    target: discord.Member,
 ):
 
     if target == mod:
@@ -143,10 +121,7 @@ def mute_soundness_check(
 
     if target == bot_user:
         raise UserFeedbackError(
-            custom_message=(
-                "I can't mute myself. "
-                "If you don't want me here, use the leave command instead."
-            )
+            custom_message=("I can't mute myself. " "If you don't want me here, use the leave command instead.")
         )
 
     if target.guild.owner == target:
@@ -154,25 +129,17 @@ def mute_soundness_check(
 
     if mod.guild.owner != mod:
         if target.top_role == mod.top_role:
-            raise HierarchyException(
-                custom_message="You can't mute someone with the same top role as you."
-            )
+            raise HierarchyException(custom_message="You can't mute someone with the same top role as you.")
 
         if target.top_role > mod.top_role:
-            raise HierarchyException(
-                custom_message="You can't mute someone with a higher top role than you."
-            )
+            raise HierarchyException(custom_message="You can't mute someone with a higher top role than you.")
 
     if bot_user.guild.owner != bot_user:
         if target.top_role == bot_user.top_role:
-            raise HierarchyException(
-                custom_message="I can't mute someone with the same top role as me."
-            )
+            raise HierarchyException(custom_message="I can't mute someone with the same top role as me.")
 
         if target.top_role >= bot_user.top_role:
-            raise HierarchyException(
-                custom_message="I can't mute someone with a higher top role than me."
-            )
+            raise HierarchyException(custom_message="I can't mute someone with a higher top role than me.")
 
 
 class Mod(commands.Cog):
@@ -218,18 +185,12 @@ class Mod(commands.Cog):
             {"guild_id": ctx.guild.id, "number": number},
         )
 
-        message = (
-            f"Max mentions per message set to {number}."
-            if number > 0
-            else "Mention filtering has been disabled."
-        )
+        message = f"Max mentions per message set to {number}." if number > 0 else "Mention filtering has been disabled."
         await ctx.send(message)
 
     @admin_or_perms(manage_guild=True)
     @antimentionspam.command(name="maxinterval")
-    async def set_max_interval_mentions(
-        self, ctx: SalamanderContext, number: int, seconds: int
-    ):
+    async def set_max_interval_mentions(self, ctx: SalamanderContext, number: int, seconds: int):
         """
         Sets the maximum number of mentions allowed in a time period.
         Setting either to 0 will disable this check.
@@ -408,29 +369,27 @@ class Mod(commands.Cog):
     @mod_or_perms(kick_members=True)
     @commands.bot_has_guild_permissions(kick_members=True)
     @commands.command(name="kick")
-    async def kick_commnand(
-        self, ctx: SalamanderContext, who: discord.Member, *, reason: str = ""
-    ):
+    async def kick_commnand(self, ctx: SalamanderContext, who: discord.Member, *, reason: str = ""):
         """ Kick a member without removing messages """
 
         kick_soundness_check(bot_user=ctx.me, mod=ctx.author, target=who)
-        await who.kick(
-            reacon=f"User kicked by command. (Authorizing mod: {ctx.author}({ctx.author.id})"
-        )
+        await who.kick(reacon=f"User kicked by command. (Authorizing mod: {ctx.author}({ctx.author.id})")
         self.bot.modlog.member_kick(mod=ctx.author, target=who, reason=reason)
 
     @mod_or_perms(ban_members=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
     @commands.command(name="ban")
     async def ban_command(
-        self, ctx: SalamanderContext, who: StrictMemberConverter, *, reason: str = "",
+        self,
+        ctx: SalamanderContext,
+        who: StrictMemberConverter,
+        *,
+        reason: str = "",
     ):
         """ Ban a member without removing messages """
 
         if not who.id:
-            raise commands.BadArgument(
-                "That wasn't a member or the ID of a user not in the server."
-            )
+            raise commands.BadArgument("That wasn't a member or the ID of a user not in the server.")
 
         if member := who.member:
 
@@ -442,13 +401,8 @@ class Mod(commands.Cog):
             self.bot.modlog.member_ban(mod=ctx.author, target=member, reason=reason)
 
         else:
-            drsn = (
-                f"User not in guild banned by command. "
-                f"(Authorizing mod: {ctx.author}({ctx.author.id})"
-            )
-            await ctx.guild.ban(
-                discord.Object(who.id), reason=drsn, delete_message_days=0
-            )
+            drsn = f"User not in guild banned by command. " f"(Authorizing mod: {ctx.author}({ctx.author.id})"
+            await ctx.guild.ban(discord.Object(who.id), reason=drsn, delete_message_days=0)
             self.bot.modlog.user_ban(mod=ctx.author, target_id=who.id, reason=reason)
 
     # TODO: more commands / ban options
@@ -474,15 +428,11 @@ class Mod(commands.Cog):
             mute_role_id = next(iter(row), None) if row is not None else None
 
             if mute_role_id is None:
-                raise UserFeedbackError(
-                    custom_message="No mute role has been configured."
-                )
+                raise UserFeedbackError(custom_message="No mute role has been configured.")
 
             mute_role = guild.get_role(mute_role_id)
             if mute_role is None:
-                raise UserFeedbackError(
-                    custom_message="The mute role for this server appears to have been deleted."
-                )
+                raise UserFeedbackError(custom_message="The mute role for this server appears to have been deleted.")
 
             mute_soundness_check(bot_user=guild.me, mod=mod, target=target)
 
@@ -549,15 +499,17 @@ class Mod(commands.Cog):
     @commands.bot_has_guild_permissions(manage_roles=True)
     @commands.command(name="mute")
     async def basic_mute_command(
-        self, ctx: SalamanderContext, who: discord.Member, *, reason: str = "",
+        self,
+        ctx: SalamanderContext,
+        who: discord.Member,
+        *,
+        reason: str = "",
     ):
         """ Mute a user using the configure mute role """
 
         audit_reason = f"User muted by command. (Mod: {ctx.author}({ctx.author.id})"
 
-        await self.mute_user_logic(
-            mod=ctx.author, target=who, reason=reason, audit_reason=audit_reason
-        )
+        await self.mute_user_logic(mod=ctx.author, target=who, reason=reason, audit_reason=audit_reason)
         await ctx.send("User Muted")
 
     @mod_or_perms(manage_roles=True)
@@ -574,13 +526,9 @@ class Mod(commands.Cog):
         """ Mute a user using the configure mute role for a duration. """
 
         if duration.delta < timedelta(minutes=2):
-            raise UserFeedbackError(
-                custom_message="Temp mutes must be at least 2 minutes long"
-            )
+            raise UserFeedbackError(custom_message="Temp mutes must be at least 2 minutes long")
 
-        audit_reason = (
-            f"User muted for {duration} by command. (Mod: {ctx.author}({ctx.author.id})"
-        )
+        audit_reason = f"User muted for {duration} by command. (Mod: {ctx.author}({ctx.author.id})"
 
         expiration = datetime.utcnow().replace(tzinfo=timezone.utc) + duration.delta
 
@@ -597,14 +545,16 @@ class Mod(commands.Cog):
     @commands.bot_has_guild_permissions(manage_roles=True)
     @commands.command(name="unmute")
     async def basic_unmute_command(
-        self, ctx: SalamanderContext, who: discord.Member, *, reason: str = "",
+        self,
+        ctx: SalamanderContext,
+        who: discord.Member,
+        *,
+        reason: str = "",
     ):
         """ Unmute a user """
 
         audit_reason = f"User unmuted by command. (Mod: {ctx.author}({ctx.author.id})"
-        cant_restore = await self.unmute_logic(
-            ctx.guild.id, who.id, reason, audit_reason, mod=ctx.author
-        )
+        cant_restore = await self.unmute_logic(ctx.guild.id, who.id, reason, audit_reason, mod=ctx.author)
 
         if cant_restore:
             r_s = format_list([r.name for r in cant_restore])
@@ -638,9 +588,7 @@ class Mod(commands.Cog):
 
         mute_role = guild.get_role(mute_role_id)
         if mute_role is None:
-            raise UserFeedbackError(
-                custom_message="The mute role for this server appears to have been deleted."
-            )
+            raise UserFeedbackError(custom_message="The mute role for this server appears to have been deleted.")
 
         who = guild.get_member(member_id)
 
@@ -665,9 +613,7 @@ class Mod(commands.Cog):
                     member_params,
                 )
                 # Prevent mute dodge applying if someone manually unmuted then this command was run
-                raise UserFeedbackError(
-                    custom_message="User does not appear to be muted."
-                )
+                raise UserFeedbackError(custom_message="User does not appear to be muted.")
 
         async with self._mute_locks[guild_id]:
             if (
@@ -681,9 +627,7 @@ class Mod(commands.Cog):
                 ).fetchone()
                 is None
             ):
-                raise UserFeedbackError(
-                    custom_message="User was not muted using this bot (not unmuting)."
-                )
+                raise UserFeedbackError(custom_message="User was not muted using this bot (not unmuting).")
 
             # Above is needed since it is possible to mute someone *without* removing any roles
 
@@ -738,14 +682,10 @@ class Mod(commands.Cog):
             )
 
         if role >= ctx.author.top_role and ctx.guild.owner != ctx.author:
-            raise UserFeedbackError(
-                custom_message="I can't let you set a mute role above your own role."
-            )
+            raise UserFeedbackError(custom_message="I can't let you set a mute role above your own role.")
 
         if role.permissions > ctx.author.guild_permissions:
-            raise UserFeedbackError(
-                custom_message="I can't let you set a mute role with permissions you don't have."
-            )
+            raise UserFeedbackError(custom_message="I can't let you set a mute role with permissions you don't have.")
 
         if role.managed:
             raise UserFeedbackError(
@@ -779,14 +719,11 @@ class Mod(commands.Cog):
     async def mute_role_error(self, ctx, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
-                "You've given me what appears to be more than 1 role. "
-                "If your role name has spaces in it, quote it."
+                "You've given me what appears to be more than 1 role. " "If your role name has spaces in it, quote it."
             )
 
     @commands.Cog.listener("on_member_update")
-    async def member_verification_hatch(
-        self, before: discord.Member, after: discord.Member
-    ):
+    async def member_verification_hatch(self, before: discord.Member, after: discord.Member):
 
         if before.pending and not after.pending:
             await self.mute_dodge_check(after)
@@ -867,9 +804,7 @@ class Mod(commands.Cog):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send("That didn't look like a single user to me.")
 
-    async def mention_punish(
-        self, message: discord.Message, settings: tuple, single_message: bool = False
-    ):
+    async def mention_punish(self, message: discord.Message, settings: tuple, single_message: bool = False):
         """
         Handles the appropriate action on the author of a message based on settings.
 
@@ -896,11 +831,10 @@ class Mod(commands.Cog):
                 pass
             else:
                 await guild.ban(
-                    discord.Object(id=target.id), reason="Mention Spam (Automated ban)",
+                    discord.Object(id=target.id),
+                    reason="Mention Spam (Automated ban)",
                 )
-                self.bot.modlog.member_ban(
-                    guild.me, target, "Mention Spam (Automated ban)"
-                )
+                self.bot.modlog.member_ban(guild.me, target, "Mention Spam (Automated ban)")
 
         if warnmsg and channel.permissions_for(guild.me).send_messages:
             try:
@@ -914,8 +848,7 @@ class Mod(commands.Cog):
         if mute:
 
             expiration = (
-                datetime.utcnow().replace(tzinfo=timezone.utc)
-                + timedelta(minutes=mute_duration)
+                datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(minutes=mute_duration)
                 if mute_duration
                 else None
             )
@@ -949,9 +882,7 @@ class Mod(commands.Cog):
             return
 
         priv = self.bot.privlevel_manager
-        if priv.member_is_mod(guild.id, author.id) or priv.member_is_admin(
-            guild.id, author.id
-        ):
+        if priv.member_is_mod(guild.id, author.id) or priv.member_is_admin(guild.id, author.id):
             return
 
         cursor = self.bot._conn.cursor()
@@ -1021,7 +952,6 @@ class Mod(commands.Cog):
             else:
                 if channel.permissions_for(guild.me).send_messages:
                     await channel.send(
-                        f"Deleted message from {author.mention} "
-                        f"for exceeding configured mention limit of: {limit}",
+                        f"Deleted message from {author.mention} " f"for exceeding configured mention limit of: {limit}",
                         allowed_mentions=discord.AllowedMentions(users=True),
                     )

@@ -74,9 +74,7 @@ def setup_logging():
     if __debug__:
         log.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(sys.stdout)
-    rotating_file_handler = RotatingFileHandler(
-        "salamander.log", maxBytes=10000000, backupCount=5
-    )
+    rotating_file_handler = RotatingFileHandler("salamander.log", maxBytes=10000000, backupCount=5)
     # Log appliance use in future with aiologger.
     formatter = logging.Formatter(
         "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s",
@@ -127,15 +125,9 @@ _PT = TypeVar("_PT", bound=str)
 
 UNTIMELY_RESPONSE_ERROR_STR = "I'm not waiting forever for a response (exiting)."
 
-NON_TEXT_RESPONSE_ERROR_STR = (
-    "There doesn't appear to be any text in your response, "
-    "please try this command again."
-)
+NON_TEXT_RESPONSE_ERROR_STR = "There doesn't appear to be any text in your response, " "please try this command again."
 
-INVALID_OPTION_ERROR_FMT = (
-    "That wasn't a valid option, please try this command again."
-    "\n(Valid options are: {})"
-)
+INVALID_OPTION_ERROR_FMT = "That wasn't a valid option, please try this command again." "\n(Valid options are: {})"
 
 
 class PreFormattedListSource(menus.ListPageSource):
@@ -278,9 +270,7 @@ class SalamanderContext(commands.Context):
 _CT = TypeVar("_CT", bound=SalamanderContext)
 
 
-def _prefix(
-    bot: "Salamander", msg: discord.Message
-) -> Callable[["Salamander", discord.Message], List[str]]:
+def _prefix(bot: "Salamander", msg: discord.Message) -> Callable[["Salamander", discord.Message], List[str]]:
     guild = msg.guild
     base = bot.prefix_manager.get_guild_prefixes(guild.id) if guild else ()
     return commands.when_mentioned_or(*base)(bot, msg)
@@ -655,9 +645,7 @@ class EmbedHelp(commands.HelpCommand):
             name = "No Category" if cog is None else cog.qualified_name
             filtered = await self.filter_commands(cog_commands, sort=True)
             if filtered:
-                value = "\N{EN SPACE}".join(
-                    [c.name for c in cog_commands if await predicate(c)]
-                )
+                value = "\N{EN SPACE}".join([c.name for c in cog_commands if await predicate(c)])
                 embed = add_field(embed, name, value)
 
         if embed.fields:  # needed in case the very last add field rolled it over
@@ -679,7 +667,8 @@ class EmbedHelp(commands.HelpCommand):
 
     async def send_cog_help(self, cog):
         embed = discord.Embed(
-            title=f"{cog.qualified_name} Commands", colour=self.context.me.color,
+            title=f"{cog.qualified_name} Commands",
+            colour=self.context.me.color,
         )
         if cog.description:
             embed.description = cog.description
@@ -752,9 +741,7 @@ class EmbedHelp(commands.HelpCommand):
                 embed = add_field(
                     embed,
                     self.get_command_signature(command),
-                    (command.short_doc or "...").replace(
-                        "[p]", self.context.clean_prefix
-                    ),
+                    (command.short_doc or "...").replace("[p]", self.context.clean_prefix),
                 )
 
         if embed.fields:  # needed in case the very last add field rolled it over
@@ -782,9 +769,7 @@ class EmbedHelp(commands.HelpCommand):
                     colour=self.context.me.color,
                 )
                 if command.help:
-                    embed.description = command.help.replace(
-                        "[p]", self.context.clean_prefix
-                    )
+                    embed.description = command.help.replace("[p]", self.context.clean_prefix)
 
                 menu = menus.MenuPages(
                     source=PreFormattedListSource([embed]),
@@ -798,9 +783,7 @@ class EmbedHelp(commands.HelpCommand):
 
 class Salamander(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
-        self._behavior_flags: BehaviorFlags = kwargs.pop(
-            "behavior", None
-        ) or BehaviorFlags.defaults()
+        self._behavior_flags: BehaviorFlags = kwargs.pop("behavior", None) or BehaviorFlags.defaults()
         super().__init__(
             *args,
             command_prefix=_prefix,
@@ -864,9 +847,7 @@ class Salamander(commands.AutoShardedBot):
                     ctx.command.reset_cooldown(ctx)
                 if original.custom_message:
                     await ctx.send_paged(original.custom_message)
-            elif not isinstance(
-                original, (discord.HTTPException, commands.TooManyArguments)
-            ):
+            elif not isinstance(original, (discord.HTTPException, commands.TooManyArguments)):
                 # too many arguments should be handled on an individual basis
                 # it requires enabling ignore_extra=False (default is True)
                 # and the user facing message should be tailored to the situation.
@@ -956,9 +937,7 @@ class Salamander(commands.AutoShardedBot):
 
         return False
 
-    async def get_context(
-        self, message: discord.Message, *, cls: Type[_CT] = SalamanderContext
-    ) -> _CT:
+    async def get_context(self, message: discord.Message, *, cls: Type[_CT] = SalamanderContext) -> _CT:
         return await super().get_context(message, cls=cls)
 
     async def on_message(self, message: discord.Message):
@@ -987,9 +966,7 @@ class Salamander(commands.AutoShardedBot):
 
             if not ctx.channel.permissions_for(ctx.me).send_messages:
                 if await self.is_owner(ctx.author):
-                    await ctx.author.send(
-                        "Hey, I don't even have send perms in that channel."
-                    )
+                    await ctx.author.send("Hey, I don't even have send perms in that channel.")
                 return
 
         await self.invoke(ctx)
@@ -1033,9 +1010,7 @@ class Salamander(commands.AutoShardedBot):
             instance = cls(
                 intents=intents,
                 behavior=config,
-                allowed_mentions=discord.AllowedMentions(
-                    everyone=False, roles=False, users=False
-                ),
+                allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False),
             )
 
             try:
@@ -1059,9 +1034,7 @@ class Salamander(commands.AutoShardedBot):
             # allow outstanding non-discord tasks a brief moment to clean themselves up
             loop.run_until_complete(asyncio.sleep(0.05))
 
-            tasks: Set[asyncio.Task] = {
-                t for t in asyncio.all_tasks(loop) if not t.done()
-            }
+            tasks: Set[asyncio.Task] = {t for t in asyncio.all_tasks(loop) if not t.done()}
             for t in tasks:
                 if not t.get_name().startswith("salamander.waterfall"):
                     # Waterfall has a few named tasks that should be allowed to clean up.
@@ -1096,9 +1069,7 @@ class Salamander(commands.AutoShardedBot):
                     for task in pending:
                         name = task.get_name()
                         coro = task.get_coro()
-                        log.warning(
-                            "Task %s wrapping coro %r did not exit properly", name, coro
-                        )
+                        log.warning("Task %s wrapping coro %r did not exit properly", name, coro)
                 else:
 
                     for task in pending:
@@ -1120,13 +1091,9 @@ class Salamander(commands.AutoShardedBot):
                             line = linecache.getline(filename, lineno, f.f_globals)
                             extracted_list.append((filename, lineno, name, line))
 
-                        log.warning(
-                            "Task %s wrapping coro %r did not exit properly", name, coro
-                        )
+                        log.warning("Task %s wrapping coro %r did not exit properly", name, coro)
                         if extracted_list:
-                            stack = traceback.StackSummary.from_list(
-                                extracted_list
-                            ).format()
+                            stack = traceback.StackSummary.from_list(extracted_list).format()
                             log.debug(
                                 "Task %r wrapping coro %r stack info:\n%s",
                                 name,

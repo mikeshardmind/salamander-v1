@@ -64,9 +64,7 @@ class RoleManagement(commands.Cog):
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
 
-    async def all_are_valid_roles(
-        self, ctx, *roles: discord.Role, detailed: bool = False
-    ) -> bool:
+    async def all_are_valid_roles(self, ctx, *roles: discord.Role, detailed: bool = False) -> bool:
         """
         Quick hierarchy check on a role set in syntax returned
         """
@@ -77,10 +75,7 @@ class RoleManagement(commands.Cog):
 
         if guild.owner != author:
             auth_top = author.top_role
-            if not (
-                all(auth_top > role for role in roles)
-                or await ctx.bot.is_owner(ctx.author)
-            ):
+            if not (all(auth_top > role for role in roles) or await ctx.bot.is_owner(ctx.author)):
                 if detailed:
                     raise UserFeedbackError(
                         custom_message="You can't give away roles which are not below your top role."
@@ -98,17 +93,13 @@ class RoleManagement(commands.Cog):
             bot_top = guild.me.top_role
             if any(bot_top <= role for role in roles):
                 if detailed:
-                    raise UserFeedbackError(
-                        custom_message="I can't give away roles which are not below my top role."
-                    )
+                    raise UserFeedbackError(custom_message="I can't give away roles which are not below my top role.")
                 return False
 
         # We can't assign managed roles
         if any(role.managed for role in roles):
             if detailed:
-                raise UserFeedbackError(
-                    custom_message="Managed roles can't be assigned by this."
-                )
+                raise UserFeedbackError(custom_message="Managed roles can't be assigned by this.")
             return False
 
         return True
@@ -132,10 +123,7 @@ class RoleManagement(commands.Cog):
         roles.extend([r for r in give if r not in roles])
         if sorted(roles) == user_roles:
             return
-        if (
-            any(r >= me.top_role for r in hierarchy_testing)
-            or not me.guild_permissions.manage_roles
-        ):
+        if any(r >= me.top_role for r in hierarchy_testing) or not me.guild_permissions.manage_roles:
             raise UserFeedbackError(custom_message="Can't do that.")
         await who.edit(roles=roles)
 
@@ -183,16 +171,12 @@ class RoleManagement(commands.Cog):
             return
 
         for user in users:
-            await self.update_roles_atomically(
-                who=user, give=query["add"], remove=query["remove"]
-            )
+            await self.update_roles_atomically(who=user, give=query["add"], remove=query["remove"])
 
         await ctx.send("Done.")
 
     @mrole.command(name="search")
-    async def mrole_search(
-        self, ctx: SalamanderContext, *, _query: ComplexSearchConverter
-    ):
+    async def mrole_search(self, ctx: SalamanderContext, *, _query: ComplexSearchConverter):
         """
         Searches for users with the specified role criteria
 
@@ -238,9 +222,7 @@ class RoleManagement(commands.Cog):
             embed = discord.Embed(description=description)
             if ctx.guild:
                 embed.color = ctx.guild.me.color
-            await ctx.send(
-                embed=embed, content=f"Search results for {ctx.author.mention}"
-            )
+            await ctx.send(embed=embed, content=f"Search results for {ctx.author.mention}")
 
         else:
             await self.send_maybe_chunked_csv(ctx, list(members))
@@ -248,9 +230,7 @@ class RoleManagement(commands.Cog):
     @staticmethod
     async def send_maybe_chunked_csv(ctx: SalamanderContext, members):
         chunk_size = 75000
-        chunks = [
-            members[i : (i + chunk_size)] for i in range(0, len(members), chunk_size)
-        ]
+        chunks = [members[i : (i + chunk_size)] for i in range(0, len(members), chunk_size)]
 
         fmt = "%Y-%m-%d"
         for part, chunk in enumerate(chunks, 1):
@@ -271,9 +251,7 @@ class RoleManagement(commands.Cog):
                         "User ID": member.id,
                         "Display Name": member.display_name,
                         "Username#Discrim": str(member),
-                        "Joined Server": member.joined_at.strftime(fmt)
-                        if member.joined_at
-                        else None,
+                        "Joined Server": member.joined_at.strftime(fmt) if member.joined_at else None,
                         "Joined Discord": member.created_at.strftime(fmt),
                     }
                 )
@@ -296,9 +274,7 @@ class RoleManagement(commands.Cog):
             del data
 
     @mrole.command(name="modify")
-    async def mrole_complex(
-        self, ctx: SalamanderContext, *, _query: ComplexActionConverter
-    ):
+    async def mrole_complex(self, ctx: SalamanderContext, *, _query: ComplexActionConverter):
         """
         Similar syntax to search, while applying/removing roles
 
@@ -334,9 +310,7 @@ class RoleManagement(commands.Cog):
         members = await member_search_filter(members, query)
 
         if len(members) > 100:
-            await ctx.send(
-                "This may take a while given the number of members to update."
-            )
+            await ctx.send("This may take a while given the number of members to update.")
 
         async with ctx.typing():
             for member in members:
@@ -344,9 +318,7 @@ class RoleManagement(commands.Cog):
                     continue
 
                 try:
-                    await self.update_roles_atomically(
-                        who=member, give=query["add"], remove=query["remove"]
-                    )
+                    await self.update_roles_atomically(who=member, give=query["add"], remove=query["remove"])
                 except UserFeedbackError:
                     log.debug(
                         "Internal filter failure on member id %d guild id %d query %s",
@@ -377,21 +349,13 @@ class RoleManagement(commands.Cog):
 
         guild = who.guild
         if role.managed:
-            raise UserFeedbackError(
-                custom_message="This role can't be assigned except by the associated integration."
-            )
+            raise UserFeedbackError(custom_message="This role can't be assigned except by the associated integration.")
         if not guild.me.guild_permissions.manage_roles:
-            raise UserFeedbackError(
-                custom_message="I don't have permission to do that."
-            )
+            raise UserFeedbackError(custom_message="I don't have permission to do that.")
         if role > guild.me.top_role and guild.me != guild.owner:
-            raise UserFeedbackError(
-                custom_message="I can't assign you that role (discord hierarchy applies here)"
-            )
+            raise UserFeedbackError(custom_message="I can't assign you that role (discord hierarchy applies here)")
 
-        role_details = role_settings or RoleSettings.from_databse(
-            self.bot._conn, role.id, role.guild.id
-        )
+        role_details = role_settings or RoleSettings.from_databse(self.bot._conn, role.id, role.guild.id)
         self.check_required(who, role, role_details)
         return self.check_exclusivity(who, role, role_details)
 
@@ -405,25 +369,19 @@ class RoleManagement(commands.Cog):
         Raises an error on missing reqs
         """
 
-        role_details = role_settings or RoleSettings.from_databse(
-            self.bot._conn, role.id, role.guild.id
-        )
+        role_details = role_settings or RoleSettings.from_databse(self.bot._conn, role.id, role.guild.id)
 
         if req_any := role_details.requires_any:
             for idx in req_any:
                 if who._roles.has(idx):
                     break
             else:
-                raise UserFeedbackError(
-                    custom_message="You don't meet the requirements to self-assign this role."
-                )
+                raise UserFeedbackError(custom_message="You don't meet the requirements to self-assign this role.")
 
         if req_all := role_details.requires_all:
             for idx in req_all:
                 if not who._roles.has(idx):
-                    raise UserFeedbackError(
-                        custom_message="You don't meet the requirements to self-assign this role."
-                    )
+                    raise UserFeedbackError(custom_message="You don't meet the requirements to self-assign this role.")
 
         return None
 
@@ -437,20 +395,14 @@ class RoleManagement(commands.Cog):
         Returns a list of roles to remove, or raises an error
         """
 
-        role_details = role_settings or RoleSettings.from_databse(
-            self.bot._conn, role.id, role.guild.id
-        )
+        role_details = role_settings or RoleSettings.from_databse(self.bot._conn, role.id, role.guild.id)
 
         ex = role_details.exclusive_to
         conflicts = [r for r in who.roles if r.id in ex]
 
         for r in conflicts:
-            if not RoleSettings.from_databse(
-                self.bot._conn, r.id, role.guild.id
-            ).self_removable:
-                raise UserFeedbackError(
-                    custom_message="You already have a role which conflicts with this one."
-                )
+            if not RoleSettings.from_databse(self.bot._conn, r.id, role.guild.id).self_removable:
+                raise UserFeedbackError(custom_message="You already have a role which conflicts with this one.")
 
         return conflicts
 
@@ -477,9 +429,7 @@ class RoleManagement(commands.Cog):
         update_member_sticky(self.bot._conn, g.id, before.id, gained, lost)
 
     @commands.Cog.listener("on_member_update")
-    async def member_verification_hatch(
-        self, before: discord.Member, after: discord.Member
-    ):
+    async def member_verification_hatch(self, before: discord.Member, after: discord.Member):
 
         if before.pending and not after.pending:
             await self.on_member_join(after)
@@ -507,9 +457,7 @@ class RoleManagement(commands.Cog):
         await member.add_roles(*to_add)
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(
-        self, payload: discord.raw_models.RawReactionActionEvent
-    ):
+    async def on_raw_reaction_add(self, payload: discord.raw_models.RawReactionActionEvent):
 
         if not payload.guild_id:
             return
@@ -531,9 +479,7 @@ class RoleManagement(commands.Cog):
         try:
             rr = ReactionRoleRecord.from_raw_reaction(self.bot._conn, payload)
             rid = rr.role_id
-            role_settings = RoleSettings.from_databse(
-                self.bot._conn, rid, payload.guild_id
-            )
+            role_settings = RoleSettings.from_databse(self.bot._conn, rid, payload.guild_id)
         except NoSuchRecord:
             return
 
@@ -552,9 +498,7 @@ class RoleManagement(commands.Cog):
             await self.update_roles_atomically(who=member, give=[role], remove=remove)
 
     @commands.Cog.listener()
-    async def on_raw_reaction_remove(
-        self, payload: discord.raw_models.RawReactionActionEvent
-    ):
+    async def on_raw_reaction_remove(self, payload: discord.raw_models.RawReactionActionEvent):
 
         if not payload.guild_id:
             return
@@ -576,9 +520,7 @@ class RoleManagement(commands.Cog):
         try:
             rr = ReactionRoleRecord.from_raw_reaction(self.bot._conn, payload)
             rid = rr.role_id
-            role_settings = RoleSettings.from_databse(
-                self.bot._conn, rid, payload.guild_id
-            )
+            role_settings = RoleSettings.from_databse(self.bot._conn, rid, payload.guild_id)
         except NoSuchRecord:
             return
 
@@ -633,9 +575,7 @@ class RoleManagement(commands.Cog):
         member = ctx.guild.get_member(user_id)
 
         if member:
-            raise UserFeedbackError(
-                custom_message="They are in the server, use the normal means."
-            )
+            raise UserFeedbackError(custom_message="They are in the server, use the normal means.")
 
         update_member_sticky(self.bot._conn, ctx.guild.id, user_id, (rid,), ())
         await ctx.send("Done.")
@@ -660,9 +600,7 @@ class RoleManagement(commands.Cog):
     @admin_or_perms(manage_guild=True, manage_roles=True)
     @commands.guild_only()
     @commands.command(name="clearmessagebinds")
-    async def clear_message_binds(
-        self, ctx: commands.Context, channel: discord.TextChannel, message_id: int
-    ):
+    async def clear_message_binds(self, ctx: commands.Context, channel: discord.TextChannel, message_id: int):
         """
         Clear all binds from a message.
         """
@@ -729,16 +667,14 @@ class RoleManagement(commands.Cog):
                 try:
                     await message.add_reaction(_emoji)
                 except discord.HTTPException:
-                    raise UserFeedbackError(
-                        custom_message="Hmm, that message couldn't be reacted to"
-                    )
+                    raise UserFeedbackError(custom_message="Hmm, that message couldn't be reacted to")
 
             to_store[eid] = role
 
         for eid, role in to_store.items():
-            ReactionRoleRecord(
-                ctx.guild.id, message.channel.id, message.id, eid, role.id, True
-            ).to_database(self.bot._conn)
+            ReactionRoleRecord(ctx.guild.id, message.channel.id, message.id, eid, role.id, True).to_database(
+                self.bot._conn
+            )
 
         await ctx.send(
             f"Remember, the reactions only function according to "
@@ -784,13 +720,9 @@ class RoleManagement(commands.Cog):
             try:
                 await message.add_reaction(emoji)
             except discord.HTTPException:
-                raise UserFeedbackError(
-                    custom_message="Hmm, that message couldn't be reacted to"
-                )
+                raise UserFeedbackError(custom_message="Hmm, that message couldn't be reacted to")
 
-        ReactionRoleRecord(
-            ctx.guild.id, message.channel.id, message.id, eid, role.id, True
-        ).to_database(self.bot._conn)
+        ReactionRoleRecord(ctx.guild.id, message.channel.id, message.id, eid, role.id, True).to_database(self.bot._conn)
 
         role_settings = RoleSettings.from_databse(self.bot._conn, role.id, ctx.guild.id)
 
@@ -819,8 +751,7 @@ class RoleManagement(commands.Cog):
             try:
                 m = await ctx.bot.wait_for(
                     "message",
-                    check=lambda m: m.channel.id == ctx.channel.id
-                    and m.author.id == ctx.author.id,
+                    check=lambda m: m.channel.id == ctx.channel.id and m.author.id == ctx.author.id,
                     timeout=30,
                 )
             except asyncio.TimeoutError:
@@ -847,8 +778,7 @@ class RoleManagement(commands.Cog):
             try:
                 m = await ctx.bot.wait_for(
                     "message",
-                    check=lambda m: m.channel.id == ctx.channel.id
-                    and m.author.id == ctx.author.id,
+                    check=lambda m: m.channel.id == ctx.channel.id and m.author.id == ctx.author.id,
                     timeout=30,
                 )
             except asyncio.TimeoutError:
@@ -881,8 +811,7 @@ class RoleManagement(commands.Cog):
             try:
                 m = await ctx.bot.wait_for(
                     "message",
-                    check=lambda m: m.channel.id == ctx.channel.id
-                    and m.author.id == ctx.author.id,
+                    check=lambda m: m.channel.id == ctx.channel.id and m.author.id == ctx.author.id,
                     timeout=30,
                 )
             except asyncio.TimeoutError:
@@ -894,14 +823,11 @@ class RoleManagement(commands.Cog):
             else:
                 if (resp := m.content.casefold()) == "yes":
                     role_settings.set_self_assignable(self.bot._conn, True)
-                    await ctx.send(
-                        "Would you also like it to be self removable? (Options are yes or no)"
-                    )
+                    await ctx.send("Would you also like it to be self removable? (Options are yes or no)")
                     try:
                         m2 = await ctx.bot.wait_for(
                             "message",
-                            check=lambda m: m.channel.id == ctx.channel.id
-                            and m.author.id == ctx.author.id,
+                            check=lambda m: m.channel.id == ctx.channel.id and m.author.id == ctx.author.id,
                             timeout=30,
                         )
                     except asyncio.TimeoutError:
@@ -913,9 +839,7 @@ class RoleManagement(commands.Cog):
                     else:
                         if (resp2 := m2.content.casefold()) == "yes":
                             role_settings.set_self_removable(self.bot._conn, True)
-                            await ctx.send(
-                                "Ok, I've made the role self removable as well."
-                            )
+                            await ctx.send("Ok, I've made the role self removable as well.")
                         elif resp2 == "no":
                             await ctx.send("Got it, leaving it alone.")
                         else:
@@ -925,9 +849,7 @@ class RoleManagement(commands.Cog):
                             )
 
                 elif resp == "no":
-                    return await ctx.send(
-                        "Ok, I assume you know what you are doing then."
-                    )
+                    return await ctx.send("Ok, I assume you know what you are doing then.")
                 else:
                     return await ctx.send(
                         f"That did not appear to be a yes or a no. "
@@ -938,9 +860,7 @@ class RoleManagement(commands.Cog):
     @admin_or_perms(manage_guild=True, manage_roles=True)
     @commands.guild_only()
     @commands.command(name="roleunbind")
-    async def unbind_role_from_reactions(
-        self, ctx: commands.Context, role: discord.Role, msgid: int, emoji: str
-    ):
+    async def unbind_role_from_reactions(self, ctx: commands.Context, role: discord.Role, msgid: int, emoji: str):
         """
         Unbinds a role from a reaction on a message.
         """
@@ -992,9 +912,7 @@ class RoleManagement(commands.Cog):
             raise commands.BadArgument("Must provide at least one setting.")
 
         to_merge = settings.as_mergeable()
-        RoleSettings.bulk_update_bools(
-            self.bot._conn, ctx.guild.id, *{r.id for r in roles}, **to_merge
-        )
+        RoleSettings.bulk_update_bools(self.bot._conn, ctx.guild.id, *{r.id for r in roles}, **to_merge)
         await ctx.send("Settings for the specified roles have been modified.")
 
     @commands.guild_only()
@@ -1004,8 +922,7 @@ class RoleManagement(commands.Cog):
         View the reactions enabled for the server.
         """
         all_records = (
-            "\n".join(self.build_messages_for_react_role(ctx.guild, use_embeds=False))
-            or "No bound react roles."
+            "\n".join(self.build_messages_for_react_role(ctx.guild, use_embeds=False)) or "No bound react roles."
         )
         await ctx.send_paged(all_records)
 
@@ -1030,9 +947,7 @@ class RoleManagement(commands.Cog):
         try:
             rsets = RoleSettings.from_databse(self.bot._conn, rid, ctx.guild.id)
         except NoSuchRecord:
-            return await ctx.send(
-                "This role has not been setup (no settings applied to it)"
-            )
+            return await ctx.send("This role has not been setup (no settings applied to it)")
 
         output = (
             f"This role:\n{'is' if rsets.self_assignable else 'is not'} self assignable"
@@ -1047,9 +962,7 @@ class RoleManagement(commands.Cog):
             output += f"\nThis role requires all of the following roles: {rstring}"
         if r_exto := rsets.exclusive_to:
             rstring = ", ".join(r.name for r in ctx.guild.roles if r.id in r_exto)
-            output += (
-                f"\nThis role is mutually exclusive to the following roles: {rstring}"
-            )
+            output += f"\nThis role is mutually exclusive to the following roles: {rstring}"
 
         await ctx.send_paged(output)
 
@@ -1068,9 +981,7 @@ class RoleManagement(commands.Cog):
             return
 
         if len(_roles) < 2:
-            raise UserFeedbackError(
-                custom_message="You need to provide at least 2 roles"
-            )
+            raise UserFeedbackError(custom_message="You need to provide at least 2 roles")
 
         RoleSettings.bulk_add_exclusivity(self.bot._conn, ctx.guild.id, _roles)
         await ctx.send("Done.")
@@ -1090,9 +1001,7 @@ class RoleManagement(commands.Cog):
             return
 
         if len(_roles) < 2:
-            raise UserFeedbackError(
-                custom_message="You need to provide at least 2 roles"
-            )
+            raise UserFeedbackError(custom_message="You need to provide at least 2 roles")
 
         RoleSettings.bulk_remove_exclusivity(self.bot._conn, ctx.guild.id, _roles)
         await ctx.send("Done.")
@@ -1101,60 +1010,46 @@ class RoleManagement(commands.Cog):
     @admin_or_perms(manage_guild=True, manage_roles=True)
     @commands.guild_only()
     @rgroup.command(name="sticky")
-    async def setsticky(
-        self, ctx: SalamanderContext, role: discord.Role, yes_or_no: bool
-    ):
+    async def setsticky(self, ctx: SalamanderContext, role: discord.Role, yes_or_no: bool):
         """
         Sets whether a role should be reapplied to people who leave and rejoin.
         """
         if not await self.all_are_valid_roles(ctx, role, detailed=True):
             return
-        RoleSettings.bulk_update_bools(
-            self.bot._conn, ctx.guild.id, role.id, sticky=yes_or_no
-        )
+        RoleSettings.bulk_update_bools(self.bot._conn, ctx.guild.id, role.id, sticky=yes_or_no)
         await ctx.send("Done.")
 
     @commands.bot_has_guild_permissions(manage_roles=True)
     @admin_or_perms(manage_guild=True, manage_roles=True)
     @commands.guild_only()
     @rgroup.command(name="selfrem")
-    async def selfrem(
-        self, ctx: SalamanderContext, role: discord.Role, yes_or_no: bool
-    ):
+    async def selfrem(self, ctx: SalamanderContext, role: discord.Role, yes_or_no: bool):
         """
         Sets if a role is self-removable.
         """
         if not await self.all_are_valid_roles(ctx, role, detailed=True):
             return
-        RoleSettings.bulk_update_bools(
-            self.bot._conn, ctx.guild.id, role.id, self_removable=yes_or_no
-        )
+        RoleSettings.bulk_update_bools(self.bot._conn, ctx.guild.id, role.id, self_removable=yes_or_no)
         await ctx.send("Done.")
 
     @commands.bot_has_guild_permissions(manage_roles=True)
     @admin_or_perms(manage_guild=True, manage_roles=True)
     @commands.guild_only()
     @rgroup.command(name="selfadd")
-    async def selfadd(
-        self, ctx: SalamanderContext, role: discord.Role, yes_or_no: bool
-    ):
+    async def selfadd(self, ctx: SalamanderContext, role: discord.Role, yes_or_no: bool):
         """
         Sets if a role is self-assignable.
         """
         if not await self.all_are_valid_roles(ctx, role, detailed=True):
             return
-        RoleSettings.bulk_update_bools(
-            self.bot._conn, ctx.guild.id, role.id, self_assignable=yes_or_no
-        )
+        RoleSettings.bulk_update_bools(self.bot._conn, ctx.guild.id, role.id, self_assignable=yes_or_no)
         await ctx.send("Done.")
 
     @commands.bot_has_guild_permissions(manage_roles=True)
     @admin_or_perms(manage_guild=True, manage_roles=True)
     @commands.guild_only()
     @rgroup.command(name="requireall")
-    async def reqall(
-        self, ctx: SalamanderContext, role: discord.Role, *roles: discord.Role
-    ):
+    async def reqall(self, ctx: SalamanderContext, role: discord.Role, *roles: discord.Role):
         """
         Sets the required roles to gain a role.
 
@@ -1169,9 +1064,7 @@ class RoleManagement(commands.Cog):
     @admin_or_perms(manage_guild=True, manage_roles=True)
     @commands.guild_only()
     @rgroup.command(name="requireany")
-    async def reqany(
-        self, ctx: SalamanderContext, role: discord.Role, *roles: discord.Role
-    ):
+    async def reqany(self, ctx: SalamanderContext, role: discord.Role, *roles: discord.Role):
         """
         Sets a role to require already having one of another.
 
@@ -1223,18 +1116,14 @@ class RoleManagement(commands.Cog):
 
         actual_role = roles[0]
 
-        role_settings = RoleSettings.from_databse(
-            self.bot._conn, actual_role.id, ctx.guild.id
-        )
+        role_settings = RoleSettings.from_databse(self.bot._conn, actual_role.id, ctx.guild.id)
 
         if not role_settings.self_assignable:
             raise UserFeedbackError(custom_message="That isn't a self-assignable role.")
 
         remove = self.is_self_assign_eligible(ctx.author, actual_role, role_settings)
 
-        await self.update_roles_atomically(
-            who=ctx.author, give=[actual_role], remove=remove
-        )
+        await self.update_roles_atomically(who=ctx.author, give=[actual_role], remove=remove)
         await ctx.send("Done.")
 
     @commands.guild_only()
@@ -1259,9 +1148,7 @@ class RoleManagement(commands.Cog):
         actual_role = roles[0]
         rid = actual_role.id
 
-        if not RoleSettings.from_databse(
-            self.bot._conn, rid, ctx.guild.id
-        ).self_removable:
+        if not RoleSettings.from_databse(self.bot._conn, rid, ctx.guild.id).self_removable:
             raise UserFeedbackError(
                 custom_message=f"You aren't allowed to remove `{actual_role}` from yourself {ctx.author.mention}!`"
             )
@@ -1269,18 +1156,14 @@ class RoleManagement(commands.Cog):
         await self.update_roles_atomically(who=ctx.author, remove=[actual_role])
         await ctx.send("Done.")
 
-    def build_messages_for_react_role(
-        self, guild: discord.Guild, use_embeds=True
-    ) -> Iterator[str]:
+    def build_messages_for_react_role(self, guild: discord.Guild, use_embeds=True) -> Iterator[str]:
         """
         Builds info.
 
         Info is suitable for passing to embeds if use_embeds is True
         """
 
-        associated_react_roles = ReactionRoleRecord.all_in_guild(
-            self.bot._conn, guild.id
-        )
+        associated_react_roles = ReactionRoleRecord.all_in_guild(self.bot._conn, guild.id)
 
         linkfmt = (
             "[message #{message_id}](https://discordapp.com/channels/{guild_id}/{channel_id}/{message_id})"
@@ -1303,10 +1186,7 @@ class RoleManagement(commands.Cog):
             emoji_info = record.reaction_string
             emoji: Union[discord.Emoji, str]
             if emoji_info.isdigit():
-                emoji = (
-                    discord.utils.get(self.bot.emojis, id=int(emoji_info))
-                    or f"A custom enoji with id {emoji_info}"
-                )
+                emoji = discord.utils.get(self.bot.emojis, id=int(emoji_info)) or f"A custom enoji with id {emoji_info}"
             else:
                 emoji = add_variation_selectors_to_emojis(emoji_info)
 
@@ -1321,6 +1201,5 @@ class RoleManagement(commands.Cog):
     async def ignore_extra_hanlder(self, ctx, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
-                "You've given me what appears to be more than 1 role. "
-                "If your role name has spaces in it, quote it."
+                "You've given me what appears to be more than 1 role. " "If your role name has spaces in it, quote it."
             )

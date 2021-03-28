@@ -167,13 +167,11 @@ class ChooseYourOwnAdventure(Generic[_CYA_TV]):
 
     def __init__(
         self,
-        initial_pages: Optional[
-            Dict[int, Union[Decision, Termination[_CYA_TV]]]
-        ] = None,
+        initial_pages: Optional[Dict[int, Union[Decision, Termination[_CYA_TV]]]] = None,
     ):
-        self._pages: Dict[
-            int, Union[Decision, Termination[_CYA_TV]]
-        ] = initial_pages if initial_pages is not None else {}
+        self._pages: Dict[int, Union[Decision, Termination[_CYA_TV]]] = (
+            initial_pages if initial_pages is not None else {}
+        )
         self._pos = 0
 
     def add_page(
@@ -253,7 +251,7 @@ class ChooseYourOwnAdventure(Generic[_CYA_TV]):
         return isinstance(self._pages[self._pos], Termination)
 
     def get_result(self) -> _CYA_TV:
-        """ Get the result
+        """Get the result
 
         Raises
         ------
@@ -306,9 +304,7 @@ def _validate_cya(adventure: ChooseYourOwnAdventure):
                         )
 
                     if not isinstance(new_p, (Termination, Decision)):
-                        raise RuntimeError(
-                            f"Got unexpected type {type(new_p)} for page number {choice.goto}"
-                        )
+                        raise RuntimeError(f"Got unexpected type {type(new_p)} for page number {choice.goto}")
 
                     ret.add(choice.goto)
 

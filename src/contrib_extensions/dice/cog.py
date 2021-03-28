@@ -48,11 +48,7 @@ class Dice(commands.Cog):
         except DiceError as err:
             return await ctx.send(f"{ctx.author.mention}: {err}", delete_after=15)
 
-        prepend = (
-            f"{ctx.author.mention} Results for {ex} "
-            f"\N{GAME DIE} Total: {v} "
-            f"\nBreakdown below"
-        )
+        prepend = f"{ctx.author.mention} Results for {ex} " f"\N{GAME DIE} Total: {v} " f"\nBreakdown below"
         await ctx.send_paged(msg, box=True, prepend=prepend)
 
     @commands.cooldown(3, 30, commands.BucketType.member)
@@ -71,6 +67,4 @@ class Dice(commands.Cog):
         except DiceError as err:
             return await ctx.send(f"{ctx.author.mention}: {err}", delete_after=15)
 
-        await ctx.send(
-            f"Information about dice Expression: {ex}:\nLow: {low}\nHigh: {high}\nEV: {ev:.7g}"
-        )
+        await ctx.send(f"Information about dice Expression: {ex}:\nLow: {low}\nHigh: {high}\nEV: {ev:.7g}")

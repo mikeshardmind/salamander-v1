@@ -78,15 +78,12 @@ class Feedback(commands.Cog):
     async def create_type_error(self, ctx: SalamanderContext, exc: Exception):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
-                "Feedback types should not contain any spaces. "
-                "This makes them easier to work with for users."
+                "Feedback types should not contain any spaces. " "This makes them easier to work with for users."
             )
 
     @commands.is_owner()
     @feedbackset.command()
-    async def setchannelfortype(
-        self, ctx: SalamanderContext, channel: discord.TextChannel, typename: str
-    ):
+    async def setchannelfortype(self, ctx: SalamanderContext, channel: discord.TextChannel, typename: str):
         """
         Sets a channel to recieve feedback for a specific type
         """
@@ -117,10 +114,8 @@ class Feedback(commands.Cog):
 
     @commands.is_owner()
     @feedbackset.command()
-    async def setautoresponsefortype(
-        self, ctx: SalamanderContext, typename: str, *, response: str
-    ):
-        """ Set an autoresponse to a feedback type
+    async def setautoresponsefortype(self, ctx: SalamanderContext, typename: str, *, response: str):
+        """Set an autoresponse to a feedback type
 
         By default, there is no response.
         """
@@ -159,7 +154,7 @@ class Feedback(commands.Cog):
         *,
         response: str = None,
     ):
-        """ Create a feedback type, setting the response channel and
+        """Create a feedback type, setting the response channel and
         optionally an autoresponse in a single command.
 
         Note: This will also overwrite settings for an existing type,
@@ -186,13 +181,9 @@ class Feedback(commands.Cog):
         )
 
         if not response:
-            await ctx.send(
-                f"Feedback type created or update to use {channel.mention} without an autoresponse."
-            )
+            await ctx.send(f"Feedback type created or update to use {channel.mention} without an autoresponse.")
         else:
-            await ctx.send(
-                f"Feedback type created or updated to use {channel.mention} with an autoresponse."
-            )
+            await ctx.send(f"Feedback type created or updated to use {channel.mention} with an autoresponse.")
 
     @commands.is_owner()
     @feedbackset.command()
@@ -283,9 +274,7 @@ class Feedback(commands.Cog):
 
         if channel_id:
             if destination := self.bot.get_channel(channel_id):
-                embed = discord.Embed(
-                    description=feedback, color=destination.guild.me.color
-                )
+                embed = discord.Embed(description=feedback, color=destination.guild.me.color)
                 embed.set_author(
                     name=f"Feedback from {ctx.author}",
                     url=ctx.author.avatar_url_as(static_format="png"),

@@ -23,9 +23,7 @@ def embed_from_member(member: discord.Member) -> discord.Embed:
     em = discord.Embed(colour=member.color)
 
     if ln := len(member._roles):
-        r_str = " ".join(
-            (r.mention for r in reversed(member.roles) if not r.is_default())
-        )
+        r_str = " ".join((r.mention for r in reversed(member.roles) if not r.is_default()))
 
         if len(r_str) > 1024:
             # This will break an embed field limit,
@@ -41,9 +39,7 @@ def embed_from_member(member: discord.Member) -> discord.Embed:
         else:
             em.add_field(name="User's roles", value=r_str, inline=False)
 
-    join_str = (
-        member.joined_at.strftime(date_format_spec) if member.joined_at else "???"
-    )
+    join_str = member.joined_at.strftime(date_format_spec) if member.joined_at else "???"
     creation_str = member.created_at.strftime(date_format_spec)
     em.add_field(name="Created their account on", value=creation_str)
     em.add_field(name="Joined this server on", value=join_str)
