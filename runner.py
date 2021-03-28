@@ -60,10 +60,34 @@ def get_conf() -> Optional[BehaviorFlags]:
 
 
 def main():
+
+    if os.environ.get("SALAMANDER_TIMING", None):
+        timing_runner()
+        return
+
     if TOKEN := os.environ.get("SALAMANDER_TOKEN", None):
         Salamander.run_with_wrapping(TOKEN, config=get_conf())
     else:
         sys.exit("No token?")
+
+
+def timing_runner():
+
+    import yappi
+    import uuid
+
+    yappi.set_clock_type("WALL")
+
+    with yappi.run():
+        if TOKEN := os.environ.get("SALAMANDER_TOKEN", None):
+            Salamander.run_with_wrapping(TOKEN, config=get_conf())
+        else:
+            sys.exit("No token?")
+
+    uid = uuid.uuid4()
+
+    yappi.save(f"salamander-{uid.hex}.callgrind", type="callgrind")
+    yappi.sae(f"salamander-{uid.hex}.pstat", type="pstat")
 
 
 if __name__ == "__main__":
