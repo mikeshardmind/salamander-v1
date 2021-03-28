@@ -209,19 +209,19 @@ class Mod(commands.Cog):
             """
             INSERT INTO guild_settings(guild_id) VALUES (:guild_id)
             ON CONFLICT (guild_id) DO NOTHING;
-            INSERT INTO antimentionspam_settings (guild_id, max_mentions)
+            INSERT INTO antimentionspam_settings (guild_id, max_mentions_single)
             VALUES (:guild_id, :number)
             ON CONFLICT (guild_id)
             DO UPDATE SET
-                max_mentions=excluded.max_mentions;
+                max_mentions_single=excluded.max_mentions_single;
             """,
             {"guild_id": ctx.guild.id, "number": number},
         )
 
         message = (
-            f"Max mentions set to {number}"
+            f"Max mentions per message set to {number}."
             if number > 0
-            else "Mention filtering has been disabled"
+            else "Mention filtering has been disabled."
         )
         await ctx.send(message)
 
@@ -255,9 +255,9 @@ class Mod(commands.Cog):
         )
 
         message = (
-            f"Max mentions set to {number} per {seconds}"
+            f"Max mentions set to {number} per {seconds} seconds."
             if number > 0 or seconds > 0
-            else "Mention interval filtering has been disabled"
+            else "Mention interval filtering has been disabled."
         )
         self.antispam[ctx.guild.id] = commands.CooldownMapping.from_cooldown(
             number, seconds, commands.BucketType.member
@@ -397,7 +397,13 @@ class Mod(commands.Cog):
                 {"guild_id": ctx.guild.id, "mute": enabled},
             )
 
-        await ctx.send(f"Mute on exceeding set limits: {enabled}")
+        message = (
+            "Users will be muted when exceeding set limits."
+            if enabled
+            else "Users will not be muted when exceeding set limits."
+        )
+
+        await ctx.send(message)
 
     @mod_or_perms(kick_members=True)
     @commands.bot_has_guild_permissions(kick_members=True)
@@ -884,10 +890,17 @@ class Mod(commands.Cog):
         ban = ban and (ban_single or not single_message)
 
         if ban and guild.me.guild_permissions.ban_members:
-            await guild.ban(
-                discord.Object(id=target.id), reason="Mention Spam (Automated ban)",
-            )
-            self.bot.modlog.member_ban(guild.me, target, "Mention Spam (Automated ban)")
+            try:
+                ban_soundness_check(guild.me, guild.me, target)
+            except UserFeedbackError:
+                pass
+            else:
+                await guild.ban(
+                    discord.Object(id=target.id), reason="Mention Spam (Automated ban)",
+                )
+                self.bot.modlog.member_ban(
+                    guild.me, target, "Mention Spam (Automated ban)"
+                )
 
         if warnmsg and channel.permissions_for(guild.me).send_messages:
             try:
@@ -900,20 +913,23 @@ class Mod(commands.Cog):
 
         if mute:
 
-            if mute_duration:
-                expiration = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(
-                    minutes=mute_duration
-                )
-            else:
-                expiration = None
-
-            await self.mute_user_logic(
-                mod=guild.me,
-                target=target,
-                reason="Mention Spam (Automated mute)",
-                audit_reason="Mention Spam (Automated mute)",
-                expiration=expiration,
+            expiration = (
+                datetime.utcnow().replace(tzinfo=timezone.utc)
+                + timedelta(minutes=mute_duration)
+                if mute_duration
+                else None
             )
+
+            try:
+                await self.mute_user_logic(
+                    mod=guild.me,
+                    target=target,
+                    reason="Mention Spam (Automated mute)",
+                    audit_reason="Mention Spam (Automated mute)",
+                    expiration=expiration,
+                )
+            except UserFeedbackError:
+                pass
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
@@ -981,7 +997,7 @@ class Mod(commands.Cog):
                     await self.mention_punish(message, row)
                     break
 
-        if len(message.mentions) >= limit > 0:
+        if len(message.mentions) > limit > 0:
             await self.mention_punish(message, row, single_message=True)
 
             if not channel.permissions_for(guild.me).manage_messages:
