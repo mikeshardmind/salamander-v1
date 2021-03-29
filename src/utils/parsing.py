@@ -19,6 +19,7 @@ import math
 import re
 import sys
 from datetime import timedelta
+from decimal import Decimal
 from typing import Final, Optional, Union
 
 from dateutil.relativedelta import relativedelta
@@ -83,7 +84,14 @@ def parse_positive_number(argument: str, upper_bound: Union[int, float] = 184467
     # prior: int(math.log(upper_bound, 10)) + 1
     # failure case: upper_bound = 1000
 
-    lexical_length = int(math.log(upper_bound, 10) + _2EPSILON) + 1
+    if upper_bound < 1:
+        raise ValueError("Must provide a positive non-zero upper bound")
+
+    # Decimal module is sloweer but works with arbitrarily large numbers while being faster than len(str(num))
+    # Realistically, I can just change the entire thing to the latter form
+    # But... this isn't costing anything to keep.
+    log = math.log(upper_bound, 10)
+    lexical_length = int(log + _2EPSILON) + 1 if math.isfinite(log) else Decimal(upper_bound).log10() + 1
 
     if m := re.match(r"([0-9]{1,%s})$" % lexical_length, argument):
         if 0 < (val := int(m.group(1))) <= upper_bound:
