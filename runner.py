@@ -61,10 +61,6 @@ def get_conf() -> Optional[BehaviorFlags]:
 
 def main():
 
-    if os.environ.get("SALAMANDER_TIMING", None):
-        timing_runner()
-        return
-
     if TOKEN := os.environ.get("SALAMANDER_TOKEN", None):
         Salamander.run_with_wrapping(TOKEN, config=get_conf())
     else:
@@ -86,8 +82,9 @@ def timing_runner():
 
     uid = uuid.uuid4()
 
-    yappi.save(f"salamander-{uid.hex}.callgrind", type="callgrind")
-    yappi.sae(f"salamander-{uid.hex}.pstat", type="pstat")
+    stats = yappi.get_func_stats()
+    stats.save(f"salamander-{uid.hex}.callgrind", type="callgrind")
+    stats.sae(f"salamander-{uid.hex}.pstat", type="pstat")
 
 
 if __name__ == "__main__":
