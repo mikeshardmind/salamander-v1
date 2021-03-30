@@ -67,25 +67,5 @@ def main():
         sys.exit("No token?")
 
 
-def timing_runner():
-
-    import yappi
-    import uuid
-
-    yappi.set_clock_type("WALL")
-
-    with yappi.run():
-        if TOKEN := os.environ.get("SALAMANDER_TOKEN", None):
-            Salamander.run_with_wrapping(TOKEN, config=get_conf())
-        else:
-            sys.exit("No token?")
-
-    uid = uuid.uuid4()
-
-    stats = yappi.get_func_stats()
-    stats.save(f"salamander-{uid.hex}.callgrind", type="callgrind")
-    stats.sae(f"salamander-{uid.hex}.pstat", type="pstat")
-
-
 if __name__ == "__main__":
     main()
