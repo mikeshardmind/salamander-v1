@@ -840,6 +840,9 @@ class Salamander(commands.AutoShardedBot):
             await ctx.send_help()
         elif isinstance(exc, commands.NoPrivateMessage):
             await ctx.author.send("This command cannot be used in private messages.")
+        elif isinstance(exc, commands.UserInputError):
+            if exc.args and (msg := exc.args[0]):
+                await ctx.send(msg)
         elif isinstance(exc, commands.CommandInvokeError):
             original = exc.original
             if isinstance(original, SalamanderException):
@@ -853,9 +856,6 @@ class Salamander(commands.AutoShardedBot):
                 # and the user facing message should be tailored to the situation.
                 # HTTP exceptions should never hit this logger from a command (faulty command)
                 log.exception(f"In {ctx.command.qualified_name}:", exc_info=original)
-        elif isinstance(exc, commands.ArgumentParsingError):
-            if exc.args and (msg := exc.args[0]):
-                await ctx.send(msg)
 
     async def check_basilisk(self, string: str) -> bool:
         """
