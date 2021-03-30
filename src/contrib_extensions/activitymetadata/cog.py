@@ -27,13 +27,7 @@ from discord.ext import commands
 
 from ...bot import Salamander, SalamanderContext, UserFeedbackError
 from ...checks import admin, mod, owner_in_guild
-from ...utils import (
-    StrictMemberConverter,
-    TimedeltaConverter,
-    Waterfall,
-    embed_from_member,
-    resolve_as_roles,
-)
+from ...utils import StrictMemberConverter, TimedeltaConverter, Waterfall, embed_from_member, resolve_as_roles
 
 log = logging.getLogger("salamander.contrib_exts.activitymetadata")
 

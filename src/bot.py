@@ -25,18 +25,7 @@ import sys
 import traceback
 from logging.handlers import RotatingFileHandler
 from types import TracebackType
-from typing import (
-    Any,
-    Callable,
-    Final,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Final, List, Optional, Sequence, Set, Type, TypeVar, Union
 from uuid import uuid4
 
 try:

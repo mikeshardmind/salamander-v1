@@ -25,12 +25,7 @@ from discord.ext import commands
 
 from ...bot import HierarchyException, Salamander, SalamanderContext, UserFeedbackError
 from ...checks import admin_or_perms, mod_or_perms
-from ...utils import (
-    StrictMemberConverter,
-    TimedeltaConverter,
-    embed_from_member,
-    format_list,
-)
+from ...utils import StrictMemberConverter, TimedeltaConverter, embed_from_member, format_list
 
 INSERT_OR_IGNORE_GUILD = """
 INSERT INTO guild_settings (guild_id) VALUES (?)

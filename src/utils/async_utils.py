@@ -18,16 +18,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from typing import (
-    Awaitable,
-    Callable,
-    Generic,
-    Literal,
-    Optional,
-    Sequence,
-    TypeVar,
-    overload,
-)
+from typing import Awaitable, Callable, Generic, Literal, Optional, Sequence, TypeVar, overload
 
 _T = TypeVar("_T")
 

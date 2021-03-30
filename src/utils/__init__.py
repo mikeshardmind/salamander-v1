@@ -30,9 +30,7 @@ from .cya import NoMatchingChoice as NoMatchingChoice
 from .cya import NotDone as NotDone
 from .cya import Termination as Termination
 from .embed_generators import embed_from_member as embed_from_member
-from .emoji_handling import (
-    add_variation_selectors_to_emojis as add_variation_selectors_to_emojis,
-)
+from .emoji_handling import add_variation_selectors_to_emojis as add_variation_selectors_to_emojis
 from .emoji_handling import strip_variation_selectors as strip_variation_selectors
 from .formatting import format_list as format_list
 from .formatting import humanize_seconds as humanize_seconds

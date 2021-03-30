@@ -26,11 +26,7 @@ from discord.ext import commands
 
 from ...bot import Salamander, SalamanderContext, UserFeedbackError
 from ...checks import admin_or_perms, mod_or_perms
-from ...utils import (
-    add_variation_selectors_to_emojis,
-    resolve_as_roles,
-    strip_variation_selectors,
-)
+from ...utils import add_variation_selectors_to_emojis, resolve_as_roles, strip_variation_selectors
 from .converters import (
     ComplexActionConverter,
     ComplexSearchConverter,
@@ -38,13 +34,7 @@ from .converters import (
     RoleSettingsConverter,
     RoleSyntaxConverter,
 )
-from .db_abstractions import (
-    NoSuchRecord,
-    ReactionRoleRecord,
-    RoleSettings,
-    get_member_sticky,
-    update_member_sticky,
-)
+from .db_abstractions import NoSuchRecord, ReactionRoleRecord, RoleSettings, get_member_sticky, update_member_sticky
 from .member_search import search_filter as member_search_filter
 
 log = logging.getLogger("salamander.extensions.rolemanagement")

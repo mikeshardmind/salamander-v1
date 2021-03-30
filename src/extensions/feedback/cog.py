@@ -20,12 +20,7 @@ import uuid
 import discord
 from discord.ext import commands
 
-from ...bot import (
-    IncompleteInputError,
-    Salamander,
-    SalamanderContext,
-    UserFeedbackError,
-)
+from ...bot import IncompleteInputError, Salamander, SalamanderContext, UserFeedbackError
 from ...utils import format_list
 
 
