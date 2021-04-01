@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from uuid import uuid4
 
 import discord
@@ -28,6 +29,8 @@ BASILISK = "basilisk"
 REFOCUS = "basilisk.refocus"
 STATUS_CHECK = "status.check"
 STATUS_RESPONSE = "status.response"
+
+TXT_FILENAME_REGEX = re.compile(r"\.txt$")
 
 
 class Filter(commands.Cog):
@@ -76,15 +79,25 @@ class Filter(commands.Cog):
     @commands.Cog.listener("on_message")
     async def on_message(self, msg: discord.Message):
 
-        if (
+        if not (
             msg.content
             and (not msg.author.bot)
             and msg.guild
             and msg.channel.permissions_for(msg.guild.me).manage_messages
             and self.check_enabled_in_guild(msg.guild.id)
-            and await self.bot.check_basilisk(msg.content)
         ):
+            return
+
+        if await self.bot.check_basilisk(msg.content):
             await msg.delete()
+            return
+
+        for attachment in msg.attachments:
+            if TXT_FILENAME_REGEX.search(attachment.name):
+                data = await attachment.read()
+                if await self.bot.check_basilisk(data):
+                    await msg.delete()
+                    return
 
     @commands.check_any(commands.is_owner(), admin_or_perms(manage_guild=True))
     @commands.group(name="filterset")
