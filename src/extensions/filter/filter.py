@@ -80,15 +80,14 @@ class Filter(commands.Cog):
     async def on_message(self, msg: discord.Message):
 
         if not (
-            msg.content
-            and (not msg.author.bot)
+            (not msg.author.bot)
             and msg.guild
             and msg.channel.permissions_for(msg.guild.me).manage_messages
             and self.check_enabled_in_guild(msg.guild.id)
         ):
             return
 
-        if await self.bot.check_basilisk(msg.content):
+        if msg.content and await self.bot.check_basilisk(msg.content):
             await msg.delete()
             return
 
