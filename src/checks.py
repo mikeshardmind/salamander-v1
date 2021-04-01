@@ -64,12 +64,21 @@ def admin():
 
 
 def mod_or_perms(**perms):
-    return commands.check_any(commands.has_guild_permissions(**perms), mod(), owner_in_guild())
+    if perms:
+        return commands.check_any(commands.has_guild_permissions(**perms), mod(), owner_in_guild())
+    else:
+        return commands.check_any(mod(), owner_in_guild())
 
 
 def admin_or_perms(**perms):
-    return commands.check_any(commands.has_guild_permissions(**perms), admin(), owner_in_guild())
+    if perms:
+        return commands.check_any(commands.has_guild_permissions(**perms), admin(), owner_in_guild())
+    else:
+        return commands.check_any(admin(), owner_in_guild())
 
 
 def guildowner_or_perms(**perms):
-    return commands.check_any(commands.has_guild_permissions(**perms), guildowner(), owner_in_guild())
+    if perms:
+        return commands.check_any(commands.has_guild_permissions(**perms), guildowner(), owner_in_guild())
+    else:
+        return commands.check_any(guildowner(), owner_in_guild())
