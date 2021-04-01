@@ -93,7 +93,7 @@ class Filter(commands.Cog):
             return
 
         for attachment in msg.attachments:
-            if TXT_FILENAME_REGEX.search(attachment.name):
+            if TXT_FILENAME_REGEX.search(attachment.filename):
                 data = await attachment.read()
                 if await self.bot.check_basilisk(data):
                     await msg.delete()
