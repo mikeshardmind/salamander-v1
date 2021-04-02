@@ -1,0 +1,10 @@
+discord.py>=1.6.0,<2
+msgpack==1.0.0
+numpy
+numba
+pyzmq
+uvloop
+python-dateutil
+lru-dict
+toml
+git+https://github.com/Rapptz/discord-ext-menus
