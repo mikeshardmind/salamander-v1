@@ -340,6 +340,3 @@ CREATE TABLE IF NOT EXISTS feedback_entries (
 	created_at TEXT DEFAULT CURRENT_TIMESTAMP,
 	feedback TEXT NOT NULL
 );
-
--- TODO: DB design for reports
--- Maybe TODO: altered command availability model (probably not!)
