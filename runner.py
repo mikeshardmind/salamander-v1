@@ -22,7 +22,7 @@ from typing import Optional
 import toml
 
 from src import ipc_layer as ipcl
-from src.bot import BehaviorFlags, Salamander
+from src.bot import _CUSTOM_DATA_DIR, BehaviorFlags, Salamander
 
 
 def get_conf() -> Optional[BehaviorFlags]:
@@ -45,6 +45,8 @@ def get_conf() -> Optional[BehaviorFlags]:
         ipcl.MULTICAST_SUBSCRIBE_ADDR.set(hydra_subscribe_addr)
     if hydra_remote_recv_addr := raw_data.pop("hydra_remote_recv_addr", ""):
         ipcl.PULL_REMOTE_ADDR.set(hydra_remote_recv_addr)
+    if data_dir := raw_data.pop("data_dir", ""):
+        _CUSTOM_DATA_DIR.set(data_dir)
 
     if ext_dict:
         exts = tuple(

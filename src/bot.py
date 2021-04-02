@@ -23,7 +23,9 @@ import re
 import signal
 import sys
 import traceback
+from contextvars import ContextVar
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from types import TracebackType
 from typing import Any, Callable, Final, List, Optional, Sequence, Set, Type, TypeVar, Union
 from uuid import uuid4
@@ -55,6 +57,19 @@ BASILISK_OFFER = "basilisk.offer"
 
 __all__ = ["setup_logging", "Salamander", "SalamanderContext"]
 
+_CUSTOM_DATA_DIR: ContextVar[Optional[str]] = ContextVar("DATA_DIR", default=None)
+
+
+def get_data_path() -> Path:
+    if base := _CUSTOM_DATA_DIR.get():
+        base_path = Path(base).resolve()
+        if not base_path.is_dir():
+            raise RuntimeError("Provided non-directory data path")
+    else:
+        base_path = Path.cwd()
+
+    return base_path
+
 
 @only_once
 def setup_logging():
@@ -63,7 +78,8 @@ def setup_logging():
     if __debug__:
         log.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(sys.stdout)
-    rotating_file_handler = RotatingFileHandler("salamander.log", maxBytes=10000000, backupCount=5)
+
+    rotating_file_handler = RotatingFileHandler(get_data_path() / "salamander.log", maxBytes=10000000, backupCount=5)
     # Log appliance use in future with aiologger.
     formatter = logging.Formatter(
         "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s",
@@ -784,7 +800,9 @@ class Salamander(commands.AutoShardedBot):
         self._zmq = ZMQHandler()
         self._zmq_task: Optional[asyncio.Task] = None
 
-        self._conn = apsw.Connection("salamander.db")
+        db_path = get_data_path() / "salamander.db"
+
+        self._conn = apsw.Connection(str(db_path))
 
         self.modlog: ModlogHandler = ModlogHandler(self._conn)
         self.prefix_manager: PrefixManager = PrefixManager(self)

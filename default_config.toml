@@ -6,6 +6,7 @@ no_basilisk = false  # refers to the filtering service
 
 hydra_subscribe_addr = ""  # Leave empty for default
 hydra_remote_recv_addr = ""  # Leave empty for default
+data_dir = ""  # leave empty to store data in working dir. Should be an absolute path, be careful.
 
 [exts]
 core = [ "mod", "meta", "cleanup", "rolemanagement",]  # refers to module names in src/extensions
