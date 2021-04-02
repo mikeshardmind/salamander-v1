@@ -7,4 +7,5 @@ uvloop
 python-dateutil
 lru-dict
 toml
+hyperscan
 git+https://github.com/Rapptz/discord-ext-menus

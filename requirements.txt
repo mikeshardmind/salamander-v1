@@ -4,6 +4,7 @@ attrs==20.3.0
 chardet==4.0.0
 discord-ext-menus @ git+https://github.com/Rapptz/discord-ext-menus@309c70222eec33acacb8c21bbb0fbe9bc57de661
 discord.py==1.6.0
+hyperscan==0.2.0
 idna==3.1
 llvmlite==0.36.0
 lru-dict==1.1.7
