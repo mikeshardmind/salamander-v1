@@ -23,13 +23,14 @@ Discord's API won't be as stable as our internals,
 so we'll prefer binds in other portions of the architecture.
 """
 import asyncio
+from contextvars import ContextVar
 
 import msgpack
 import zmq
 import zmq.asyncio
 
-MULTICAST_SUBSCRIBE_ADDR = "tcp://127.0.0.1:5555"
-PULL_REMOTE_ADDR = "tcp://127.0.0.1:5556"
+MULTICAST_SUBSCRIBE_ADDR: ContextVar[str] = ContextVar("MULTICAST_SUBSCRIBE_ADDR", default="tcp://127.0.0.1:5555")
+PULL_REMOTE_ADDR: ContextVar[str] = ContextVar("PULL_REMOTE_ADDR", default="tcp://127.0.0.1:5556")
 
 
 class ZMQHandler:
@@ -72,8 +73,8 @@ class ZMQHandler:
 
     async def __aenter__(self):
         self.sub_socket.setsockopt(zmq.SUBSCRIBE, b"")  # pylint: disable=no-member
-        self.sub_socket.connect(MULTICAST_SUBSCRIBE_ADDR)
-        self.push_socket.connect(PULL_REMOTE_ADDR)
+        self.sub_socket.connect(MULTICAST_SUBSCRIBE_ADDR.get())
+        self.push_socket.connect(PULL_REMOTE_ADDR.get())
 
         self._push_task = asyncio.create_task(self.push_loop())
         self._recv_task = asyncio.create_task(self.recv_loop())

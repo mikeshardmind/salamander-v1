@@ -4,6 +4,9 @@
 no_serpent = false  # refers to the scheduling service
 no_basilisk = false  # refers to the filtering service
 
+hydra_subscribe_addr = ""  # Leave empty for default
+hydra_remote_recv_addr = ""  # Leave empty for default
+
 [exts]
 core = [ "mod", "meta", "cleanup", "rolemanagement",]  # refers to module names in src/extensions
 contrib = [ "dice", "qotw", "activitymetadata",]  # refers to module names in src/contrib_extensions

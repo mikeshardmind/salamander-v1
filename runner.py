@@ -22,6 +22,7 @@ from typing import Optional
 import toml
 
 from src.bot import BehaviorFlags, Salamander
+from src import ipc_layer as ipcl
 
 
 def get_conf() -> Optional[BehaviorFlags]:
@@ -38,6 +39,12 @@ def get_conf() -> Optional[BehaviorFlags]:
 
     ext_dict = raw_data.pop("exts", None)
     about_text = raw_data.pop("about_text", None)
+
+    # TODO: probably move this later to allow multiple bots in same proc to have different addresses here.
+    if hydra_subscribe_addr := raw_data.pop("hydra_subscribe_addr", ""):
+        ipcl.MULTICAST_SUBSCRIBE_ADDR.set(hydra_subscribe_addr)
+    if hydra_remote_recv_addr := raw_data.pop("hydra_remote_recv_addr", ""):
+        ipcl.PULL_REMOTE_ADDR.set(hydra_remote_recv_addr)
 
     if ext_dict:
         exts = tuple(
