@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 if [ ! -f wheels/apsw-3.35.2.post1-cp38-cp38*.whl ]; then
   git clone https://github.com/rogerbinns/apsw/
   pushd apsw
