@@ -21,8 +21,8 @@ from typing import Optional
 
 import toml
 
-from src.bot import BehaviorFlags, Salamander
 from src import ipc_layer as ipcl
+from src.bot import BehaviorFlags, Salamander
 
 
 def get_conf() -> Optional[BehaviorFlags]:
