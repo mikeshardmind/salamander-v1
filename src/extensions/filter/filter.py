@@ -16,7 +16,6 @@
 from __future__ import annotations
 
 import asyncio
-import re
 from uuid import uuid4
 
 import discord
@@ -29,8 +28,6 @@ BASILISK = "basilisk"
 REFOCUS = "basilisk.refocus"
 STATUS_CHECK = "status.check"
 STATUS_RESPONSE = "status.response"
-
-TXT_FILENAME_REGEX = re.compile(r"\.txt$")
 
 
 class Filter(commands.Cog):
@@ -92,8 +89,20 @@ class Filter(commands.Cog):
             return
 
         for attachment in msg.attachments:
-            if TXT_FILENAME_REGEX.search(attachment.filename):
-                data = await attachment.read()
+            if "charset" in attachment.content_type:
+
+                if attachment.size > 64_000:
+                    # We can work on allowing this if anyone has a reason to.
+                    # for context, this is above the length of entire movie scripts and most novels in text form.
+                    await msg.delete()
+                    return
+
+                try:
+                    data = (await attachment.read()).decode(encoding="utf-8")
+                except UnicodeDecodeError:
+                    await msg.delete()  # we won't let junk data that discord won't render anyhow
+                    return
+
                 if await self.bot.check_basilisk(data):
                     await msg.delete()
                     return
