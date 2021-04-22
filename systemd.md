@@ -5,7 +5,8 @@ Example systemd service files:
 [Unit]
 Description=Salamander
 After=multi-user.target
-After=network-online.target hydra.service
+After=network-online.target
+After=hydra.service
 Wants=network-online.target
 
 [Service]
@@ -49,7 +50,8 @@ WantedBy=multi-user.target
 [Unit]
 Description=Basilisk
 After=multi-user.target
-After=network-online.target hydra.service
+After=network-online.target
+After=hydra.service
 Wants=network-online.target
 [Service]
 WorkingDirectory=/umw/basilisk
