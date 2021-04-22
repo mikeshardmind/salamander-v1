@@ -53,6 +53,7 @@ log = logging.getLogger("salamander")
 
 BASILISK_GAZE = "basilisk.gaze"
 BASILISK_OFFER = "basilisk.offer"
+BASILISK_SHM_OFFER = "basilisk.shmstart"
 
 
 __all__ = ["setup_logging", "Salamander", "SalamanderContext"]
@@ -130,9 +131,9 @@ _PT = TypeVar("_PT", bound=str)
 
 UNTIMELY_RESPONSE_ERROR_STR = "I'm not waiting forever for a response (exiting)."
 
-NON_TEXT_RESPONSE_ERROR_STR = "There doesn't appear to be any text in your response, " "please try this command again."
+NON_TEXT_RESPONSE_ERROR_STR = "There doesn't appear to be any text in your response, please try this command again."
 
-INVALID_OPTION_ERROR_FMT = "That wasn't a valid option, please try this command again." "\n(Valid options are: {})"
+INVALID_OPTION_ERROR_FMT = "That wasn't a valid option, please try this command again.\n(Valid options are: {})"
 
 
 class PreFormattedListSource(menus.ListPageSource):
@@ -804,6 +805,16 @@ class Salamander(commands.AutoShardedBot):
 
         self._conn = apsw.Connection(str(db_path))
 
+        self._basilisk_db = apsw.Connection(":memory:?basilisk")
+        self._basilisk_db.cursor().execute(
+            """
+            CREATE TABLE IF NOT EXISTS basilisk (
+                object_uuid BLOB NOT NULL PRIMARY KEY,
+                data TEXT NOT NULL
+            );
+            """
+        )
+
         self.modlog: ModlogHandler = ModlogHandler(self._conn)
         self.prefix_manager: PrefixManager = PrefixManager(self)
         self.block_manager: BlockManager = BlockManager(self)
@@ -890,9 +901,24 @@ class Salamander(commands.AutoShardedBot):
             topic, (recv_uuid, *_data) = args
             return topic == BASILISK_GAZE and recv_uuid == this_uuid
 
+        topic: str
+        payload: Any
+        if len(string) > 2000:
+
+            self._basilisk_db.cursor().execute(
+                """
+                INSERT INTO basilisk (object_uuid, data) VALUES (?, ?);
+                """,
+                (this_uuid, string),
+            )
+
+            topic, payload = BASILISK_SHM_OFFER, this_uuid
+        else:
+            topic, payload = BASILISK_OFFER, ((this_uuid, None), string)
+
         # This is an intentionally genererous timeout, won't be an issue.
         fut = self.wait_for("ipc_recv", check=matches, timeout=5)
-        self.ipc_put(BASILISK_OFFER, ((this_uuid, None), string))
+        self.ipc_put(topic, payload)
         try:
             await fut
         except asyncio.TimeoutError:

@@ -16,6 +16,8 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+import re
 from uuid import uuid4
 
 import discord
@@ -28,6 +30,11 @@ BASILISK = "basilisk"
 REFOCUS = "basilisk.refocus"
 STATUS_CHECK = "status.check"
 STATUS_RESPONSE = "status.response"
+
+CONTENT_TYPE_PATTERN = re.compile(r"; charset=(.*)$")
+MAX_REASONABLE_TEXT_SIZE = 128_000
+
+log = logging.getLogger("salamander.filter")
 
 
 class Filter(commands.Cog):
@@ -89,19 +96,25 @@ class Filter(commands.Cog):
             return
 
         for attachment in msg.attachments:
-            if "charset" in attachment.content_type:
+            if match := CONTENT_TYPE_PATTERN.search(attachment.content_type):
+                encoding = match.group(1)
 
-                if attachment.size > 64_000:
-                    # We can work on allowing this if anyone has a reason to.
-                    # for context, this is above the length of entire movie scripts and most novels in text form.
+                if attachment.size > MAX_REASONABLE_TEXT_SIZE:
                     await msg.delete()
                     return
 
                 try:
-                    data = (await attachment.read()).decode(encoding="utf-8")
+                    data = (await attachment.read()).decode(encoding=encoding)
+                except LookupError:
+                    log.exception("Got unknown encoding %s", encoding)
+                    await msg.delete()
                 except UnicodeDecodeError:
-                    await msg.delete()  # we won't let junk data that discord won't render anyhow
-                    return
+                    # I'm not actually sure this is possible with how discord handles text attachments.
+                    log.exception(
+                        "If you have this in your log, please open an issue %s: %s",
+                        encoding,
+                        b"\x17p\xbc\x1a\x95\xe4B\xc3",
+                    )
 
                 if await self.bot.check_basilisk(data):
                     await msg.delete()
