@@ -13,7 +13,7 @@
 --   limitations under the License.
 
 
--- sql here intended for sqlite
+-- sql here intended for sqlite >= 3.35.4 (RETURNING being the newest feature used)
 -- timezones are stored using the IANA code, not a raw offset
 -- discord and bot event timestamps use unix timestamps,
 -- any user displays for these are then formed by
