@@ -169,11 +169,7 @@ class Filter(commands.Cog):
 
         def matches(*args) -> bool:
             topic, (recv_uuid, component_name, *_data) = args
-            return (
-                topic == STATUS_RESPONSE
-                and recv_uuid == this_uuid
-                and component_name == BASILISK
-            )
+            return topic == STATUS_RESPONSE and recv_uuid == this_uuid and component_name == BASILISK
 
         f = self.bot.wait_for("ipc_recv", check=matches, timeout=5)
 

@@ -903,6 +903,7 @@ class Salamander(commands.AutoShardedBot):
 
         topic: str
         payload: Any
+        cleanup_needed = False
         if len(string) > 2000:
 
             self._basilisk_db.cursor().execute(
@@ -913,6 +914,7 @@ class Salamander(commands.AutoShardedBot):
             )
 
             topic, payload = BASILISK_SHM_OFFER, this_uuid
+            cleanup_needed = True
         else:
             topic, payload = BASILISK_OFFER, ((this_uuid, None), string)
 
@@ -922,6 +924,13 @@ class Salamander(commands.AutoShardedBot):
         try:
             await fut
         except asyncio.TimeoutError:
+            if cleanup_needed:
+                self._basilisk_db.cursor().execute(
+                    """
+                    DELETE FROM basilisk WHERE object_uuid = ?
+                    """,
+                    (this_uuid,),
+                )
             return False
         else:
             return True
