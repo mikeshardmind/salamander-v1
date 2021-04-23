@@ -109,12 +109,17 @@ class Filter(commands.Cog):
                     log.exception("Got unknown encoding %s", encoding)
                     await msg.delete()
                 except UnicodeDecodeError:
-                    # I'm not actually sure this is possible with how discord handles text attachments.
-                    log.exception(
-                        "If you have this in your log, please open an issue %s: %s",
-                        encoding,
-                        b"\x17p\xbc\x1a\x95\xe4B\xc3",
-                    )
+                    # Well, yes it can happen.
+                    # I don't know why I expected otherwise
+                    # given the issues with their media renderer.
+                    # I guess I figured this was too hard for them to screw up.
+                    # because of how easy it is to not show malformed unicode.
+                    # Rather than reject to render the file,
+                    # they just assume it should be shown.
+                    # and fill unknown byte sequences with U+FFFD
+                    # While I could do similar using errors='replace'
+                    # I have no interest in such.
+                    await msg.delete()
 
                 if await self.bot.check_basilisk(data):
                     await msg.delete()
@@ -164,7 +169,11 @@ class Filter(commands.Cog):
 
         def matches(*args) -> bool:
             topic, (recv_uuid, component_name, *_data) = args
-            return topic == STATUS_RESPONSE and recv_uuid == this_uuid and component_name == BASILISK
+            return (
+                topic == STATUS_RESPONSE
+                and recv_uuid == this_uuid
+                and component_name == BASILISK
+            )
 
         f = self.bot.wait_for("ipc_recv", check=matches, timeout=5)
 
