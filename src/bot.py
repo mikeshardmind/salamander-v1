@@ -1118,8 +1118,13 @@ class Salamander(commands.AutoShardedBot):
                         name = task.get_name()
                         coro = task.get_coro()
 
-                        extracted_list = []
+                        # The below is a realtively optimized way to get details about each frame
+                        # in the task's stack
 
+                        # List of tuple per frame, tuple in form: (filename, lineno, name, line)
+                        # This is for use with traceback.StackSummary.from_list
+                        extracted_list = []
+                        # used to prevent extra calls to linecache.checkcache
                         checked = set()
 
                         for f in task.get_stack():
@@ -1127,6 +1132,8 @@ class Salamander(commands.AutoShardedBot):
                             co = f.f_code
                             filename = co.co_filename
                             name = co.co_name
+                            # Using linecache here as it's the way the standard lib
+                            # accesses the same info when it needs it, and is optimized as such.
                             if filename not in checked:
                                 checked.add(filename)
                                 linecache.checkcache(filename)
