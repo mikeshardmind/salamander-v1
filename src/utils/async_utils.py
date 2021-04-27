@@ -40,7 +40,7 @@ class Waterfall(Generic[_T]):
         asyncio.get_running_loop()
         self.queue = asyncio.Queue()  # type: asyncio.Queue[_T]
         self.max_wait: float = max_wait
-        self.max_wait_finalize: int = 3
+        self.max_wait_finalize: int = max_wait_finalize
         self.max_quantity: int = max_quantity
         self.callback: Callable[[Sequence[_T]], Awaitable] = async_callback
         self.task: Optional[asyncio.Task] = None
