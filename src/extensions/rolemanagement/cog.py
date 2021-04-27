@@ -656,7 +656,11 @@ class RoleManagement(commands.Cog):
             if all(str(r) != emoji for r in message.reactions):
                 try:
                     await message.add_reaction(_emoji)
-                except discord.HTTPException:
+                except discord.HTTPException as exc:
+                    if exc.code == 30010:
+                        raise UserFeedbackError(
+                            custom_message="This message can not have more reactions added to it. (limit 20)"
+                        )
                     raise UserFeedbackError(custom_message="Hmm, that message couldn't be reacted to")
 
             to_store[eid] = role
@@ -709,7 +713,11 @@ class RoleManagement(commands.Cog):
         if not any(str(r) == emoji for r in message.reactions):
             try:
                 await message.add_reaction(emoji)
-            except discord.HTTPException:
+            except discord.HTTPException as exc:
+                if exc.code == 30010:
+                    raise UserFeedbackError(
+                        custom_message="This message can not have more reactions added to it. (limit 20)"
+                    )
                 raise UserFeedbackError(custom_message="Hmm, that message couldn't be reacted to")
 
         ReactionRoleRecord(ctx.guild.id, message.channel.id, message.id, eid, role.id, True).to_database(self.bot._conn)
