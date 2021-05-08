@@ -21,9 +21,9 @@
 
 PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
-PRAGMA synchronous = FULL;
-PRAGMA wal_autocheckpoint = 32;
-PRAGMA journal_size_limit = 3072;
+PRAGMA synchronous = NORMAL;
+PRAGMA wal_autocheckpoint = 1000;
+PRAGMA journal_size_limit = -1;
 
 
 -- BEGIN REGION: Core bot settings
