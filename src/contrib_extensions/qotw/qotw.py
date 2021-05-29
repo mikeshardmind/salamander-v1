@@ -17,11 +17,12 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 import logging
 import random
 from datetime import datetime, timezone
 from fractions import Fraction
-from typing import Optional
+from typing import List, Optional
 
 import apsw
 import discord
@@ -156,11 +157,14 @@ class QOTW(commands.Cog):
     async def handle_qotw(self, guild_id: int, channel_id: int, last_pinned_message_id: int):
 
         guild = self.bot.get_guild(guild_id)
-        if guild is None:
+        if guild is None or guild.unavailable:
             return
         channel = guild.get_channel(channel_id)
         if channel is None:
             return
+
+        if guild.large and not guild.chunked:
+            await guild.chunk()
 
         cursor = self.conn.cursor()
 
@@ -186,14 +190,19 @@ class QOTW(commands.Cog):
             )
             return
 
+        to_null: List[int] = []
+
         def gen_(question_list):
             for (mid, cq, qss) in question_list:
                 if mem := guild.get_member(mid):  # ensure we only ask questions for people still here.
-                    for i in range(qss):
+                    for _ in range(qss):
                         yield (mem, cq)
+                else:
+                    to_null.append(mid)  # And if they have left the server, we should reset them
 
         # could do something more clever here, but this isn't gonna be an issue
         selected_m, selected_question = resevoir_sample(gen_(questions))
+        to_null.append(selected_m.id)
 
         with contextlib.suppress(discord.HTTPException):
             old_m = await channel.fetch_message(last_pinned_message_id)
@@ -219,11 +228,20 @@ class QOTW(commands.Cog):
 
             cursor.execute(
                 """
+                WITH tn_ids AS (
+                    SELECT value FROM json_each(json(?))
+                )
                 UPDATE contrib_qotw_members
-                SET questions_since_select = 1, current_question=NULL
-                WHERE guild_id = ? AND  user_id = ?
+                SET
+                    questions_since_select = 1,
+                    current_question=NULL
+                WHERE
+                    guild_id = ?
+                    AND EXISTS (
+                        SELECT 1 FROM tn_ids WHERE value=contrib_qotw_members.user_id
+                    )
                 """,
-                (guild_id, selected_m.id),
+                (json.dumps(to_null), guild_id),
             )
 
             cursor.execute(
@@ -237,8 +255,11 @@ class QOTW(commands.Cog):
             cursor.execute(
                 """
                 UPDATE contrib_qotw_guild_settings
-                SET last_qotw_at = CURRENT_TIMESTAMP, last_pinned_message_id = :pin
-                WHERE guild_id = :guild_id
+                SET
+                    last_qotw_at = CURRENT_TIMESTAMP,
+                    last_pinned_message_id = :pin
+                WHERE
+                    guild_id = :guild_id
                 """,
                 dict(pin=last_pin, guild_id=guild_id),
             )
