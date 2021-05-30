@@ -118,8 +118,10 @@ class QOTW(commands.Cog):
                 self.handle_qotw(*row)
                 for row in cursor.execute(
                     """
-                    SELECT guild_id, channel_id, last_pinned_message_id
-                    FROM contrib_qotw_guild_settings
+                    SELECT
+                        guild_id, channel_id, last_pinned_message_id
+                    FROM
+                        contrib_qotw_guild_settings
                     WHERE
                         channel_id IS NOT NULL
                         AND qotw_day=?
@@ -310,9 +312,7 @@ class QOTW(commands.Cog):
             """
             SELECT channel_id, last_pinned_message_id
             FROM contrib_qotw_guild_settings
-            WHERE
-                channel_id IS NOT NULL
-                AND guild_id = ?
+            WHERE channel_id IS NOT NULL AND guild_id = ?
             """,
             (ctx.guild.id,),
         ).fetchone()
