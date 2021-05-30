@@ -82,7 +82,7 @@ though there may be an option to enable a local filter in the future.
 
 1. Install dependencies 
 
-These are the expecific packages required to build *everything* associated with the network
+These are the specific packages required to build *everything* associated with the network
 on Ubuntu 20.04 (to be streamlined in the future)
 
 Many of these are build-time but not run-time dependencies, and if you intend to create a container, should not end up in the resulting image.
