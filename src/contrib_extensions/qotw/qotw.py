@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS contrib_qotw_members (
 DROP_HISTORICAL_1 = """DROP TABLE IF EXISTS contrib_qotw_all_history"""
 DROP_HISTORICAL_2 = """DROP TABLE IF EXISTS contrib_qotw_selected_history"""
 
+
 def resevoir_sample(iterable):
     for n, x in enumerate(iterable, 1):
         if random.randrange(n) == 0:  # nosec
