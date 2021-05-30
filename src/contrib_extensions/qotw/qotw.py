@@ -56,31 +56,11 @@ CREATE TABLE IF NOT EXISTS contrib_qotw_members (
     PRIMARY KEY (user_id, guild_id)
 )
 """
-
-CREATE_HISTORICAL_ALL = """
-CREATE TABLE IF NOT EXISTS contrib_qotw_all_history (
-    guild_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    question TEXT NOT NULL,
-    when_asked TEXT DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (guild_id, user_id) REFERENCES contrib_qotw_members (guild_id, user_id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-)
-"""
-
-SELECTED_QUESTION_HISTORY = """
-CREATE TABLE IF NOT EXISTS contrib_qotw_selected_history (
-    guild_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    question TEXT,
-    when_selected TEXT DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (guild_id, user_id) REFERENCES contrib_qotw_members (guild_id, user_id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-)
-"""
-
 # The default here isn't wrong, but it is intentionally offset for math.
 
+# Below are for passively cleaning up no longer existing tables. In a future version this can be removed.
+DROP_HISTORICAL_1 = """DROP TABLE IF EXISTS contrib_qotw_all_history"""
+DROP_HISTORICAL_2 = """DROP TABLE IF EXISTS contrib_qotw_selected_history"""
 
 def resevoir_sample(iterable):
     for n, x in enumerate(iterable, 1):
@@ -100,8 +80,8 @@ class QOTW(commands.Cog):
         for statement in (
             GUILD_SETTINGS_TABLE_CREATION_STATEMENT,
             CREATE_MEMBERS_TABLE_STATEMENT,
-            CREATE_HISTORICAL_ALL,
-            SELECTED_QUESTION_HISTORY,
+            DROP_HISTORICAL_1,
+            DROP_HISTORICAL_2,
         ):
             cursor.execute(statement)
         cursor.close()
@@ -112,10 +92,10 @@ class QOTW(commands.Cog):
     def remove_tables_from_connection(conn: apsw.Connection):
         cursor = conn.cursor()
         with conn:
-            cursor.execute("""DROP TABLE contrib_qotw_all_history""")
-            cursor.execute("""DROP TABLE contrib_qotw_selected_history""")
-            cursor.execute("""DROP TABLE contrib_qotw_members""")
-            cursor.execute("""DROP TABLE contrib_qotw_guild_settings""")
+            cursor.execute("""DROP TABLE IF EXISTS contrib_qotw_all_history""")
+            cursor.execute("""DROP TABLE IF EXISTS contrib_qotw_selected_history""")
+            cursor.execute("""DROP TABLE IF EXISTS contrib_qotw_members""")
+            cursor.execute("""DROP TABLE IF EXISTS contrib_qotw_guild_settings""")
 
     def init(self):
         self._loop = asyncio.create_task(self.bg_loop())
@@ -242,14 +222,6 @@ class QOTW(commands.Cog):
                     )
                 """,
                 (json.dumps(to_null), guild_id),
-            )
-
-            cursor.execute(
-                """
-                INSERT INTO contrib_qotw_selected_history (guild_id, user_id, question)
-                VALUES (?,?,?)
-                """,
-                (guild_id, selected_m.id, selected_question),
             )
 
             cursor.execute(
@@ -464,13 +436,6 @@ class QOTW(commands.Cog):
                 VALUES (?,?,?)
                 ON CONFLICT (guild_id, user_id)
                 DO UPDATE SET current_question=excluded.current_question
-                """,
-                params,
-            )
-            cursor.execute(
-                """
-                INSERT INTO contrib_qotw_all_history (guild_id, user_id, question)
-                VALUES(?,?,?)
                 """,
                 params,
             )
