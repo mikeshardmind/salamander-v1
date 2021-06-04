@@ -74,7 +74,7 @@ including through docker, terraform, ansible and others.
 This section is not in a polished state as there is a lot left to streamline on this to make it more accessible.
 For now, it serves as a very minimal documentation of what's needed to get this up, running and tested on ubuntu 20.04
 
-Currently, this requires [hydra](https://github.com/unified-moderation-network/hydra]) to be running.
+Currently, this requires [hydra](https://github.com/unified-moderation-network/hydra) to be running.
 
 The filter is designed as an external service (see [basilisk](https://github.com/unified-moderation-network/basilisk))
 though there may be an option to enable a local filter in the future.
