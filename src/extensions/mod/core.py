@@ -489,7 +489,12 @@ class Mod(commands.Cog):
                 # Lost perms mid ban?
                 raise UserFeedbackError(custom_message="Banning interrupted by losing permissions(?)")
             except discord.HTTPException as exc:
-                log.exception("HTTP Exception with json code %s in guild %d", exc.code, ctx.guild.id, exc_info=exc)
+                log.exception(
+                    "HTTPException with json code %s in guild %d during ban of user not in guild.",
+                    exc.code,
+                    ctx.guild.id,
+                    exc_info=exc,
+                )
                 if exc.code == 30035:
                     raise UserFeedbackError(
                         custom_message=(
