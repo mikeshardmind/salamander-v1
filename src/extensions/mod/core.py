@@ -16,6 +16,8 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
@@ -25,7 +27,11 @@ from discord.ext import commands
 
 from ...bot import HierarchyException, Salamander, SalamanderContext, UserFeedbackError
 from ...checks import admin_or_perms, mod_or_perms
-from ...utils import StrictMemberConverter, TimedeltaConverter, embed_from_member, format_list
+from ...utils import StrictMemberConverter, TimedeltaConverter, embed_from_member, format_list, humanize_seconds
+from .converters import MultiBanConverter
+
+log = logging.getLogger("salamander.extensions.mod")
+
 
 INSERT_OR_IGNORE_GUILD = """
 INSERT INTO guild_settings (guild_id) VALUES (?)
@@ -372,7 +378,7 @@ class Mod(commands.Cog):
         self.bot.modlog.member_kick(mod=ctx.author, target=who, reason=reason)
 
     @mod_or_perms(ban_members=True)
-    @commands.bot_has_guild_permissions(manage_roles=True)
+    @commands.bot_has_guild_permissions(ban_members=True)
     @commands.command(name="ban")
     async def ban_command(
         self,
@@ -396,9 +402,134 @@ class Mod(commands.Cog):
             self.bot.modlog.member_ban(mod=ctx.author, target=member, reason=reason)
 
         else:
-            drsn = f"User not in guild banned by command. " f"(Authorizing mod: {ctx.author}({ctx.author.id})"
+            drsn = f"User not in guild banned by command. (Authorizing mod: {ctx.author}({ctx.author.id})"
             await ctx.guild.ban(discord.Object(who.id), reason=drsn, delete_message_days=0)
             self.bot.modlog.user_ban(mod=ctx.author, target_id=who.id, reason=reason)
+
+    @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.cooldown(2, 30, commands.BucketType.guild)
+    @mod_or_perms(ban_members=True)
+    @commands.bot_has_guild_permissions(ban_members=True)
+    @commands.command(name="massban")
+    async def massban_command(
+        self,
+        ctx: SalamanderContext,
+        *,
+        ban_args: MultiBanConverter,
+    ):
+        """Ban Multiple users
+
+        --users user_id_or_mention_one user_id_or_mention_two --reason because whatever
+        """
+
+        for member in ban_args.matched_members:
+            ban_soundness_check(bot_user=ctx.me, mod=ctx.author, target=member)
+
+        members_to_ban = len(ban_args.matched_members)
+        users_to_ban = len(ban_args.unmatched_user_ids)
+        total_to_ban = members_to_ban + users_to_ban
+
+        progress: Optional[discord.Message] = None
+
+        if total_to_ban > 50 or users_to_ban > 25:
+            # Ratelimiting is worse on users no longer in the server
+            progress = await ctx.send(f"This may take a while: (0/{total_to_ban} banned so far, 0s elapsed)")
+
+        start = last = time.monotonic()
+
+        for idx, member in enumerate(ban_args.matched_members, 1):
+            try:
+                await member.ban(
+                    reason=f"User banned by command. (Authorizing mod: {ctx.author}({ctx.author.id})",
+                    delete_message_days=0,
+                )
+            except discord.Forbidden:
+                # Lost perms mid ban?
+                raise UserFeedbackError(custom_message="Banning interrupted by losing permissions(?)")
+            except discord.HTTPException as exc:
+                log.exception(
+                    "Unexpected HTTPException with json code %s in guild %d during memberban",
+                    exc.code,
+                    ctx.guild.id,
+                    exc_info=exc,
+                )
+                banned = idx - 1
+                raise UserFeedbackError(
+                    custom_message=(
+                        f"An unexpected error occured while banning. This error has been logged. If you continue experiencing this, report the issue."
+                        f"\n\nBanned {banned} of {total_to_ban} prior to the unexpected error."
+                    )
+                )
+
+            self.bot.modlog.member_ban(mod=ctx.author, target=member, reason=ban_args.reason)
+
+            now = time.monotonic()
+            if now - last > 60:
+                last = now
+                elapsed = humanize_seconds(int(now - start))
+                if progress and (idx < members_to_ban or users_to_ban):
+                    await progress.edit(
+                        content=f"This may take a while: ({idx}/{total_to_ban} banned in {elapsed} so far)"
+                    )
+
+        drsn = f"User not in guild banned by command. (Authorizing mod: {ctx.author}({ctx.author.id})"
+        unfound_count = 0
+
+        for idx, user_id in enumerate(ban_args.unmatched_user_ids, 1):
+
+            try:
+                await ctx.guild.ban(discord.Object(user_id), reason=drsn, delete_message_days=0)
+            except discord.NotFound:
+                unfound_count += 1
+                if not unfound_count % 5:
+                    # Discord has additional ratelimiting that comes into play in this case and isn't documented and is a PITA.
+                    # we should prevent confusing discord.py's header based ratelimit handling (Not a discord.py bug, discord is dumb about ratelimits)
+                    await asyncio.sleep(3)
+            except discord.Forbidden:
+                # Lost perms mid ban?
+                raise UserFeedbackError(custom_message="Banning interrupted by losing permissions(?)")
+            except discord.HTTPException as exc:
+                log.exception("HTTP Exception with json code %s in guild %d", exc.code, ctx.guild.id, exc_info=exc)
+                if exc.code == 30035:
+                    raise UserFeedbackError(
+                        custom_message=(
+                            "Discord has limits on the maximum number of people you can try and ban without them being in the server at the time of the ban. "
+                            "I think this is incredibly dumb, but this limit has been hit. If you need to be able to ban more people like this, reach out to Discord."
+                        )
+                    )
+                else:
+                    banned = members_to_ban + idx - 1 - unfound_count
+                    raise UserFeedbackError(
+                        custom_message=(
+                            f"An unexpected error occured while banning. This error has been logged. If you continue experiencing this, report the issue."
+                            f"\n\nBanned {banned} of {total_to_ban} prior to the unexpected error."
+                        )
+                    )
+            else:
+                self.bot.modlog.user_ban(mod=ctx.author, target_id=user_id, reason=ban_args.reason)
+
+                now = time.monotonic()
+                if now - last > 60:
+                    last = now
+                    if progress and idx < users_to_ban:
+                        elapsed = humanize_seconds(int(now - start))
+                        banned = members_to_ban + idx - unfound_count
+                        await progress.edit(
+                            content=f"This may take a while: ({banned}/{total_to_ban} banned in {elapsed} so far)"
+                        )
+
+        if progress:
+            await progress.delete(delay=0)  # let d.py handle this
+
+        elapsed = humanize_seconds(int(time.monotonic() - start))
+
+        message: str
+        if unfound_count:
+            message = f"Banned {total_to_ban - unfound_count}/{total_to_ban} users in {elapsed}.\n(Skipped {unfound_count} user(s) that do not appear to exist anymore)."
+        else:
+            message = f"Banned {total_to_ban} users in {elapsed}"
+
+        await ctx.send(message)
 
     # TODO: more commands / ban options
 
