@@ -18,12 +18,14 @@ import argparse
 import asyncio
 import re
 import shlex
-from typing import Final, Iterator, List, NamedTuple, Sequence, Set, TypeVar
+from datetime import timedelta
+from typing import Final, Iterator, List, NamedTuple, Optional, Sequence, Set, TypeVar
 
 import discord
 from discord.ext import commands
 
 from ...bot import SalamanderContext
+from ...utils.parsing import parse_timedelta
 
 _id_regex: Final[re.Pattern] = re.compile(r"([0-9]{15,21})$")
 _mention_regex: Final[re.Pattern] = re.compile(r"<@!?([0-9]{15,21})>$")
@@ -60,7 +62,7 @@ class MultiBanConverter(NamedTuple):
 
         parser = NoExitParser(description="MultiBan", add_help=False, allow_abbrev=True)
 
-        parser.add_argument("--reason", dest="reason")
+        parser.add_argument("--reason", dest="reason", nargs="*", default=[])
         parser.add_argument("--members", dest="members", nargs="*", default=[])
 
         try:
@@ -73,7 +75,7 @@ class MultiBanConverter(NamedTuple):
         if not guild:
             raise commands.NoPrivateMessage()
 
-        reason = ns.reason
+        reason = " ".join(ns.reason)
 
         if not reason:
             raise commands.BadArgument("Must provide a ban reason.")
@@ -122,3 +124,69 @@ class MultiBanConverter(NamedTuple):
             raise commands.BadArgument("Must provide at least 1 user to ban.")
 
         return cls(matched_members, list(to_search), reason)
+
+
+class SearchBan(NamedTuple):
+    matched_members: List[discord.Member]
+    unmatched_user_ids: List[int]
+    reason: str
+
+    @classmethod
+    async def convert(cls, ctx: SalamanderContext, arg: str):
+
+        parser = NoExitParser(description="SearchBan", add_help=False, allow_abbrev=True)
+        parser.add_argument("--reason", dest="reason", nargs="*", default=[])
+        parser.add_argument("--no-pfp", dest="nopfp", action="store_true", default=False)
+        parser.add_argument("--joined-server-within", dest="js", default=[], nargs="*")
+        parser.add_argument("--joined-discord-within", dest="jd", default=[], nargs="*")
+        parser.add_argument("--username", dest="uname", nargs="*")
+
+        try:
+            ns = parser.parse_args(shlex.split(arg))
+        except Exception:
+            raise commands.BadArgument()
+
+        guild = ctx.guild
+        if not guild:
+            raise commands.NoPrivateMessage()
+
+        reason = " ".join(ns.reason)
+
+        if not reason:
+            raise commands.BadArgument("Must provide a ban reason.")
+
+        if not any((ns.nopfp, ns.js, ns.jd, ns.uname)):
+            raise commands.BadArgument("Must provide at least 1 search criterion.")
+
+        joined_server: Optional[timedelta] = None
+        if ns.js:
+            joined_server = parse_timedelta(" ".join(ns.js))
+            if joined_server is None:
+                raise commands.BadArgument("That did not appear to be a valid amount of time.")
+                # It's allowed to not be provided, but if provided, we won't silent error
+
+        joined_discord: Optional[timedelta] = None
+        if ns.jd:
+            joined_discord = parse_timedelta(" ".join(ns.js))
+            if joined_discord is None:
+                raise commands.BadArgument("That did not appear to be a valid amount of time.")
+                # It's allowed to not be provided, but if provided, we won't silent error
+
+        members: List[discord.Member] = []
+
+        uname: Optional[str] = " ".join(ns.uname) if ns.uname else None
+
+        for m in guild.members:
+
+            if uname and uname == m.name:
+                continue
+
+            if joined_server and m.joined_at + joined_server < ctx.message.created_at:
+                continue
+
+            if joined_discord and m.created_at + joined_discord < ctx.message.created_at:
+                continue
+
+            members.append(m)
+
+        return cls(members, [], reason)

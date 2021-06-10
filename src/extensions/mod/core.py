@@ -20,7 +20,8 @@ import logging
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional
+from typing import Dict, List, MutableMapping, Optional, Union
+from weakref import WeakValueDictionary
 
 import discord
 from discord.ext import commands
@@ -28,7 +29,7 @@ from discord.ext import commands
 from ...bot import HierarchyException, Salamander, SalamanderContext, UserFeedbackError
 from ...checks import admin_or_perms, mod_or_perms
 from ...utils import StrictMemberConverter, TimedeltaConverter, embed_from_member, format_list, humanize_seconds
-from .converters import MultiBanConverter
+from .converters import MultiBanConverter, SearchBan
 
 log = logging.getLogger("salamander.extensions.mod")
 
@@ -151,6 +152,7 @@ class Mod(commands.Cog):
         self._mute_locks: Dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
         self._bgloop = asyncio.create_task(self.background_loop())
         self.antispam: Dict[int, commands.cooldowns.CooldownMapping] = {}
+        self._ban_concurrency: MutableMapping[int, asyncio.Lock] = WeakValueDictionary()
 
     def cog_unload(self):
         self._bgloop.cancel()
@@ -421,6 +423,40 @@ class Mod(commands.Cog):
 
         --users user_id_or_mention_one user_id_or_mention_two --reason because whatever
         """
+
+        lock = self._ban_concurrency.setdefault(
+            ctx.guild.id, asyncio.Lock()
+        )  # change this in d.py 2.0 with shared max_concurrency
+        async with lock:
+            await self.handle_mass_or_search_ban(ctx, ban_args)
+
+    @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.cooldown(2, 30, commands.BucketType.guild)
+    @mod_or_perms(ban_members=True)
+    @commands.bot_has_guild_permissions(ban_members=True)
+    @commands.command(name="massban")
+    async def searchban_command(
+        self,
+        ctx: SalamanderContext,
+        *,
+        ban_args: MultiBanConverter,
+    ):
+        """Ban Multiple users
+
+        --reason some reason
+        --no-pfp
+        --joined-server-within 1h
+        --joined-discord-within 1d
+        --username Spammer's Name
+        """
+
+        lock = self._ban_concurrency.setdefault(
+            ctx.guild.id, asyncio.Lock()
+        )  # change this in d.py 2.0 with shared max_concurrency
+        async with lock:
+            await self.handle_mass_or_search_ban(ctx, ban_args)
+
+    async def handle_mass_or_search_ban(self, ctx: SalamanderContext, ban_args: Union[MultiBanConverter, SearchBan]):
 
         for member in ban_args.matched_members:
             ban_soundness_check(bot_user=ctx.me, mod=ctx.author, target=member)
