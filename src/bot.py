@@ -275,7 +275,7 @@ class SalamanderContext(commands.Context):
 _CT = TypeVar("_CT", bound=SalamanderContext)
 
 
-def _prefix(bot: "Salamander", msg: discord.Message) -> Callable[["Salamander", discord.Message], List[str]]:
+def _prefix(bot: Salamander, msg: discord.Message) -> Callable[[Salamander, discord.Message], List[str]]:
     guild = msg.guild
     base = bot.prefix_manager.get_guild_prefixes(guild.id) if guild else ()
     return commands.when_mentioned_or(*base)(bot, msg)
