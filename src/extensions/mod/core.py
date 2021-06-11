@@ -29,7 +29,7 @@ from discord.ext import commands
 from ...bot import HierarchyException, Salamander, SalamanderContext, UserFeedbackError
 from ...checks import admin_or_perms, mod_or_perms
 from ...utils import StrictMemberConverter, TimedeltaConverter, embed_from_member, format_list, humanize_seconds
-from .converters import MultiBanConverter, SearchBan
+from .converters import MultiBanConverter, SearchBanConverter
 
 log = logging.getLogger("salamander.extensions.mod")
 
@@ -433,7 +433,7 @@ class Mod(commands.Cog):
         self,
         ctx: SalamanderContext,
         *,
-        ban_args: MultiBanConverter,
+        ban_args: SearchBanConverter,
     ):
         """Ban Multiple users
 
