@@ -126,7 +126,7 @@ class MultiBanConverter(NamedTuple):
         return cls(matched_members, list(to_search), reason)
 
 
-class SearchBan(NamedTuple):
+class SearchBanConverter(NamedTuple):
     matched_members: List[discord.Member]
     unmatched_user_ids: List[int]
     reason: str
