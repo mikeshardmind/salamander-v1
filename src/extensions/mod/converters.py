@@ -167,7 +167,7 @@ class SearchBanConverter(NamedTuple):
 
         joined_discord: Optional[timedelta] = None
         if ns.jd:
-            joined_discord = parse_timedelta(" ".join(ns.js))
+            joined_discord = parse_timedelta(" ".join(ns.jd))
             if joined_discord is None:
                 raise commands.BadArgument("That did not appear to be a valid amount of time.")
                 # It's allowed to not be provided, but if provided, we won't silent error
