@@ -176,6 +176,7 @@ class SearchBan(NamedTuple):
 
         uname: Optional[str] = " ".join(ns.uname) if ns.uname else None
 
+        m: discord.Member
         for m in guild.members:
 
             if uname and uname == m.name:
@@ -185,6 +186,9 @@ class SearchBan(NamedTuple):
                 continue
 
             if joined_discord and m.created_at + joined_discord < ctx.message.created_at:
+                continue
+
+            if ns.nopfp and m.avatar is not None:  # changes in d.py 2.0
                 continue
 
             members.append(m)

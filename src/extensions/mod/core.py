@@ -423,10 +423,8 @@ class Mod(commands.Cog):
 
         --users user_id_or_mention_one user_id_or_mention_two --reason because whatever
         """
-
-        lock = self._ban_concurrency.setdefault(
-            ctx.guild.id, asyncio.Lock()
-        )  # change this in d.py 2.0 with shared max_concurrency
+        # change this in d.py 2.0 with shared max_concurrency
+        lock = self._ban_concurrency.setdefault(ctx.guild.id, asyncio.Lock())
         async with lock:
             await self.handle_mass_or_search_ban(ctx, ban_args)
 
@@ -450,9 +448,19 @@ class Mod(commands.Cog):
         --username Spammer's Name
         """
 
-        lock = self._ban_concurrency.setdefault(
-            ctx.guild.id, asyncio.Lock()
-        )  # change this in d.py 2.0 with shared max_concurrency
+        # As this was a search, let's confirm some things:
+
+        resp = await ctx.prompt(
+            f"This would ban {len(ban_args.matched_members)} members, continue? (yes/no)",
+            options=("yes", "no"),
+            timeout=15,
+        )
+
+        if resp != "yes":
+            return
+
+        # change this in d.py 2.0 with shared max_concurrency
+        lock = self._ban_concurrency.setdefault(ctx.guild.id, asyncio.Lock())
         async with lock:
             await self.handle_mass_or_search_ban(ctx, ban_args)
 
