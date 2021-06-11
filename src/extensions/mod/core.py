@@ -432,7 +432,7 @@ class Mod(commands.Cog):
     @commands.cooldown(2, 30, commands.BucketType.guild)
     @mod_or_perms(ban_members=True)
     @commands.bot_has_guild_permissions(ban_members=True)
-    @commands.command(name="massban")
+    @commands.command(name="searchban")
     async def searchban_command(
         self,
         ctx: SalamanderContext,
