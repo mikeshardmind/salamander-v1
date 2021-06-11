@@ -90,7 +90,7 @@ class Meta(commands.Cog):
                 )
             )
 
-        for special_char_sequence in ("*", "`", "_", "~", "|", ">>>", "'", '"', "\\"):
+        for special_char_sequence in ("*", "`", "_", "~", "|", "> ", ":", "'", '"', "\\"):
             if special_char_sequence in prefix:
                 raise UserFeedbackError(custom_message=f"Prefixes may not contain {special_char_sequence}")
         if prefix.startswith((f"<@{ctx.me.id}>", f"<@!{ctx.me.id}>")):

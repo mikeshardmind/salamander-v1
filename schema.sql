@@ -92,15 +92,16 @@ CREATE TABLE IF NOT EXISTS guild_prefixes_constraint_migration (
 	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id),
 	prefix TEXT NOT NULL CHECK(
 		length(prefix) < 16
+		AND NOT prefix LIKE '%:%'
 		AND NOT prefix LIKE '%<%>%'
 		AND NOT prefix LIKE '/%' 
-		AND NOT prefix LIKE '%\*%' ESCAPE '\'
+		AND NOT prefix LIKE '%~*%' ESCAPE '~'
 		AND NOT prefix LIKE '%\%'
 		AND NOT prefix LIKE '%`%'
-		AND NOT prefix LIKE '%\_%' ESCAPE '\'
+		AND NOT prefix LIKE '%~_%' ESCAPE '~'
 		AND NOT prefix LIKE '%~%'
 		AND NOT prefix LIKE '%|%'
-		AND NOT prefix LIKE '%>>>%'
+		AND NOT prefix LIKE '%> %'
 		AND NOT prefix LIKE '%''%'
 		AND NOT prefix LIKE '%"%'
 	),
@@ -111,15 +112,16 @@ INSERT INTO guild_prefixes_constraint_migration
 	SELECT * FROM guild_prefixes
 	WHERE
 		length(prefix) < 16
+		AND NOT prefix LIKE '%:%'
 		AND NOT prefix LIKE '%<%>%'
 		AND NOT prefix LIKE '/%' 
-		AND NOT prefix LIKE '%\*%' ESCAPE '\'
+		AND NOT prefix LIKE '%~*%' ESCAPE '~'
 		AND NOT prefix LIKE '%\%'
 		AND NOT prefix LIKE '%`%'
-		AND NOT prefix LIKE '%\_%' ESCAPE '\'
+		AND NOT prefix LIKE '%~_%' ESCAPE '~'
 		AND NOT prefix LIKE '%~%'
 		AND NOT prefix LIKE '%|%'
-		AND NOT prefix LIKE '%>>>%'
+		AND NOT prefix LIKE '%> %'
 		AND NOT prefix LIKE '%''%'
 		AND NOT prefix LIKE '%"%';
 DROP TABLE guild_prefixes;
