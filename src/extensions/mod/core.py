@@ -408,8 +408,6 @@ class Mod(commands.Cog):
             await ctx.guild.ban(discord.Object(who.id), reason=drsn, delete_message_days=0)
             self.bot.modlog.user_ban(mod=ctx.author, target_id=who.id, reason=reason)
 
-    @commands.max_concurrency(1, commands.BucketType.guild)
-    @commands.cooldown(2, 30, commands.BucketType.guild)
     @mod_or_perms(ban_members=True)
     @commands.bot_has_guild_permissions(ban_members=True)
     @commands.command(name="massban")
@@ -428,8 +426,6 @@ class Mod(commands.Cog):
         async with lock:
             await self.handle_mass_or_search_ban(ctx, ban_args)
 
-    @commands.max_concurrency(1, commands.BucketType.guild)
-    @commands.cooldown(2, 30, commands.BucketType.guild)
     @mod_or_perms(ban_members=True)
     @commands.bot_has_guild_permissions(ban_members=True)
     @commands.command(name="searchban")
