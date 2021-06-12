@@ -15,8 +15,8 @@
 
 from __future__ import annotations
 
-import sys
 import re
+import sys
 from typing import Union
 
 import discord
@@ -24,7 +24,6 @@ from discord.ext import commands
 
 from ...bot import Salamander, SalamanderContext, UserFeedbackError
 from ...checks import admin_or_perms, guildowner_or_perms
-
 
 dpy_version = discord.__version__
 py_version = ".".join(f"{i}" for i in sys.version_info[:3])
