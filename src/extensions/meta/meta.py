@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import sys
 import re
 from typing import Union
 
@@ -23,6 +24,10 @@ from discord.ext import commands
 
 from ...bot import Salamander, SalamanderContext, UserFeedbackError
 from ...checks import admin_or_perms, guildowner_or_perms
+
+
+dpy_version = discord.__version__
+py_version = ".".join(f"{i}" for i in sys.version_info[:3])
 
 
 class Meta(commands.Cog):
@@ -46,6 +51,8 @@ class Meta(commands.Cog):
             "with lots of room to grow."
         )
         em = discord.Embed(color=ctx.me.color, description=about_text)
+        em.add_field(name="Python", value=py_version)
+        em.add_field(name="Discord.py", value=dpy_version)
         await ctx.send(embed=em)
 
     @admin_or_perms(manage_guild=True)
