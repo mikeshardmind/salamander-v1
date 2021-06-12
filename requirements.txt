@@ -52,9 +52,9 @@ chardet==4.0.0 \
 https://github.com/Rapptz/discord-ext-menus/archive/309c70222eec33acacb8c21bbb0fbe9bc57de661.zip \
     --hash=sha256:81567be0cdafeadc9707b0268376a5ceea67461f5951acd0422ab5f31b64b5f3
 
-discord.py==1.7.2 \
-    --hash=sha256:114e76cd27362fb919abf7f001a2dbdc77c9a67cff74ed6a89aecd6582ee298e \
-    --hash=sha256:f179db299c949a8cf0a12c1b1b94d0da9a18e088857154d93ae5ab1d807ec61d
+discord.py==1.7.3 \
+    --hash=sha256:462cd0fe307aef8b29cbfa8dd613e548ae4b2cb581d46da9ac0d46fb6ea19408 \
+    --hash=sha256:c6f64db136de0e18e090f6752ea68bdd4ab0a61b82dfe7acecefa22d6477bb0c
 
 hyperscan==0.2.0 \
     --hash=sha256:10cb8939d7db85d522ed319031ff5ab86fd0133126b986290f01aa83dbfb9ff7 \
