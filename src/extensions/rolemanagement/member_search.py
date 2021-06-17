@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import AsyncIterator, Callable, Optional, Set
+from typing import AsyncIterator, Callable, List, Optional, Set
 
 import discord
 
@@ -85,7 +85,7 @@ def _non_set_filter(query: dict) -> Optional[Callable[[discord.Member], bool]]:
     if required_perms := query["hasperm"]:
         minimum_perms = discord.Permissions(**{x: True for x in required_perms})
 
-    conditions = []
+    conditions: List[Callable[[discord.Member], bool]] = []
 
     if query["bots"]:
         conditions.append(lambda m: m.bot)

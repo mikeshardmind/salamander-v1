@@ -16,7 +16,7 @@
 from __future__ import annotations
 
 import operator
-from typing import Callable, Dict, Generic, Optional, Sequence, Set, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, Optional, Sequence, Set, TypeVar, Union
 
 __all__ = [
     "AlreadyDone",
@@ -225,7 +225,7 @@ class ChooseYourOwnAdventure(Generic[_CYA_TV]):
 
         return page.to_prompt()
 
-    def turn_page(self, choice: str):
+    def turn_page(self, choice: str) -> None:
         """
         Turns to the page corresponding to a choice
 
@@ -263,12 +263,12 @@ class ChooseYourOwnAdventure(Generic[_CYA_TV]):
 
         return page.result
 
-    def reset(self):
+    def reset(self) -> None:
         """ Resets to the initial state """
         self._pos = 0
 
 
-def _validate_cya(adventure: ChooseYourOwnAdventure):
+def _validate_cya(adventure: ChooseYourOwnAdventure[Any]) -> None:
     """
     Tool to validate that a ChooseYourOwnAdventure instance is valid
     """

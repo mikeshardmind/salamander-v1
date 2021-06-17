@@ -31,7 +31,7 @@ from typing import Any, Callable, Final, List, Optional, Sequence, Set, Type, Ty
 from uuid import uuid4
 
 try:
-    import uvloop
+    import uvloop  # type: ignore
 except ImportError:
     uvloop = None
 
@@ -72,7 +72,7 @@ def get_data_path() -> Path:
 
 
 @only_once
-def setup_logging():
+def setup_logging() -> None:
     log = logging.getLogger("salamander")
     log.setLevel(logging.INFO)
     if __debug__:
@@ -321,9 +321,6 @@ class BehaviorFlags:
             "src.extensions.cleanup",
             "src.extensions.rolemanagement",
         )
-
-        if __debug__ and jishaku is not None:
-            exts = exts + ("jishaku",)
 
         return cls(no_serpent=True, initial_exts=exts)
 
@@ -815,10 +812,10 @@ class Salamander(commands.AutoShardedBot):
         if not self._behavior_flags.no_basilisk:
             self.load_extension("src.extensions.filter")
 
-    async def __aenter__(self) -> "Salamander":
+    async def __aenter__(self) -> Salamander:
         if self._zmq_task is None:
 
-            async def zmq_injest_task():
+            async def zmq_injest_task() -> None:
                 await self.wait_until_ready()
                 async with self._zmq as zmq_handler:
                     while True:

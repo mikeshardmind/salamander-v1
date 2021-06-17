@@ -460,7 +460,7 @@ class Mod(commands.Cog):
         async with lock:
             await self.handle_mass_or_search_ban(ctx, ban_args)
 
-    async def handle_mass_or_search_ban(self, ctx: SalamanderContext, ban_args: Union[MultiBanConverter, SearchBan]):
+    async def handle_mass_or_search_ban(self, ctx: SalamanderContext, ban_args: Union[MultiBanConverter, SearchBanConverter]):
 
         for member in ban_args.matched_members:
             ban_soundness_check(bot_user=ctx.me, mod=ctx.author, target=member)

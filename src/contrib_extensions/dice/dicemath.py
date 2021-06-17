@@ -26,19 +26,22 @@ import operator
 import random
 import re
 import sys
-from typing import Callable, Dict, List, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, List, Tuple, TypeVar, Union
 
 import numpy as np
 
 try:
     from numba import njit, prange
 except ImportError:
+    numba = None
 
     import warnings as _wrn
 
     _wrn.warn("Unable to import numba, falling back to non-JIT")
 
-    def njit(*args, **kwargs):
+    T = TypeVar("T")
+
+    def njit(*args: Any, **kwargs: Any) -> Callable[[T], T]:
         return lambda f: f
 
     prange = range
@@ -70,13 +73,13 @@ DIE_COMPONENT_RE = re.compile(
 
 
 class DiceError(Exception):
-    def __init__(self, msg=None, *args):
+    def __init__(self, msg=None, *args: Any):
         self.msg = msg
         super().__init__(msg, *args)
 
 
 @njit("uint32(uint32, uint32)", nogil=True)
-def ncr(n, r):
+def ncr(n: int, r: int) -> int:
     # With numba, this is significantly better than using scipy.special.comb
     # https://en.wikipedia.org/wiki/Binomial_coefficient#Multiplicative_formula
     if 0 <= r <= n:
@@ -116,14 +119,14 @@ def ncr(n, r):
 
 
 @njit("float32(uint32, uint32, uint32, uint32, uint32)")
-def _inner_flattened_cdf_math(quant, sides, i, j, k):
+def _inner_flattened_cdf_math(quant: int, sides: int, i: int, j: int) -> float:
     x = (((sides - j) / sides) ** i) * ((j / sides) ** (quant - i))
     y = (((sides - j + 1) / sides) ** i) * (((j - 1) / sides) ** (quant - i))
     return ncr(quant, i) * (x - y)
 
 
 @njit("float32(uint32, uint32, uint32)", parallel=_USE_P, nogil=True, cache=True)
-def _ev_roll_dice_keep_best(quant, sides, keep):
+def _ev_roll_dice_keep_best(quant: int, sides: int, keep: int) -> float:
 
     outermost_sum = 0
     for k in prange(0, keep):
@@ -131,14 +134,14 @@ def _ev_roll_dice_keep_best(quant, sides, keep):
         for j in prange(1, sides + 1):
             inner_sum = 0
             for i in prange(0, k + 1):
-                inner_sum += _inner_flattened_cdf_math(quant, sides, i, j, k)
+                inner_sum += _inner_flattened_cdf_math(quant, sides, i, j)
             middle_sum += j * inner_sum
         outermost_sum += middle_sum
     return outermost_sum
 
 
 @njit("float32(uint32, uint32, uint32)", parallel=_USE_P, nogil=True)
-def _ev_roll_dice_keep_worst(quant, sides, keep):
+def _ev_roll_dice_keep_worst(quant: int, sides: int, keep: int) -> float:
 
     outermost_sum = 0
     for k in prange(1, keep + 1):
@@ -146,14 +149,14 @@ def _ev_roll_dice_keep_worst(quant, sides, keep):
         for j in prange(1, sides + 1):
             inner_sum = 0
             for i in prange(0, quant - k + 1):
-                inner_sum += _inner_flattened_cdf_math(quant, sides, i, j, k)
+                inner_sum += _inner_flattened_cdf_math(quant, sides, i, j)
             middle_sum += j * inner_sum
         outermost_sum += middle_sum
     return outermost_sum
 
 
 @njit("float32(uint32, uint32, uint32, uint32)", nogil=True)
-def fast_analytic_ev(quant, sides, low, high):
+def fast_analytic_ev(quant: int, sides: int, low: int, high: int) -> float:
 
     if high < quant:
         return _ev_roll_dice_keep_best(quant, sides, high)
@@ -164,7 +167,7 @@ def fast_analytic_ev(quant, sides, low, high):
 
 
 @njit("uint32(uint32, uint32, uint32, uint32)")
-def fast_roll(quant, sides, low, high):
+def fast_roll(quant: int, sides: int, low: int, high: int) -> int:
     c = np.random.randint(1, sides, (quant,))
     c.sort()
     return np.sum(c[low:high])
