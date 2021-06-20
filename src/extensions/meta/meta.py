@@ -15,9 +15,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import re
 import sys
-from typing import Union
+from typing import Optional, Union
 
 import discord
 from discord.ext import commands
@@ -29,9 +30,46 @@ dpy_version = discord.__version__
 py_version = ".".join(f"{i}" for i in sys.version_info[:3])
 
 
+class AppInfoCache:
+    # TODO: Maybe move this to the bot if other things have a reason to touch this.
+
+    def __init__(self, bot: Salamander):
+        self.bot: Salamander = bot
+        self._cached_info: Optional[discord.AppInfo] = None
+        self._lock = asyncio.Lock()
+        self._invalidate_task: Optional[asyncio.Task] = None
+
+    async def get_app_info(self) -> discord.AppInfo:
+
+        async with self._lock:
+            if self._cached_info is not None:
+                return self._cached_info
+
+            self._cached_info = await self.bot.application_info()
+            if self._invalidate_task is not None:
+                self._invalidate_task.cancel()
+
+            self._invalidate_task = asyncio.create_task(self.defered_invalidation(300))
+
+    async def defered_invalidation(self, time: float):
+        await asyncio.sleep(time)
+        async with self._lock:
+            self._cached_info = None
+
+
+def bot_is_public():
+    async def bot_public(ctx: SalamanderContext) -> bool:
+        cog: Meta = ctx.cog
+        info = await cog.cached_info.get_app_info()
+        return info.bot_public
+
+    return commands.check(bot_public)
+
+
 class Meta(commands.Cog):
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
+        self.cached_info = AppInfoCache(bot)
 
     @commands.is_owner()
     @commands.command()
@@ -53,6 +91,19 @@ class Meta(commands.Cog):
         em.add_field(name="Python", value=py_version)
         em.add_field(name="Discord.py", value=dpy_version)
         await ctx.send(embed=em)
+
+    @commands.check_any(commands.is_owner(), bot_is_public())
+    @commands.cooldown(1, 300, commands.BucketType.channel)
+    @commands.command(name="invitelink")
+    async def invite_link_command(self, ctx: SalamanderContext):
+        """ Get the bot's invite link """
+
+        url = discord.utils.oauth_url(
+            client_id=ctx.guild.me.id,
+            permissions=discord.Permissions(470150262),
+        )  # TODO
+
+        await ctx.send(url)
 
     @admin_or_perms(manage_guild=True)
     @commands.group()
