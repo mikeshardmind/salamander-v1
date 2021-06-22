@@ -118,7 +118,7 @@ def ncr(n: int, r: int) -> int:
 #########################################################################################
 
 
-@njit("float32(uint32, uint32, uint32, uint32, uint32)")
+@njit("float32(uint32, uint32, uint32, uint32)")
 def _inner_flattened_cdf_math(quant: int, sides: int, i: int, j: int) -> float:
     x = (((sides - j) / sides) ** i) * ((j / sides) ** (quant - i))
     y = (((sides - j + 1) / sides) ** i) * (((j - 1) / sides) ** (quant - i))
