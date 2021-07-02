@@ -38,6 +38,30 @@ CREATE TABLE IF NOT EXISTS guild_settings (
 	feature_flags INTEGER DEFAULT 0
 );
 
+BEGIN;
+CREATE TABLE IF NOT EXISTS guild_settings_modadmin_migration (
+	guild_id INTEGER PRIMARY KEY NOT NULL,
+	mute_role INTEGER DEFAULT NULL,
+	mod_role INTEGER DEFAULT NULL,
+	admin_role INTEGER DEFAULT NULL,
+	timezone TEXT DEFAULT 'America/New_York',
+	mod_log_channel INTEGER DEFAULT NULL,
+	feature_flags INTEGER DEFAULT 0
+);
+
+INSERT INTO guild_settings_modadmin_migration (
+	guild_id, mute_role, timezone, mod_log_channel, feature_flags
+)
+SELECT
+	guild_id, mute_role, timezone, mod_log_channel, feature_flags
+FROM guild_settings;
+
+DROP TABLE guild_settings;
+ALTER TABLE guild_settings_modadmin_migration RENAME TO guild_settings;
+COMMIT;
+
+
+
 -- annoyance filters
 -- These are behavioral things to be dealt with automatically.
 CREATE TABLE IF NOT EXISTS annoyance_filter_settings (

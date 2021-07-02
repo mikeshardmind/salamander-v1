@@ -152,8 +152,8 @@ class AnnoyanceFilters(commands.Cog):
 
         settings = self.get_guild_settings(guild.id)
 
-        if (settings.mods_immune and self.bot.priv_handler.member_is_mod(guild.id, message.author.id)) or (
-            settings.admins_immune and self.bot.priv_handler.member_is_admin(guild.id, message.author.id)
+        if (settings.mods_immune and self.bot.priv_handler.member_is_mod(message.author)) or (
+            settings.admins_immune and self.bot.priv_handler.member_is_admin(message.author)
         ):
             return
 
@@ -186,12 +186,13 @@ class AnnoyanceFilters(commands.Cog):
             if settings.remove_excessive_html_elements and self.check_excessive_elements(content):
 
                 member_id = raw_payload.data.get("member", {}).get("id", None)
-                if not member_id:
+                member = guild.get_member(member_id) if member_id else None
+                if not member:
                     await self.bot.http.delete_message(channel.id, raw_payload.message_id)
 
                 if not (
-                    (settings.mods_immune and self.bot.priv_handler.member_is_mod(guild.id, member_id))
-                    or (settings.admins_immune and self.bot.priv_handler.member_is_admin(guild.id, member_id))
+                    (settings.mods_immune and self.bot.priv_handler.member_is_mod(member))
+                    or (settings.admins_immune and self.bot.priv_handler.member_is_admin(member))
                 ):
                     await self.bot.http.delete_message(channel.id, raw_payload.message_id)
 

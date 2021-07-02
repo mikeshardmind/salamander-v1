@@ -515,7 +515,7 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
     def __init__(self, bot: Salamander):
         self._bot: Salamander = bot
 
-    def member_is_mod(self, guild_id: int, user_id: int) -> bool:
+    def member_is_mod(self, member: discord.Member) -> bool:
         cursor = self._bot._conn.cursor()
         r = cursor.execute(
             """
@@ -523,12 +523,29 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
             FROM member_settings
             WHERE guild_id = ? and user_id = ?
             """,
-            (guild_id, user_id),
+            (member.guild.id, member.id),
         ).fetchone()
 
-        return r[0] if r else False
+        if r and r[0]:
+            return True
 
-    def member_is_admin(self, guild_id: int, user_id: int) -> bool:
+        r = cursor.execute(
+            """
+            SELECT mod_role, admin_role
+            FROM guild_settings
+            WHERE guild_id = ?
+            """,
+            (member.guild.id,)
+        ).fetchone()
+
+        if r:
+            for role_id in r:
+                if role_id and member._roles.has(role_id):
+                    return True
+
+        return False
+
+    def member_is_admin(self, member: discord.Member) -> bool:
         cursor = self._bot._conn.cursor()
         r = cursor.execute(
             """
@@ -536,10 +553,26 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
             FROM member_settings
             WHERE guild_id = ? and user_id = ?
             """,
-            (guild_id, user_id),
+            (member.guild.id, member.id),
         ).fetchone()
 
-        return r[0] if r else False
+        if r and r[0]:
+            return True
+
+        r = cursor.execute(
+            """
+            SELECT admin_role
+            FROM guild_settings
+            WHERE guild_id = ?
+            """,
+            (member.guild.id,)
+        ).fetchone()
+
+        if r and r[0]:
+            if member._roles.has(r[0]):
+                return True
+
+        return False
 
     def _modify_mod_status(self, val: bool, guild_id: int, user_ids: Sequence[int]):
         cursor = self._bot._conn.cursor()

@@ -376,7 +376,7 @@ class Mod(commands.Cog):
         """ Kick a member without removing messages """
 
         kick_soundness_check(bot_user=ctx.me, mod=ctx.author, target=who)
-        await who.kick(reacon=f"User kicked by command. (Authorizing mod: {ctx.author}({ctx.author.id})")
+        await who.kick(reason=f"User kicked by command. (Authorizing mod: {ctx.author}({ctx.author.id})")
         self.bot.modlog.member_kick(mod=ctx.author, target=who, reason=reason)
 
     @mod_or_perms(ban_members=True)
@@ -1046,16 +1046,22 @@ class Mod(commands.Cog):
         if not message.mentions:
             return
 
+        if not guild:
+            return
+
+        # This will be true if recieving message events in a guild, typing woes.
+        assert isinstance(guild, discord.Guild), "invariantly true"  # nosec
+        assert isinstance(author, discord.Member), "invariantly true"  # nosec
+
         if (
             author.bot
-            or message.guild is None
             or (author == guild.owner or author.top_role >= guild.me.top_role)
             or await self.bot.is_owner(author)
         ):
             return
 
         priv = self.bot.privlevel_manager
-        if priv.member_is_mod(guild.id, author.id) or priv.member_is_admin(guild.id, author.id):
+        if priv.member_is_mod(author) or priv.member_is_admin(author):
             return
 
         cursor = self.bot._conn.cursor()

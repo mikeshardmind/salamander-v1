@@ -84,6 +84,8 @@ class ZMQHandler:
     async def __aexit__(self, *args):
         self.sub_socket.close()
         self.push_socket.close()
+        assert self._push_task is not None, "Typing memes"  # nosec
+        assert self._recv_task is not None, "Typing memes"  # nosec
         self._push_task.cancel()
         self._recv_task.cancel()
         await asyncio.gather(self._push_task, self._recv_task, return_exceptions=True)

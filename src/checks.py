@@ -37,7 +37,7 @@ def mod():
         if ctx.guild:
             if ctx.guild.owner == ctx.author:
                 return True
-            return ctx.bot.privlevel_manager.member_is_mod(ctx.guild.id, ctx.author.id)
+            return ctx.bot.privlevel_manager.member_is_mod(ctx.author)
         return False
 
     return commands.check(predicate)
@@ -57,7 +57,7 @@ def admin():
         if ctx.guild:
             if ctx.guild.owner == ctx.author:
                 return True
-            return ctx.bot.privlevel_manager.member_is_admin(ctx.guild.id, ctx.author.id)
+            return ctx.bot.privlevel_manager.member_is_admin(ctx.author)
         return False
 
     return commands.check(predicate)

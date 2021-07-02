@@ -42,14 +42,15 @@ class AppInfoCache:
     async def get_app_info(self) -> discord.AppInfo:
 
         async with self._lock:
-            if self._cached_info is not None:
-                return self._cached_info
+            if self._cached_info is None:
 
-            self._cached_info = await self.bot.application_info()
-            if self._invalidate_task is not None:
-                self._invalidate_task.cancel()
+                self._cached_info = await self.bot.application_info()
+                if self._invalidate_task is not None:
+                    self._invalidate_task.cancel()
 
-            self._invalidate_task = asyncio.create_task(self.defered_invalidation(300))
+                self._invalidate_task = asyncio.create_task(self.defered_invalidation(300))
+
+            return self._cached_info
 
     async def defered_invalidation(self, time: float):
         await asyncio.sleep(time)
@@ -58,7 +59,9 @@ class AppInfoCache:
 
 
 def bot_is_public():
+    """ Don't use this elsewhere. """
     async def bot_public(ctx: SalamanderContext) -> bool:
+        assert isinstance(ctx.cog, Meta), "safe enough"  # nosec
         cog: Meta = ctx.cog
         info = await cog.cached_info.get_app_info()
         return info.bot_public
@@ -79,7 +82,7 @@ class Meta(commands.Cog):
 
     @commands.command(name="info", aliases=["about"])
     async def info_com(self, ctx: SalamanderContext):
-        """ Get info about this bot """
+        """ Get info about this bot. """
 
         about_text = self.bot._behavior_flags.about_text or (
             "This bot is an instance of [Project Salamander]"
@@ -96,7 +99,7 @@ class Meta(commands.Cog):
     @commands.cooldown(1, 300, commands.BucketType.channel)
     @commands.command(name="invitelink")
     async def invite_link_command(self, ctx: SalamanderContext):
-        """ Get the bot's invite link """
+        """ Get the bot's invite link. """
 
         url = discord.utils.oauth_url(
             client_id=ctx.guild.me.id,
@@ -108,13 +111,13 @@ class Meta(commands.Cog):
     @admin_or_perms(manage_guild=True)
     @commands.group()
     async def prefix(self, ctx: SalamanderContext):
-        """ Commands for managing the bot's prefix in this server """
+        """ Commands for managing the bot's prefix in this server. """
         if ctx.invoked_subcommand is None:
             await ctx.send_help()
 
     @prefix.command(name="list")
     async def prefix_list(self, ctx: SalamanderContext):
-        """ List the prefixes currently configured for this server """
+        """ List the prefixes currently configured for this server. """
 
         prefixes = self.bot.prefix_manager.get_guild_prefixes(ctx.guild.id)[::-1]
         if prefixes:
@@ -128,7 +131,7 @@ class Meta(commands.Cog):
     @prefix.command(name="add", ignore_extra=True)
     async def prefix_add(self, ctx: SalamanderContext, prefix: str):
         """
-        Add a prefix
+        Add a prefix.
 
         If you would like your prefix to end in a space, make sure you use quates.
         (Discord removes trailing whitespace from messages)
@@ -168,7 +171,7 @@ class Meta(commands.Cog):
     @prefix.command(name="remove", aliases=["delete"], ignore_extra=True)
     async def prefix_remove(self, ctx: SalamanderContext, prefix: str):
         """
-        Remove a prefix
+        Remove a prefix.
 
         If referring to a prefix which ends in a space, make sure you use quates.
         (Discord removes trailing whitespace from messages)
@@ -209,7 +212,7 @@ class Meta(commands.Cog):
     @commands.command(name="removemod", ignore_extra=False)
     async def rem_mod(self, ctx: SalamanderContext, who: Union[discord.Member, int]):
         """
-        Remove a mod
+        Remove a mod.
         """
 
         if isinstance(who, discord.Member):
@@ -235,7 +238,7 @@ class Meta(commands.Cog):
     @commands.command(name="removeadmin", ignore_extra=False)
     async def rem_admin(self, ctx: SalamanderContext, who: Union[discord.Member, int]):
         """
-        Remove an admin
+        Remove an admin.
         """
 
         if isinstance(who, discord.Member):
@@ -255,4 +258,98 @@ class Meta(commands.Cog):
                 "You appeared to give me multiple users. "
                 "If this isn't the case, please use quotes around "
                 "their name or mention them instead."
+            )
+
+    @guildowner_or_perms(manage_guild=True)
+    @commands.command(name="setadminrole", ignore_extra=False)
+    async def set_adminrole(self, ctx: commands.Context, role: discord.Role):
+        """
+        Set the bot admin role for the server.
+        """
+
+        cursor = self.bot._conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO guild_settings (guild_id, admin_role)
+            VALUES (?, ?)
+            ON CONFLICT (guild_id)
+            DO UPDATE SET
+                admin_role=excluded.admin_role
+            """,
+            (ctx.guild.id, role.id),
+        )
+
+        await ctx.send(f"Admin role set: {role.name}")
+
+    @guildowner_or_perms(manage_guild=True)
+    @commands.command(name="setmodrole", ignore_extra=False)
+    async def set_modrole(self, ctx: commands.Context, role: discord.Role):
+        """
+        Set the bot mod role for the server.
+        """
+
+        cursor = self.bot._conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO guild_settings (guild_id, mod_role)
+            VALUES (?, ?)
+            ON CONFLICT (guild_id)
+            DO UPDATE SET
+                mod_role=excluded.mod_role
+            """,
+            (ctx.guild.id, role.id),
+        )
+
+        await ctx.send(f"Mod role set: {role.name}")
+
+    @guildowner_or_perms(manage_guild=True)
+    @commands.command(name="clearadminrole", ignore_extra=False)
+    async def clear_adminrole(self, ctx: commands.Context):
+        """ Clears the bot admin role setting. """
+
+        cursor = self.bot._conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO guild_settings (guild_id, admin_role)
+            VALUES (?, ?)
+            ON CONFLICT (guild_id)
+            DO UPDATE SET
+                admin_role=excluded.admin_role
+            """,
+            (ctx.guild.id, None),
+        )
+
+        await ctx.send("Admin role setting has been reset. (None configured)")
+
+    @guildowner_or_perms(manage_guild=True)
+    @commands.command(name="clearmodrole", ignore_extra=False)
+    async def clear_modrole(self, ctx: commands.Context):
+        """ Clears the bot mod role setting. """
+
+        cursor = self.bot._conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO guild_settings (guild_id, mod_role)
+            VALUES (?, ?)
+            ON CONFLICT (guild_id)
+            DO UPDATE SET
+                mod_role=excluded.mod_role
+            """,
+            (ctx.guild.id, None),
+        )
+
+        await ctx.send("Mod role setting has been reset. (None configured)")
+
+    @set_modrole.error
+    @set_adminrole.error
+    async def set_roles_too_many(self, ctx, exc):
+        if isinstance(exc, commands.TooManyArguments):
+            await ctx.send(
+                "You appeared to give me multiple roles. "
+                "If this isn't the case, please use quotes around "
+                "the role name or use the role id instead."
             )
