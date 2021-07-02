@@ -1060,8 +1060,8 @@ class Salamander(commands.AutoShardedBot):
         def stop_when_done(fut):
             loop.stop()
 
+        fut = asyncio.ensure_future(runner(), loop=loop)
         try:
-            fut = asyncio.ensure_future(runner(), loop=loop)
             fut.add_done_callback(stop_when_done)
             loop.run_forever()
         except KeyboardInterrupt:
