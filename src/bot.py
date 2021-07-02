@@ -535,7 +535,7 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
             FROM guild_settings
             WHERE guild_id = ?
             """,
-            (member.guild.id,)
+            (member.guild.id,),
         ).fetchone()
 
         if r:
@@ -565,7 +565,7 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
             FROM guild_settings
             WHERE guild_id = ?
             """,
-            (member.guild.id,)
+            (member.guild.id,),
         ).fetchone()
 
         if r and r[0]:

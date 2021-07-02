@@ -60,6 +60,7 @@ class AppInfoCache:
 
 def bot_is_public():
     """ Don't use this elsewhere. """
+
     async def bot_public(ctx: SalamanderContext) -> bool:
         assert isinstance(ctx.cog, Meta), "safe enough"  # nosec
         cog: Meta = ctx.cog
