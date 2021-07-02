@@ -16,12 +16,17 @@
 from __future__ import annotations
 
 import threading
-from typing import Any, Dict
+from typing import Any, Callable, Dict
+
+from typing_extensions import ParamSpec
 
 __all__ = ["MainThreadSingletonMeta", "only_once"]
 
 
-def only_once(f):
+P = ParamSpec("P")
+
+
+def only_once(f: Callable[P, Any]) -> Callable[P, None]:
     """
     This isn't threadsafe, might need some guards on this later, but
     it's currently only for use in setting up logging,
@@ -31,7 +36,7 @@ def only_once(f):
     """
     has_called = False
 
-    def wrapped(*args, **kwargs) -> None:
+    def wrapped(*args: P.args, **kwargs: P.kwargs) -> None:
         nonlocal has_called
 
         if not has_called:
