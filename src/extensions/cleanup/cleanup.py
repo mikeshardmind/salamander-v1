@@ -45,14 +45,10 @@ class Cleanup(commands.Cog):
         Is intentionally very slow, limited to admins only, and can only run one at a time
         """
 
-        resp = await ctx.prompt(
-            "Are you sure you want to remove all messages " "from any user who cannot see this channel? (yes, no)",
-            options=("yes", "no"),
-            timeout=30,
+        if not await ctx.yes_or_no(
+            "Are you sure you want to remove all messages from any user who cannot see this channel? (yes, no)",
             delete_on_return=True,
-        )
-
-        if resp != "yes":
+        ):
             return
 
         informational = await ctx.send("This may take a while, I'll inform you when it is done.")
@@ -137,13 +133,10 @@ class Cleanup(commands.Cog):
             raise UserFeedbackError(custom_message="You must provide a positive number of 1 million or less.")
 
         if limit > 100:
-            confirm = await ctx.prompt(
+            if not await ctx.yes_or_no(
                 f"Are you sure you want to delete up to {limit} messages?",
-                options=("yes", "no"),
-                timeout=30,
                 delete_on_return=True,
-            )
-            if confirm == "no":
+            ):
                 return
 
         await self._cleanup(ctx, limit=limit)
@@ -160,14 +153,10 @@ class Cleanup(commands.Cog):
         if before_obj.created_at < ctx.message.created_at - timedelta(days=10):
             raise UserFeedbackError(custom_message="This message is older than the 10 day cutoff.")
 
-        confirm = await ctx.prompt(
+        if not await ctx.yes_or_no(
             "Are you sure you want to delete all the messages before this ID within the last 10 days?",
-            options=("yes", "no"),
-            timeout=30,
             delete_on_return=True,
-        )
-
-        if confirm == "no":
+        ):
             return
 
         await self._cleanup(ctx, before=before_obj)
@@ -184,14 +173,10 @@ class Cleanup(commands.Cog):
         if after_obj.created_at < ctx.message.created_at - timedelta(days=10):
             raise UserFeedbackError(custom_message="This message is older than the 10 day cutoff.")
 
-        confirm = await ctx.prompt(
+        if not await ctx.yes_or_no(
             "Are you sure you want to delete all the messages after the provided message ID?",
-            options=("yes", "no"),
-            timeout=30,
             delete_on_return=True,
-        )
-
-        if confirm == "no":
+        ):
             return
 
         await self._cleanup(ctx, after=after_obj)
@@ -223,14 +208,10 @@ class Cleanup(commands.Cog):
                 custom_message="The first message ID provided should be the earlier one. (Not continuing in case of accidental misuse.)"
             )
 
-        confirm = await ctx.prompt(
+        if not await ctx.yes_or_no(
             "Are you sure you want to delete all the messages between the provided message IDs?",
-            options=("yes", "no"),
-            timeout=30,
             delete_on_return=True,
-        )
-
-        if confirm == "no":
+        ):
             return
 
         await self._cleanup(ctx, before=second_obj, after=first_obj)

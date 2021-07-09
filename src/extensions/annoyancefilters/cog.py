@@ -243,9 +243,7 @@ class AnnoyanceFilters(commands.Cog):
             )
 
         elif settings.remove_apngs:
-            parts.append(
-                "Currently filtering messages that may contain hidden content due " "to a long time discord bug."
-            )
+            parts.append("Currently filtering messages that may contain hidden content due to a long time discord bug.")
 
         elif settings.remove_excessive_html_elements:
             parts.append(
@@ -268,34 +266,24 @@ class AnnoyanceFilters(commands.Cog):
     async def interactive(self, ctx: SalamanderContext):
         """ Set up filtering with an interactive prompt. """
 
-        lookup = {"yes": True, "no": False}
-
-        resp = await ctx.prompt(
+        elements = await ctx.yes_or_no(
             "Discord hides portions of messages if they contain "
             "too many formatting characters or too many emojis. "
             "This can allow pings to be hidden from moderators in "
             "messages or just be at a threshold where the client may lag for some users. "
             "\n\nWould you like to enable automatic removal of messages like this? "
-            "(Options are yes/no)",
-            options=("yes", "no"),
-            timeout=30,
+            "(Options are yes/no)"
         )
 
-        elements = lookup[resp]
-
-        resp = await ctx.prompt(
+        apng = await ctx.yes_or_no(
             "When animated pngs are uploaded to Discord, discord only shows the first frame. "
             "When these images are opened in the browser or downloaded, "
             "the png will play to the last frame and either loop or stop depending on the image. "
             "Some users have used this in ways that can range from annoying to malicious, "
             "but there are also legitimate uses for apng files."
             "\n\nWould you like to enable detection and removal of messages with apngs attached? "
-            "(options are yes/no)",
-            options=("yes", "no"),
-            timeout=30,
+            "(options are yes/no)"
         )
-
-        apng = lookup[resp]
 
         if not (elements or apng):
 
@@ -303,23 +291,11 @@ class AnnoyanceFilters(commands.Cog):
             await ctx.send("Ok, that's all of the available annoyance filters at this time.")
             return
 
-        resp = await ctx.prompt(
-            "Would you like admins to be exempt from these filters? (options are yes/no)",
-            options=("yes", "no"),
-            timeout=30,
-        )
-
-        admins = lookup[resp]
+        admins = await ctx.yes_or_no("Would you like admins to be exempt from these filters? (options are yes/no)")
 
         if admins:
 
-            resp = await ctx.prompt(
-                "Would you like mods to also be exempt from these filters? (options are yes/no)",
-                options=("yes", "no"),
-                timeout=30,
-            )
-
-            mods = lookup[resp]
+            mods = await ctx.yes_or_no("Would you like mods to also be exempt? (options are yes/no)")
 
         else:
             mods = False

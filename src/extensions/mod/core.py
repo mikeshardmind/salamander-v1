@@ -446,13 +446,9 @@ class Mod(commands.Cog):
 
         # As this was a search, let's confirm some things:
 
-        resp = await ctx.prompt(
+        if not await ctx.yes_or_no(
             f"This would ban {len(ban_args.matched_members)} members, continue? (yes/no)",
-            options=("yes", "no"),
-            timeout=15,
-        )
-
-        if resp != "yes":
+        ):
             return
 
         # change this in d.py 2.0 with shared max_concurrency

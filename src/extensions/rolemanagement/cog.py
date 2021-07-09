@@ -14,7 +14,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import csv
 import io
 import logging
@@ -709,8 +708,7 @@ class RoleManagement(commands.Cog):
             )
 
         await ctx.send(
-            f"Remember, the reactions only function according to "
-            f"the rules set for the roles using `{ctx.prefix}roleset`",
+            f"Remember, the reactions assign and remove roles based on the rules set using `{ctx.prefix}roleset`",
             delete_after=30,
         )
 
@@ -770,119 +768,51 @@ class RoleManagement(commands.Cog):
 
         if self_assign:
 
-            await ctx.send(
-                "This role is self assignable, "
-                "but not self removable. "
-                "Would you like to make it self removable? "
-                "(Options are yes or no)"
+            prompt = (
+                "This role is self assignable, but not self removable. "
+                "Would you like to make it self removable? (Options are yes or no)"
             )
-            try:
-                m = await ctx.bot.wait_for(
-                    "message",
-                    check=lambda m: m.channel.id == ctx.channel.id and m.author.id == ctx.author.id,
-                    timeout=30,
-                )
-            except asyncio.TimeoutError:
-                await ctx.send(
-                    f"I won't change this for you without "
-                    f"confirmation of it not being intentional. "
-                    f"If you decide to change this later, use `{ctx.prefix}roleset`."
-                )
+
+            if await ctx.yes_or_no(prompt):
+                role_settings.set_self_removable(self.bot._conn, True)
+                await ctx.send("Ok, I've made the role self removable")
             else:
-                if (resp := m.content.casefold()) == "yes":
-                    role_settings.set_self_removable(self.bot._conn, True)
-                    await ctx.send("Ok, I've made the role self removable")
-                elif resp == "no":
-                    await ctx.send("Got it, leaving it alone.")
+                await ctx.send("Got it, leaving it alone.")
 
         elif self_remove:
-            await ctx.send(
-                "This role is self removable, but nor self assignable. "
-                "While this is sometimes intentional, "
-                "this particular configuration is usually a mistake. "
-                "Would you like to make this role self assignable to go with that? "
-                "(Options are yes or no)"
-            )
-            try:
-                m = await ctx.bot.wait_for(
-                    "message",
-                    check=lambda m: m.channel.id == ctx.channel.id and m.author.id == ctx.author.id,
-                    timeout=30,
-                )
-            except asyncio.TimeoutError:
-                await ctx.send(
-                    f"I won't change this for you without "
-                    f"confirmation of it not being intentional. "
-                    f"If you decide to change this later, use `{ctx.prefix}roleset`."
-                )
 
+            prompt = (
+                "This role is self removable, but not self assignable. "
+                "While this is sometimes intentional, this particular configuration is usually a mistake. "
+                "Would you like to make this role self assignable to go with that? (Options are yes or no)"
+            )
+
+            if await ctx.yes_or_no(prompt):
+                role_settings.set_self_assignable(self.bot._conn, True)
+                await ctx.send("Ok, I've made the role self assignable")
             else:
-                if (resp := m.content.casefold()) == "yes":
-                    role_settings.set_self_assignable(self.bot._conn, True)
-                    await ctx.send("Ok, I've made the role self assignable")
-                elif resp == "no":
-                    await ctx.send("Got it, change was intentional.")
-                else:
-                    await ctx.send(
-                        f"That did not appear to be a yes or a no. "
-                        f"If you need to change this, use `{ctx.prefix}roleset`"
-                    )
+                await ctx.send("Got it, change was intentional.")
 
         else:
 
-            await ctx.send(
+            prompt = (
                 "This role is neither self assignable nor self removable. "
                 "This rolebind will be essentially useless without changing that. "
                 "Would you like me to make it self assignable? (Options are yes or no)"
             )
 
-            try:
-                m = await ctx.bot.wait_for(
-                    "message",
-                    check=lambda m: m.channel.id == ctx.channel.id and m.author.id == ctx.author.id,
-                    timeout=30,
-                )
-            except asyncio.TimeoutError:
-                await ctx.send(
-                    f"I won't wait forever for a response. "
-                    f"If you decide to change this later, use `{ctx.prefix}roleset`."
-                )
-                return
-            else:
-                if (resp := m.content.casefold()) == "yes":
-                    role_settings.set_self_assignable(self.bot._conn, True)
-                    await ctx.send("Would you also like it to be self removable? (Options are yes or no)")
-                    try:
-                        m2 = await ctx.bot.wait_for(
-                            "message",
-                            check=lambda m: m.channel.id == ctx.channel.id and m.author.id == ctx.author.id,
-                            timeout=30,
-                        )
-                    except asyncio.TimeoutError:
-                        await ctx.send(
-                            f"I won't wait forever for a response. "
-                            f"If you decide to change this later, use `{ctx.prefix}roleset`."
-                        )
-                        return
-                    else:
-                        if (resp2 := m2.content.casefold()) == "yes":
-                            role_settings.set_self_removable(self.bot._conn, True)
-                            await ctx.send("Ok, I've made the role self removable as well.")
-                        elif resp2 == "no":
-                            await ctx.send("Got it, leaving it alone.")
-                        else:
-                            return await ctx.send(
-                                f"That did not appear to be a yes or a no. "
-                                f"If you need to change this, use `{ctx.prefix}roleset`"
-                            )
+            if await ctx.yes_or_no(prompt):
 
-                elif resp == "no":
-                    return await ctx.send("Ok, I assume you know what you are doing then.")
+                role_settings.set_self_assignable(self.bot._conn, True)
+
+                if await ctx.yes_or_no("Would you also like it to be self removable? (Options are yes or no)"):
+                    role_settings.set_self_removable(self.bot._conn, True)
+                    await ctx.send("Ok, I've made the role self removable as well.")
                 else:
-                    return await ctx.send(
-                        f"That did not appear to be a yes or a no. "
-                        f"If you need to change this, use `{ctx.prefix}roleset`"
-                    )
+                    await ctx.send("Got it, leaving it alone.")
+
+            else:
+                await ctx.send("Ok, I assume you know what you are doing then.")
 
     @commands.bot_has_guild_permissions(manage_roles=True)
     @admin_or_perms(manage_guild=True, manage_roles=True)
@@ -1229,5 +1159,5 @@ class RoleManagement(commands.Cog):
     async def ignore_extra_hanlder(self, ctx, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
-                "You've given me what appears to be more than 1 role. " "If your role name has spaces in it, quote it."
+                "You've given me what appears to be more than 1 role. If your role name has spaces in it, quote it."
             )

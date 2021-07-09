@@ -127,7 +127,7 @@ class Meta(commands.Cog):
             em.description = "\n".join(f"{index}. `{prefix}`" for index, prefix in enumerate(prefixes, 1))
             await ctx.send(embed=em)
         else:
-            await ctx.send("There are no configured extra prefixes in this server, " "but using a mention will work.")
+            await ctx.send("There are no configured extra prefixes in this server, but using a mention will work.")
 
     @prefix.command(name="add", ignore_extra=True)
     async def prefix_add(self, ctx: SalamanderContext, prefix: str):
@@ -147,7 +147,7 @@ class Meta(commands.Cog):
         if prefix.startswith("/"):
             raise UserFeedbackError(
                 custom_message=(
-                    "Prefixes may not start with `/` " "to avoid conflicting with discord integrated /commands"
+                    "Prefixes may not start with `/` to avoid conflicting with discord integrated /commands"
                 )
             )
 
@@ -194,7 +194,7 @@ class Meta(commands.Cog):
     async def prefix_addremove_too_many_args(self, ctx: SalamanderContext, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
-                "I can only add one prefix at a time. " "If you intended that as a singular prefix, please quote it."
+                "I can only add one prefix at a time. If you intended that as a singular prefix, please quote it."
             )
 
     @admin_or_perms(manage_guild=True)

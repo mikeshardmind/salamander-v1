@@ -295,7 +295,7 @@ class RoleSettingsConverter(NamedTuple):
         try:
             parsed = parser.parse_args(shlex.split(arg))
         except Exception:
-            raise BadArgument("Settings:\n" "    --(no-)selfadd\n" "    --(no-)selfrem\n" "    --(no-)sticky")
+            raise BadArgument("Settings:\n    --(no-)selfadd\n    --(no-)selfrem\n    --(no-)sticky")
 
         return cls(parsed.selfadd, parsed.selfrem, parsed.sticky)
 

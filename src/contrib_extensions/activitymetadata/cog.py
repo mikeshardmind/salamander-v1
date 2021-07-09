@@ -237,8 +237,7 @@ class MessageMetaTrack(commands.Cog):
     async def drop(self, ctx: SalamanderContext):
         """ Drop the data for this guild """
 
-        confirm = await ctx.prompt("Are you sure? (yes/no)", options=("yes", "no"), timeout=30)
-        if confirm != "yes":
+        if not await ctx.yes_or_no("Are you sure? (yes/no)"):
             return
 
         cursor = self.conn.cursor()
@@ -414,7 +413,7 @@ class MessageMetaTrack(commands.Cog):
     async def activity_for_role_error_hanlder(self, ctx, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
-                "You've given me what appears to be more than 1 role. " "If your role name has spaces in it, quote it."
+                "You've given me what appears to be more than 1 role. If your role name has spaces in it, quote it."
             )
         elif isinstance(exc, commands.MaxConcurrencyReached):
             await ctx.send("A mod is using this currently already.")

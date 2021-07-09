@@ -73,7 +73,7 @@ class Feedback(commands.Cog):
     async def create_type_error(self, ctx: SalamanderContext, exc: Exception):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
-                "Feedback types should not contain any spaces. " "This makes them easier to work with for users."
+                "Feedback types should not contain any spaces. This makes them easier to work with for users."
             )
 
     @commands.is_owner()
@@ -197,13 +197,10 @@ class Feedback(commands.Cog):
         if not already_exists:
             raise UserFeedbackError(custom_message="That type doesn't exist.")
 
-        resp = await ctx.prompt(
-            "Are you sure you want to delete this feedback type? Doing so will also remove all feedback you have gotten for this type. (yes/no)",
-            options=("yes", "no"),
-            timeout=30,
-        )
-
-        if resp != "yes":
+        if not await ctx.yes_or_no(
+            "Are you sure you want to delete this feedback type? "
+            "Doing so will also remove all feedback you have gotten for this type. (yes/no)",
+        ):
             return
 
         cursor.execute(

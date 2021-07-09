@@ -183,6 +183,25 @@ class SalamanderContext(commands.Context):
         await menu.start(self, channel=alt_destination or self.channel, wait=wait)
         return menu
 
+    async def yes_or_no(
+        self,
+        prompt: str,
+        timeout: float = 30,
+        reset_cooldown_on_failure: bool = False,
+        delete_on_return: bool = False,
+    ) -> bool:
+        """
+        Wrapper around .prompt for yes/no questions.
+        """
+        r = await self.prompt(
+            prompt,
+            options=("yes", "no"),
+            timeout=timeout,
+            reset_cooldown_on_failure=reset_cooldown_on_failure,
+            delete_on_return=delete_on_return,
+        )
+        return r == "yes"
+
     async def prompt(
         self,
         prompt: str,

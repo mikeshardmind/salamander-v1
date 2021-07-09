@@ -228,11 +228,11 @@ class NumberofDice:
             if self.keep_high < self.quant:
                 choices.sort(reverse=True)
                 choices = choices[: self.keep_high]
-                parts.append(f"-> Highest {self.keep_high} " f"({', '.join(map(str, choices))})")
+                parts.append(f"-> Highest {self.keep_high} ({', '.join(map(str, choices))})")
             else:
                 choices.sort()
                 choices = choices[: self.keep_low]
-                parts.append(f"-> Lowest {self.keep_low} " f"({', '.join(map(str, choices))})")
+                parts.append(f"-> Lowest {self.keep_low} ({', '.join(map(str, choices))})")
 
         total = sum(choices)
         parts.append(f"-> ({total})")
