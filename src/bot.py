@@ -844,7 +844,6 @@ class Salamander(commands.AutoShardedBot):
                 continue
             self.load_extension(ext)
 
-
     async def __aenter__(self) -> Salamander:
         if self._zmq_task is None:
 
