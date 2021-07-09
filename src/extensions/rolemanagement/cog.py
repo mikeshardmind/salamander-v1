@@ -40,7 +40,7 @@ from .member_search import search_filter as member_search_filter
 log = logging.getLogger("salamander.extensions.rolemanagement")
 
 
-EMOJI_REGEX: re.Pattern = re.compile(r"<(?:a?):(?:[a-zA-Z0-9_]{2,32}):([0-9]{18,22})>$")
+EMOJI_REGEX: re.Pattern = re.compile(r"<(?:a?):(?:[a-zA-Z0-9_]{2,32}):([0-9]{15,20})>$")
 
 
 def normalize_emoji(s: str) -> str:
@@ -646,22 +646,44 @@ class RoleManagement(commands.Cog):
 
         for emoji, role in pairs.items():
             eid = normalize_emoji(emoji)
-            _emoji = discord.utils.find(lambda e: str(e) == emoji, self.bot.emojis)
+
+            if EMOJI_REGEX.fullmatch(emoji):
+                _emoji = self.bot.get_emoji(int(eid))
+
+                if _emoji is None:
+                    raise UserFeedbackError(
+                        custom_message="I can't use that emoji. (It is not from a guild that I am in)"
+                    )
+
+                assert isinstance(_emoji, discord.Emoji), "typing"  # nosec
+
+                gid = _emoji.guild_id
+                if gid != ctx.guild.id and not message.channel.permissions_for(ctx.guild.me).use_external_emojis:
+                    raise UserFeedbackError(
+                        custom_message="I can't use that emoji on that message. (I can't use external emojis)"
+                    )
+
+                if _emoji.roles:
+                    source_guild = _emoji.guild
+                    if set(_emoji.roles).isdisjoint(source_guild.me.roles):
+                        raise UserFeedbackError(
+                            custom_message="I can't use that emoji. (It is restricted to a role I don't have)"
+                        )
+
+            else:
+                _emoji = add_variation_selectors_to_emojis(emoji)
 
             try:
-                await ctx.message.add_reaction(add_variation_selectors_to_emojis(emoji))
-            except discord.HTTPException:
-                raise UserFeedbackError(custom_message=f"No such emoji {emoji}")
-
-            if all(str(r) != emoji for r in message.reactions):
-                try:
-                    await message.add_reaction(_emoji)
-                except discord.HTTPException as exc:
-                    if exc.code == 30010:
-                        raise UserFeedbackError(
-                            custom_message="This message can not have more reactions added to it. (limit 20)"
-                        )
-                    raise UserFeedbackError(custom_message="Hmm, that message couldn't be reacted to")
+                await ctx.message.add_reaction(_emoji)
+            except discord.HTTPException as exc:
+                code_message_lookup = {
+                    10014: f"{emoji} does not appear to be an emoji.",
+                    30010: "This message can not have more reactions added to it. (limit 20)",
+                    50001: f"I cannot add {emoji} as a reaction to this message.",
+                    90001: "The author of this message has blocked me and I cannot react to it.",
+                }
+                msg = code_message_lookup.get(exc.code, "Hmm, that message couldn't be reacted to")
+                raise UserFeedbackError(custom_message=msg)
 
             to_store[eid] = role
 
