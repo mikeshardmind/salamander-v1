@@ -602,6 +602,52 @@ class RoleManagement(commands.Cog):
         ReactionRoleRecord.remove_all_on_message(self.bot._conn, message_id)
         await ctx.send("Done.")
 
+    @staticmethod
+    def check_emoji_usable(channel: discord.TextChannel, emoji: Optional[discord.Emoji]):
+        """
+        Checks if an emoji is usable in a channel, raising if not.
+
+        Exists to have consistent error handling for failure cases.
+        """
+
+        if emoji is None:
+            raise UserFeedbackError(custom_message="I can't use that emoji. (It is not from a guild that I am in)")
+
+        assert isinstance(emoji, discord.Emoji), "typing"  # nosec
+
+        gid = emoji.guild_id
+        if gid != channel.guild.id and not channel.permissions_for(channel.guild.me).use_external_emojis:
+            raise UserFeedbackError(
+                custom_message="I can't use that emoji on that message. (I can't use external emojis)"
+            )
+
+        if emoji.roles:
+            source_guild = emoji.guild
+            if set(emoji.roles).isdisjoint(source_guild.me.roles):
+                raise UserFeedbackError(
+                    custom_message="I can't use that emoji. (It is restricted to a role I don't have)"
+                )
+
+    @staticmethod
+    async def wrapped_reaction_add(message: discord.Message, reaction: Union[discord.Emoji, str]):
+        """
+        Attempts to react to a message with the specified reaction.
+
+        Exists to have consistent error handling for failure cases.
+        """
+
+        try:
+            await message.add_reaction(reaction)
+        except discord.HTTPException as exc:
+            code_message_lookup = {
+                10014: f"{reaction} does not appear to be an emoji.",
+                30010: "This message can not have more reactions added to it. (limit 20)",
+                50001: f"I cannot add {reaction} as a reaction to this message.",
+                90001: "The author of this message has blocked me and I cannot react to it.",
+            }
+            msg = code_message_lookup.get(exc.code, "Hmm, that message couldn't be reacted to")
+            raise UserFeedbackError(custom_message=msg)
+
     @commands.bot_has_guild_permissions(manage_roles=True)
     @admin_or_perms(manage_guild=True, manage_roles=True)
     @commands.guild_only()
@@ -649,41 +695,11 @@ class RoleManagement(commands.Cog):
 
             if EMOJI_REGEX.fullmatch(emoji):
                 _emoji = self.bot.get_emoji(int(eid))
-
-                if _emoji is None:
-                    raise UserFeedbackError(
-                        custom_message="I can't use that emoji. (It is not from a guild that I am in)"
-                    )
-
-                assert isinstance(_emoji, discord.Emoji), "typing"  # nosec
-
-                gid = _emoji.guild_id
-                if gid != ctx.guild.id and not message.channel.permissions_for(ctx.guild.me).use_external_emojis:
-                    raise UserFeedbackError(
-                        custom_message="I can't use that emoji on that message. (I can't use external emojis)"
-                    )
-
-                if _emoji.roles:
-                    source_guild = _emoji.guild
-                    if set(_emoji.roles).isdisjoint(source_guild.me.roles):
-                        raise UserFeedbackError(
-                            custom_message="I can't use that emoji. (It is restricted to a role I don't have)"
-                        )
-
+                self.check_emoji_usable(message.channel, _emoji)
             else:
                 _emoji = add_variation_selectors_to_emojis(emoji)
 
-            try:
-                await ctx.message.add_reaction(_emoji)
-            except discord.HTTPException as exc:
-                code_message_lookup = {
-                    10014: f"{emoji} does not appear to be an emoji.",
-                    30010: "This message can not have more reactions added to it. (limit 20)",
-                    50001: f"I cannot add {emoji} as a reaction to this message.",
-                    90001: "The author of this message has blocked me and I cannot react to it.",
-                }
-                msg = code_message_lookup.get(exc.code, "Hmm, that message couldn't be reacted to")
-                raise UserFeedbackError(custom_message=msg)
+            await self.wrapped_reaction_add(message, _emoji)
 
             to_store[eid] = role
 
@@ -726,21 +742,13 @@ class RoleManagement(commands.Cog):
             raise UserFeedbackError(custom_message="No such message")
 
         eid = normalize_emoji(emoji)
+        if EMOJI_REGEX.fullmatch(emoji):
+            _emoji = self.bot.get_emoji(int(eid))
+            self.check_emoji_usable(message.channel, _emoji)
+        else:
+            _emoji = add_variation_selectors_to_emojis(emoji)
 
-        try:
-            await ctx.message.add_reaction(emoji)
-        except discord.HTTPException:
-            raise UserFeedbackError(custom_message="No such emoji")
-
-        if not any(str(r) == emoji for r in message.reactions):
-            try:
-                await message.add_reaction(emoji)
-            except discord.HTTPException as exc:
-                if exc.code == 30010:
-                    raise UserFeedbackError(
-                        custom_message="This message can not have more reactions added to it. (limit 20)"
-                    )
-                raise UserFeedbackError(custom_message="Hmm, that message couldn't be reacted to")
+        await self.wrapped_reaction_add(message, _emoji)
 
         ReactionRoleRecord(ctx.guild.id, message.channel.id, message.id, eid, role.id, True).to_database(self.bot._conn)
 
