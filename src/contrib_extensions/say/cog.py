@@ -57,6 +57,24 @@ class Say(commands.Cog):
         await channel.send(content)
 
     @commands.check_any(mod(), owner_in_guild())
+    @commands.command(name="sayecho")
+    async def say_echo_command(self, ctx: SalamanderContext, channel: discord.TextChannel, message: discord.Message):
+        """ Copy a message's content into another channel. """
+
+        content = message.content
+
+        if not content:
+            raise UserFeedbackError(custom_message="This message does not have content to copy.")
+
+        if not channel.permissions_for(ctx.guild.me).send_messages:
+            raise UserFeedbackError(custom_message="I can't speak in that channel.")
+
+        if len(content) > 2000:
+            raise UserFeedbackError(custom_message="I can only send up to 2000 characters in a single message.")
+
+        await channel.send(content)
+
+    @commands.check_any(mod(), owner_in_guild())
     @commands.command(name="sayedit")
     async def edit_bot_message(self, ctx: SalamanderContext, message: discord.Message, *, content: str):
         """ Edit an existing bot message. """
