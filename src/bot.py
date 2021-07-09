@@ -839,11 +839,11 @@ class Salamander(commands.AutoShardedBot):
         self.block_manager: BlockManager = BlockManager(self)
         self.privlevel_manager: PrivHandler = PrivHandler(self)
 
-        for ext in self._behavior_flags.initial_exts:
+        for ext in dict.fromkeys(self._behavior_flags.initial_exts):
+            if ext == "src.extensions.filter" and self._behavior_flags.no_basilisk:
+                continue
             self.load_extension(ext)
 
-        if not self._behavior_flags.no_basilisk:
-            self.load_extension("src.extensions.filter")
 
     async def __aenter__(self) -> Salamander:
         if self._zmq_task is None:
