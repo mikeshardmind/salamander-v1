@@ -35,6 +35,9 @@ class Say(commands.Cog):
             await ctx.send_help()
             return
 
+        if len(content) > 2000:
+            raise UserFeedbackError(custom_message="I can only send up to 2000 characters in a single message.")
+
         await ctx.send(content)
 
     @mod()
@@ -47,6 +50,9 @@ class Say(commands.Cog):
 
         if not channel.permissions_for(ctx.guild.me).send_messages:
             raise UserFeedbackError(custom_message="I can't speak in that channel.")
+        
+        if len(content) > 2000:
+            raise UserFeedbackError(custom_message="I can only send up to 2000 characters in a single message.")
 
         await channel.send(content)
 
@@ -62,5 +68,8 @@ class Say(commands.Cog):
 
         if author.id != ctx.guild.me.id:
             raise UserFeedbackError(custom_message="I can't edit other people's messages.")
+        
+        if len(content) > 2000:
+            raise UserFeedbackError(custom_message="I can only send up to 2000 characters in a single message.")
 
         await message.edit(content=content)
