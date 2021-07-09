@@ -19,7 +19,7 @@ import discord
 from discord.ext import commands
 
 from ...bot import SalamanderContext, UserFeedbackError
-from ...checks import mod
+from ...checks import mod, owner_in_guild
 
 
 class Say(commands.Cog):
@@ -27,7 +27,7 @@ class Say(commands.Cog):
 
     #: This is a good canidate for conversion to /command later
 
-    @mod()
+    @commands.check_any(mod(), owner_in_guild())
     @commands.command(name="sayhere")
     async def say_here(self, ctx: SalamanderContext, *, content: str):
         """ Say something in this channel. """
@@ -40,7 +40,7 @@ class Say(commands.Cog):
 
         await ctx.send(content)
 
-    @mod()
+    @commands.check_any(mod(), owner_in_guild())
     @commands.command(name="say")
     async def say_command(self, ctx: SalamanderContext, channel: discord.TextChannel, *, content: str):
         """ Say something in a specific channel. """
@@ -56,7 +56,7 @@ class Say(commands.Cog):
 
         await channel.send(content)
 
-    @mod()
+    @commands.check_any(mod(), owner_in_guild())
     @commands.command(name="sayedit")
     async def edit_bot_message(self, ctx: SalamanderContext, message: discord.Message, *, content: str):
         """ Edit an existing bot message. """
