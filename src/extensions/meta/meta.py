@@ -103,7 +103,7 @@ class Meta(commands.Cog):
         """ Get the bot's invite link. """
 
         url = discord.utils.oauth_url(
-            client_id=ctx.guild.me.id,
+            client_id=ctx.bot.user.id,
             permissions=discord.Permissions(470150262),
         )  # TODO
 
