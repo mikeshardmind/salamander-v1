@@ -92,6 +92,16 @@ def setup_logging() -> None:
     log.addHandler(rotating_file_handler)
 
 
+@only_once
+def add_connection_hooks() -> None:
+    def setwal(connection):
+        connection.cursor().execute("pragma journal_mode=wal")
+        connection.wal_autocheckpoint(1000)
+
+    if setwal not in apsw.connection_hooks:
+        apsw.connection_hooks.append(setwal)
+
+
 class SalamanderException(Exception):
     """ Base Exception for custom Exceptions """
 
@@ -1040,6 +1050,7 @@ class Salamander(commands.AutoShardedBot):
         """
 
         setup_logging()
+        add_connection_hooks()
 
         if uvloop is not None:
             uvloop.install()
