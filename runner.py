@@ -25,7 +25,7 @@ import apsw
 import toml
 
 from src import ipc_layer as ipcl
-from src.bot import _CUSTOM_DATA_DIR, BehaviorFlags, Salamander, get_data_path
+from src.bot import _CUSTOM_DATA_DIR, BehaviorFlags, Salamander, add_connection_hooks, get_data_path
 
 # ensure broken extensions break early
 from src.contrib_extensions import *
@@ -76,7 +76,13 @@ def get_conf() -> Optional[BehaviorFlags]:
 
 def main():
 
+    if data_dir := os.environ.get("DATA_DIR", None):
+        _CUSTOM_DATA_DIR.set(data_dir)
+
     no_file_log = bool(os.environ.get("NOLOG", False))
+
+    add_connection_hooks()
+    ensure_schema()
 
     if TOKEN := os.environ.get("SALAMANDER_TOKEN", None):
         Salamander.run_with_wrapping(TOKEN, config=get_conf(), no_file_log=no_file_log)
@@ -84,7 +90,7 @@ def main():
         sys.exit("No token?")
 
 
-def buildout():
+def ensure_schema():
 
     # The below is a hack of a solution, but it only runs against a trusted file
     # I don't want to have the schema repeated in multiple places
@@ -108,12 +114,4 @@ def buildout():
 
 
 if __name__ == "__main__":
-
-    if data_dir := os.environ.get("DATA_DIR", None):
-        _CUSTOM_DATA_DIR.set(data_dir)
-
-    if os.environ.get("BUILDOUT", None):
-        buildout()
-        sys.exit(0)
-
     main()
