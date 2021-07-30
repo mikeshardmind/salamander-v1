@@ -26,7 +26,7 @@ import operator
 import random
 import re
 import sys
-from typing import Any, Callable, Dict, List, Tuple, TypeVar, Union
+from typing import Any, Callable, TypeVar, Union
 
 import numpy as np
 
@@ -55,12 +55,12 @@ _OP_T = TypeVar("_OP_T")
 
 OperatorType = Callable[[_OP_T, _OP_T], _OP_T]
 
-OPS: Dict[str, OperatorType] = {
+OPS: dict[str, OperatorType] = {
     "+": operator.add,
     "-": operator.sub,
 }
 
-ROPS: Dict[OperatorType, str] = {
+ROPS: dict[OperatorType, str] = {
     operator.add: "+",
     operator.sub: "-",
 }
@@ -210,7 +210,7 @@ class NumberofDice:
     def get_ev(self) -> float:
         return fast_analytic_ev(self.quant, self.sides, self.keep_low, self.keep_high)  # type: ignore
 
-    def verbose_roll(self) -> Tuple[int, List[int]]:
+    def verbose_roll(self) -> tuple[int, list[int]]:
         choices = random.choices(range(1, self.sides + 1), k=self.quant)
         if self._kd_expr:
             if self.keep_high < self.quant:
@@ -220,7 +220,7 @@ class NumberofDice:
             return sum(filtered), choices
         return sum(choices), choices
 
-    def full_verbose_roll(self) -> Tuple[int, str]:
+    def full_verbose_roll(self) -> tuple[int, str]:
         parts = []
         choices = random.choices(range(1, self.sides + 1), k=self.quant)
         parts.append(f"{self.quant}d{self.sides} ({', '.join(map(str, choices))})")
@@ -249,7 +249,7 @@ class NumberofDice:
         return fast_roll(self.quant, self.sides, low, high)  # type: ignore
 
 
-def _try_die_or_int(expr: str) -> Tuple[Union[NumberofDice, int], str]:
+def _try_die_or_int(expr: str) -> tuple[Union[NumberofDice, int], str]:
 
     if m := DIE_COMPONENT_RE.search(expr):
         assert m is not None, "mypy#8128"  # nosec

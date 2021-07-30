@@ -27,7 +27,7 @@ from contextvars import ContextVar
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Callable, Final, List, Optional, Sequence, Set, Type, TypeVar, Union
+from typing import Any, Callable, Final, Optional, Sequence, Type, TypeVar, Union
 from uuid import uuid4
 
 import apsw
@@ -164,7 +164,7 @@ class SalamanderContext(commands.Context):
 
     async def list_menu(
         self,
-        pages: List[Union[discord.Embed, str]],
+        pages: list[Union[discord.Embed, str]],
         *,
         timeout: float = 180,
         alt_destination: Optional[discord.abc.Messageable] = None,
@@ -295,7 +295,7 @@ class SalamanderContext(commands.Context):
 _CT = TypeVar("_CT", bound=SalamanderContext)
 
 
-def _prefix(bot: Salamander, msg: discord.Message) -> Callable[[Salamander, discord.Message], List[str]]:
+def _prefix(bot: Salamander, msg: discord.Message) -> Callable[[Salamander, discord.Message], list[str]]:
     guild = msg.guild
     base = bot.prefix_manager.get_guild_prefixes(guild.id) if guild else ()
     return commands.when_mentioned_or(*base)(bot, msg)
@@ -1091,7 +1091,7 @@ class Salamander(commands.AutoShardedBot):
             # allow outstanding non-discord tasks a brief moment to clean themselves up
             loop.run_until_complete(asyncio.sleep(0.05))
 
-            tasks: Set[asyncio.Task] = {t for t in asyncio.all_tasks(loop) if not t.done()}
+            tasks: set[asyncio.Task] = {t for t in asyncio.all_tasks(loop) if not t.done()}
             for t in tasks:
                 if not t.get_name().startswith("salamander.waterfall"):
                     # Waterfall has a few named tasks that should be allowed to clean up.

@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import contextlib
 import itertools
-from typing import Iterable, List, NamedTuple, Sequence
+from typing import Iterable, NamedTuple, Sequence
 
 import apsw
 import discord
@@ -222,7 +222,7 @@ class RoleSettings(NamedTuple):
     requires_all: Sequence[int]
 
     @staticmethod
-    def self_assignable_ids_in_guild(conn: apsw.Connection, guild_id: int) -> List[int]:
+    def self_assignable_ids_in_guild(conn: apsw.Connection, guild_id: int) -> list[int]:
         cursor = conn.cursor()
 
         return [

@@ -22,7 +22,7 @@ import logging
 import random
 from datetime import datetime, timezone
 from fractions import Fraction
-from typing import List, Optional
+from typing import Optional
 
 import apsw
 import discord
@@ -173,7 +173,7 @@ class QOTW(commands.Cog):
             )
             return
 
-        to_null: List[int] = []
+        to_null: list[int] = []
 
         def gen_(question_list):
             for (mid, cq, qss) in question_list:

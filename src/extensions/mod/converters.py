@@ -19,7 +19,7 @@ import asyncio
 import re
 import shlex
 from datetime import timedelta
-from typing import Final, Iterator, List, NamedTuple, Optional, Sequence, Set, TypeVar
+from typing import Final, Iterator, NamedTuple, Optional, Sequence, TypeVar
 
 import discord
 from discord.ext import commands
@@ -53,8 +53,8 @@ class MultiBanConverter(NamedTuple):
     Handles strict matching semantics + multiple targets, search, and reason
     """
 
-    matched_members: List[discord.Member]
-    unmatched_user_ids: List[int]
+    matched_members: list[discord.Member]
+    unmatched_user_ids: list[int]
     reason: str
 
     @classmethod
@@ -80,9 +80,9 @@ class MultiBanConverter(NamedTuple):
         if not reason:
             raise commands.BadArgument("Must provide a ban reason.")
 
-        matched_members: List[discord.Member] = []
-        seen_ids: Set[int] = set()
-        to_search: Set[int] = set()
+        matched_members: list[discord.Member] = []
+        seen_ids: set[int] = set()
+        to_search: set[int] = set()
 
         for argument in ns.members:
 
@@ -127,8 +127,8 @@ class MultiBanConverter(NamedTuple):
 
 
 class SearchBanConverter(NamedTuple):
-    matched_members: List[discord.Member]
-    unmatched_user_ids: List[int]
+    matched_members: list[discord.Member]
+    unmatched_user_ids: list[int]
     reason: str
 
     @classmethod
@@ -172,7 +172,7 @@ class SearchBanConverter(NamedTuple):
                 raise commands.BadArgument("That did not appear to be a valid amount of time.")
                 # It's allowed to not be provided, but if provided, we won't silent error
 
-        members: List[discord.Member] = []
+        members: list[discord.Member] = []
 
         uname: Optional[str] = " ".join(ns.uname) if ns.uname else None
 

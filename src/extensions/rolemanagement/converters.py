@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import argparse
 import shlex
-from typing import Dict, Generator, Iterable, List, NamedTuple, Tuple, TypeVar
+from typing import Generator, Iterable, NamedTuple, TypeVar
 
 import discord
 from discord.ext.commands import BadArgument, RoleConverter
@@ -28,7 +28,7 @@ _RoleConverter = RoleConverter()
 _T = TypeVar("_T")
 
 
-def _grab_pairs(iterable: Iterable[_T]) -> Generator[Tuple[_T, _T], None, None]:
+def _grab_pairs(iterable: Iterable[_T]) -> Generator[tuple[_T, _T], None, None]:
     """
     This can be generalized more, but I really don't care to do so without reason
     """
@@ -52,7 +52,7 @@ def add_bool_arg(parser: NoExitParser, name: str, default=None):
 
 
 class RoleSyntaxConverter(NamedTuple):
-    parsed: Dict[str, List[discord.Role]]
+    parsed: dict[str, list[discord.Role]]
 
     @classmethod
     async def convert(cls, ctx: SalamanderContext, argument: str):
@@ -74,7 +74,7 @@ class RoleSyntaxConverter(NamedTuple):
 
 
 class EmojiRolePairConverter(NamedTuple):
-    pairs: Dict[str, discord.Role]
+    pairs: dict[str, discord.Role]
 
     @classmethod
     async def convert(cls, ctx: SalamanderContext, argument: str):
@@ -85,7 +85,7 @@ class EmojiRolePairConverter(NamedTuple):
         if len(chunks) % 2:
             raise BadArgument("Must provide pairings of emojis to roles.")
 
-        pairs: Dict[str, discord.Role] = {}
+        pairs: dict[str, discord.Role] = {}
 
         pairs_gen = _grab_pairs(chunks)
         try:

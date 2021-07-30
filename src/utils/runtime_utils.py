@@ -16,7 +16,7 @@
 from __future__ import annotations
 
 import threading
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 
 from typing_extensions import ParamSpec
 
@@ -50,7 +50,7 @@ def only_once(f: Callable[P, Any]) -> Callable[P, None]:
 
 class MainThreadSingletonMeta(type):
 
-    _instances: Dict[type, object] = {}
+    _instances: dict[type, object] = {}
 
     def __call__(cls, *args: Any, **kwargs: Any):
 

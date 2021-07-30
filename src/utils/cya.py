@@ -16,7 +16,7 @@
 from __future__ import annotations
 
 import operator
-from typing import Any, Callable, Dict, Generic, Optional, Sequence, Set, TypeVar, Union
+from typing import Any, Callable, Generic, Optional, Sequence, TypeVar, Union
 
 __all__ = [
     "AlreadyDone",
@@ -167,9 +167,9 @@ class ChooseYourOwnAdventure(Generic[_CYA_TV]):
 
     def __init__(
         self,
-        initial_pages: Optional[Dict[int, Union[Decision, Termination[_CYA_TV]]]] = None,
+        initial_pages: Optional[dict[int, Union[Decision, Termination[_CYA_TV]]]] = None,
     ):
-        self._pages: Dict[int, Union[Decision, Termination[_CYA_TV]]] = (
+        self._pages: dict[int, Union[Decision, Termination[_CYA_TV]]] = (
             initial_pages if initial_pages is not None else {}
         )
         self._pos = 0
@@ -281,13 +281,13 @@ def _validate_cya(adventure: ChooseYourOwnAdventure[Any]) -> None:
     if not isinstance(entrypoint, Decision):
         raise RuntimeError("Entrypoint must be a Decision")
 
-    seen: Set[int] = {0}
-    unseen: Set[int] = {k for k, v in pages.items() if k}
+    seen: set[int] = {0}
+    unseen: set[int] = {k for k, v in pages.items() if k}
 
-    def reachable_from(*page_numbers: int) -> Set[int]:
+    def reachable_from(*page_numbers: int) -> set[int]:
         """This is 1 choice reachability"""
 
-        ret: Set[int] = set()
+        ret: set[int] = set()
 
         for page_num in page_numbers:
             page = pages[page_num]
@@ -322,8 +322,8 @@ def _validate_cya(adventure: ChooseYourOwnAdventure[Any]) -> None:
     # An example that the above would not have ruled out:
     # 0 -> 1 or 2, 1 -> 1, 2 -> 3, with 0, 1, 2, as decisions and 3 as a termination
 
-    terminations: Set[int] = {k for k, v in pages.items() if isinstance(k, Termination)}
-    decisions: Set[int] = {k for k, v in pages.items() if isinstance(k, Decision)}
+    terminations: set[int] = {k for k, v in pages.items() if isinstance(k, Termination)}
+    decisions: set[int] = {k for k, v in pages.items() if isinstance(k, Decision)}
 
     # I imagine there's a more efficient way of doing this, but given the constraints that:
     # 1: This allows loops
@@ -337,11 +337,11 @@ def _validate_cya(adventure: ChooseYourOwnAdventure[Any]) -> None:
 
     # If anyone comes across this and knows of a more efficient way, I'd love to hear about it.
 
-    reaches_a_termination: Set[int] = set()
+    reaches_a_termination: set[int] = set()
 
     for start_state in decisions:
 
-        state_seen: Set[int] = {start_state}
+        state_seen: set[int] = {start_state}
 
         while state_newly_reachable := reachable_from(*state_seen) - state_seen:
             for page_number in state_newly_reachable:

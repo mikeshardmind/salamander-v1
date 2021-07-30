@@ -16,7 +16,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Final, Iterator, List, Optional, Sequence, Tuple
+from typing import Final, Iterator, Optional, Sequence
 
 __all__ = [
     "format_list",
@@ -26,7 +26,7 @@ __all__ = [
 ]
 
 
-PERIODS: Final[Sequence[Tuple[str, str, int]]] = (
+PERIODS: Final[tuple[tuple[str, str, int]]] = (
     ("year", "years", 60 * 60 * 24 * 365),
     ("month", "months", 60 * 60 * 24 * 30),
     ("day", "days", 60 * 60 * 24),
@@ -77,7 +77,7 @@ def pagify(
     text: str,
     *,
     page_size: int = 1800,
-    delims: Optional[List[str]] = None,
+    delims: Optional[list[str]] = None,
     strip_before_yield: bool = True,
 ) -> Iterator[str]:
 

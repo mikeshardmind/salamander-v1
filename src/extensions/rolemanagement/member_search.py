@@ -15,13 +15,13 @@
 from __future__ import annotations
 
 import asyncio
-from typing import AsyncIterator, Callable, List, Optional, Set
+from typing import AsyncIterator, Callable, Optional
 
 import discord
 
 
 async def _member_yielder(
-    members: Set[discord.Member],
+    members: set[discord.Member],
 ) -> AsyncIterator[discord.Member]:
 
     # While the check function isn't expensive,
@@ -35,7 +35,7 @@ async def _member_yielder(
         yield member
 
 
-async def search_filter(members: Set[discord.Member], query: dict) -> Set[discord.Member]:
+async def search_filter(members: set[discord.Member], query: dict) -> set[discord.Member]:
     """
     Reusable filter
     """
@@ -54,7 +54,7 @@ async def search_filter(members: Set[discord.Member], query: dict) -> Set[discor
         await asyncio.sleep(0)
 
     if any_roles := query["any"]:
-        any_set: Set[discord.Member] = set()
+        any_set: set[discord.Member] = set()
         any_set.update(*(role.members for role in any_roles))
         members.intersection_update(any_set)
         await asyncio.sleep(0)
@@ -85,7 +85,7 @@ def _non_set_filter(query: dict) -> Optional[Callable[[discord.Member], bool]]:
     if required_perms := query["hasperm"]:
         minimum_perms = discord.Permissions(**{x: True for x in required_perms})
 
-    conditions: List[Callable[[discord.Member], bool]] = []
+    conditions: list[Callable[[discord.Member], bool]] = []
 
     if query["bots"]:
         conditions.append(lambda m: m.bot)

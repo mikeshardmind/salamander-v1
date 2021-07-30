@@ -20,7 +20,7 @@ import logging
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, MutableMapping, Optional, Union
+from typing import MutableMapping, Optional, Union
 from weakref import WeakValueDictionary
 
 import discord
@@ -149,9 +149,9 @@ class Mod(commands.Cog):
 
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
-        self._mute_locks: Dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
+        self._mute_locks: dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
         self._bgloop = asyncio.create_task(self.background_loop())
-        self.antispam: Dict[int, commands.cooldowns.CooldownMapping] = {}
+        self.antispam: dict[int, commands.cooldowns.CooldownMapping] = {}
         self._ban_concurrency: MutableMapping[int, asyncio.Lock] = WeakValueDictionary()
 
     def cog_unload(self):
@@ -739,7 +739,7 @@ class Mod(commands.Cog):
         audit_reason: str,
         *,
         mod: Optional[discord.Member] = None,
-    ) -> List[discord.Role]:
+    ) -> list[discord.Role]:
 
         cursor = self.bot._conn.cursor()
         params = (guild_id,)

@@ -18,7 +18,7 @@ import csv
 import io
 import logging
 import re
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Iterator, Optional, Union
 
 import discord
 from discord.ext import commands
@@ -97,8 +97,8 @@ class RoleManagement(commands.Cog):
         self,
         *,
         who: discord.Member,
-        give: List[discord.Role] = None,
-        remove: List[discord.Role] = None,
+        give: list[discord.Role] = None,
+        remove: list[discord.Role] = None,
     ):
         """
         Give and remove roles as a single op with some slight wrapping
@@ -330,7 +330,7 @@ class RoleManagement(commands.Cog):
         who: discord.Member,
         role: discord.Role,
         role_settings: Optional[RoleSettings] = None,
-    ) -> List[discord.Role]:
+    ) -> list[discord.Role]:
         """
         Returns a list of roles to be removed if this one is added, or raises an
         exception
@@ -379,7 +379,7 @@ class RoleManagement(commands.Cog):
         who: discord.Member,
         role: discord.Role,
         role_settings: Optional[RoleSettings] = None,
-    ) -> List[discord.Role]:
+    ) -> list[discord.Role]:
         """
         Returns a list of roles to remove, or raises an error
         """
@@ -686,7 +686,7 @@ class RoleManagement(commands.Cog):
         except discord.HTTPException:
             return await ctx.send("No such message")
 
-        to_store: Dict[str, discord.Role] = {}
+        to_store: dict[str, discord.Role] = {}
         _emoji: Optional[Union[discord.Emoji, str]]
 
         for emoji, role in pairs.items():
