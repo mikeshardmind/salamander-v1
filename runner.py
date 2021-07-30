@@ -24,6 +24,11 @@ import toml
 from src import ipc_layer as ipcl
 from src.bot import _CUSTOM_DATA_DIR, BehaviorFlags, Salamander
 
+# ensure broken extensions break early
+from src.contrib_extensions import *
+from src.extensions import *
+from src.local_extensions import *
+
 
 def get_conf() -> Optional[BehaviorFlags]:
 
