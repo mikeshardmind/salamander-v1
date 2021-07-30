@@ -147,7 +147,7 @@ class ModNotes(commands.Cog):
     @mod()
     @commands.command()
     async def makemodnote(self, ctx: SalamanderContext, who: StrictMemberConverter, *, note: str):
-        """ Make a note about a user """
+        """Make a note about a user"""
 
         if not who.id:
             raise UserFeedbackError(custom_message="That didn't look like a user or ID")
@@ -163,14 +163,14 @@ class ModNotes(commands.Cog):
     @mod()
     @commands.group()
     async def getmodnotes(self, ctx: SalamanderContext):
-        """ Get notes """
+        """Get notes"""
         if ctx.invoked_subcommand is None:
             await ctx.send_help()
 
     @mod()
     @getmodnotes.command()
     async def about(self, ctx: SalamanderContext, who: StrictMemberConverter):
-        """ Get notes about a user """
+        """Get notes about a user"""
 
         if not who.id:
             raise UserFeedbackError(custom_message="That didn't look like a user or ID")

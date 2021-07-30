@@ -128,42 +128,42 @@ class Filter(commands.Cog):
     @commands.check_any(commands.is_owner(), admin_or_perms(manage_guild=True))
     @commands.group(name="filterset")
     async def filterset(self, ctx: SalamanderContext):
-        """ Commands for managing the network filter """
+        """Commands for managing the network filter"""
         if ctx.invoked_subcommand is None:
             await ctx.send_help()
 
     @admin_or_perms(manage_guild=True)
     @filterset.command()
     async def enable(self, ctx: SalamanderContext):
-        """ Enable the network wide filter in this server """
+        """Enable the network wide filter in this server"""
         self.enable_in_guild(ctx.guild.id)
         await ctx.send("Filtering enabled.")
 
     @admin_or_perms(manage_guild=True)
     @filterset.command()
     async def disable(self, ctx: SalamanderContext):
-        """ Disable the network wide filter in this server """
+        """Disable the network wide filter in this server"""
         self.disable_in_guild(ctx.guild.id)
         await ctx.send("Filtering disabled.")
 
     @commands.is_owner()
     @filterset.command()
     async def addpattern(self, ctx: SalamanderContext, *, pattern):
-        """ Add a pattern to the scanner """
+        """Add a pattern to the scanner"""
         self.bot.ipc_put(REFOCUS, ((pattern,), ()))
         await ctx.send("Pattern added.")
 
     @commands.is_owner()
     @filterset.command()
     async def removepattern(self, ctx: SalamanderContext, *, pattern):
-        """ Remove a pattern from the scanner """
+        """Remove a pattern from the scanner"""
         self.bot.ipc_put(REFOCUS, ((), (pattern,)))
         await ctx.send("Pattern removed.")
 
     @admin_or_perms(manage_guild=True)
     @filterset.command()
     async def listpatterns(self, ctx: SalamanderContext):
-        """ List the current patterns being filtered """
+        """List the current patterns being filtered"""
 
         this_uuid = uuid4().bytes
 

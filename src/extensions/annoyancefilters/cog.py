@@ -58,7 +58,7 @@ class GuildSettings(NamedTuple):
 
 
 class AnnoyanceFilters(commands.Cog):
-    """ Filter out content which is poorly behaved on Discord """
+    """Filter out content which is poorly behaved on Discord"""
 
     def __init__(self, bot):
         self.bot = bot
@@ -199,7 +199,7 @@ class AnnoyanceFilters(commands.Cog):
     @admin_or_perms(manage_messages=True, manage_guild=True)
     @commands.group(name="annoyancefilter")
     async def top_level_group(self, ctx: SalamanderContext):
-        """ Configuration for various annoyances. """
+        """Configuration for various annoyances."""
 
         if ctx.invoked_subcommand is None:
             await ctx.send_help()
@@ -219,14 +219,14 @@ class AnnoyanceFilters(commands.Cog):
 
     @top_level_group.command(name="disable")
     async def disable(self, ctx: SalamanderContext):
-        """ Disable annoyance filtering for this server. """
+        """Disable annoyance filtering for this server."""
 
         self.set_guild_settings(ctx.guild.id, GuildSettings())
         await ctx.send("No longer filtering for annoyances.")
 
     @top_level_group.command(name="view")
     async def view_settings(self, ctx: SalamanderContext):
-        """ Get info about the current settings. """
+        """Get info about the current settings."""
 
         settings = self.get_guild_settings(ctx.guild.id)
 
@@ -264,7 +264,7 @@ class AnnoyanceFilters(commands.Cog):
 
     @top_level_group.command(name="custom")
     async def interactive(self, ctx: SalamanderContext):
-        """ Set up filtering with an interactive prompt. """
+        """Set up filtering with an interactive prompt."""
 
         elements = await ctx.yes_or_no(
             "Discord hides portions of messages if they contain "

@@ -30,18 +30,9 @@ from types import TracebackType
 from typing import Any, Callable, Final, List, Optional, Sequence, Set, Type, TypeVar, Union
 from uuid import uuid4
 
-try:
-    import uvloop  # type: ignore
-except ImportError:
-    uvloop = None
-
-try:
-    import jishaku
-except ImportError:
-    jishaku = None
-
 import apsw
 import discord
+import uvloop
 from discord.ext import commands, menus
 from lru import LRU
 
@@ -103,14 +94,14 @@ def add_connection_hooks() -> None:
 
 
 class SalamanderException(Exception):
-    """ Base Exception for custom Exceptions """
+    """Base Exception for custom Exceptions"""
 
     custom_message: str
     reset_cooldown: bool
 
 
 class IncompleteInputError(SalamanderException):
-    """ To be used when a command did not recieve all the inputs """
+    """To be used when a command did not recieve all the inputs"""
 
     def __init__(self, *args, reset_cooldown: bool = False, custom_message: str = ""):
         super().__init__("Incomplete user input")
@@ -119,7 +110,7 @@ class IncompleteInputError(SalamanderException):
 
 
 class HierarchyException(SalamanderException):
-    """ For cases where invalid targetting due to hierarchy occurs """
+    """For cases where invalid targetting due to hierarchy occurs"""
 
     def __init__(self, *args, custom_message: str = ""):
         super().__init__("Hierarchy memes")
@@ -128,7 +119,7 @@ class HierarchyException(SalamanderException):
 
 
 class UserFeedbackError(SalamanderException):
-    """ Generic error which propogates a message to the user """
+    """Generic error which propogates a message to the user"""
 
     def __init__(self, *args, custom_message: str):
         super().__init__(self, custom_message)
@@ -281,7 +272,7 @@ class SalamanderContext(commands.Context):
         page_size: int = 1800,
         allowed_mentions: Optional[discord.AllowedMentions] = None,
     ):
-        """ Send something paged out """
+        """Send something paged out"""
 
         for i, page in enumerate(pagify(content, page_size=page_size)):
             if box:
@@ -1176,6 +1167,7 @@ class Salamander(commands.AutoShardedBot):
 
             loop.run_until_complete(limited_finalization())
             loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.run_until_complete(loop.shutdown_default_executor())
 
             for task in tasks:
                 try:
@@ -1190,8 +1182,8 @@ class Salamander(commands.AutoShardedBot):
                 except (asyncio.InvalidStateError, asyncio.CancelledError):
                     pass
 
-            loop.close()
             asyncio.set_event_loop(None)
+            loop.close()
 
         if not fut.cancelled():
             try:

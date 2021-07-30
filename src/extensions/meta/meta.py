@@ -59,7 +59,7 @@ class AppInfoCache:
 
 
 def bot_is_public():
-    """ Don't use this elsewhere. """
+    """Don't use this elsewhere."""
 
     async def bot_public(ctx: SalamanderContext) -> bool:
         assert isinstance(ctx.cog, Meta), "safe enough"  # nosec
@@ -78,12 +78,12 @@ class Meta(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def shutdown(self, ctx: SalamanderContext):
-        """ Shuts down the bot """
+        """Shuts down the bot"""
         await self.bot.logout()
 
     @commands.command(name="info", aliases=["about"])
     async def info_com(self, ctx: SalamanderContext):
-        """ Get info about this bot. """
+        """Get info about this bot."""
 
         about_text = self.bot._behavior_flags.about_text or (
             "This bot is an instance of [Project Salamander]"
@@ -100,7 +100,7 @@ class Meta(commands.Cog):
     @commands.cooldown(1, 300, commands.BucketType.channel)
     @commands.command(name="invitelink")
     async def invite_link_command(self, ctx: SalamanderContext):
-        """ Get the bot's invite link. """
+        """Get the bot's invite link."""
 
         url = discord.utils.oauth_url(
             client_id=ctx.bot.user.id,
@@ -112,13 +112,13 @@ class Meta(commands.Cog):
     @admin_or_perms(manage_guild=True)
     @commands.group()
     async def prefix(self, ctx: SalamanderContext):
-        """ Commands for managing the bot's prefix in this server. """
+        """Commands for managing the bot's prefix in this server."""
         if ctx.invoked_subcommand is None:
             await ctx.send_help()
 
     @prefix.command(name="list")
     async def prefix_list(self, ctx: SalamanderContext):
-        """ List the prefixes currently configured for this server. """
+        """List the prefixes currently configured for this server."""
 
         prefixes = self.bot.prefix_manager.get_guild_prefixes(ctx.guild.id)[::-1]
         if prefixes:
@@ -308,7 +308,7 @@ class Meta(commands.Cog):
     @guildowner_or_perms(manage_guild=True)
     @commands.command(name="clearadminrole", ignore_extra=False)
     async def clear_adminrole(self, ctx: commands.Context):
-        """ Clears the bot admin role setting. """
+        """Clears the bot admin role setting."""
 
         cursor = self.bot._conn.cursor()
 
@@ -328,7 +328,7 @@ class Meta(commands.Cog):
     @guildowner_or_perms(manage_guild=True)
     @commands.command(name="clearmodrole", ignore_extra=False)
     async def clear_modrole(self, ctx: commands.Context):
-        """ Clears the bot mod role setting. """
+        """Clears the bot mod role setting."""
 
         cursor = self.bot._conn.cursor()
 

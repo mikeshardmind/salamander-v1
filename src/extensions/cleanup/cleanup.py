@@ -31,7 +31,7 @@ log = logging.getLogger("salamander.extensions.cleanup")
 
 
 class Cleanup(commands.Cog):
-    """ Quick message cleanup """
+    """Quick message cleanup"""
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.bot_has_guild_permissions(manage_messages=True, read_message_history=True)
@@ -119,14 +119,14 @@ class Cleanup(commands.Cog):
     @mod_or_perms(manage_messages=True)
     @commands.group()
     async def cleanup(self, ctx: SalamanderContext):
-        """ Message cleanup tools """
+        """Message cleanup tools"""
 
         if ctx.invoked_subcommand is None:
             await ctx.send_help()
 
     @cleanup.command(name="number")
     async def cleanup_number(self, ctx: SalamanderContext, number):
-        """ Cleanup some number of messages within the last 10 days. """
+        """Cleanup some number of messages within the last 10 days."""
 
         limit = parse_positive_number(number, 1e7)
         if not limit:
@@ -143,7 +143,7 @@ class Cleanup(commands.Cog):
 
     @cleanup.command(name="before")
     async def cleanup_before(self, ctx: SalamanderContext, before):
-        """ Cleanup messages before a specific message ID within the last 10 days. """
+        """Cleanup messages before a specific message ID within the last 10 days."""
 
         snowflake = parse_snowflake(before)
         if not snowflake:
@@ -163,7 +163,7 @@ class Cleanup(commands.Cog):
 
     @cleanup.command(name="after")
     async def cleanup_after(self, ctx: SalamanderContext, after):
-        """ Cleanup all messages after a specific message ID within the last 10 days. """
+        """Cleanup all messages after a specific message ID within the last 10 days."""
 
         snowflake = parse_snowflake(after)
         if not snowflake:

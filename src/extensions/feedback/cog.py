@@ -25,7 +25,7 @@ from ...utils import format_list
 
 
 class Feedback(commands.Cog):
-    """ Commands for sending feedback about the bot """
+    """Commands for sending feedback about the bot"""
 
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
@@ -33,7 +33,7 @@ class Feedback(commands.Cog):
     @commands.is_owner()
     @commands.group()
     async def feedbackset(self, ctx: SalamanderContext):
-        """ Settings commands for configuring accepted feedback """
+        """Settings commands for configuring accepted feedback"""
 
         if ctx.invoked_subcommand is None:
             await ctx.send_help()
@@ -41,7 +41,7 @@ class Feedback(commands.Cog):
     @commands.is_owner()
     @feedbackset.command(ignore_extra=False)
     async def createtype(self, ctx: SalamanderContext, name: str):
-        """ Create a type of feedback (see "fullcreate" command as well) """
+        """Create a type of feedback (see "fullcreate" command as well)"""
         name = name.casefold()
         if re.match(r"\s", name):
             raise UserFeedbackError(
@@ -183,7 +183,7 @@ class Feedback(commands.Cog):
     @commands.is_owner()
     @feedbackset.command()
     async def deletetype(self, ctx: SalamanderContext, typename: str):
-        """ Delete a feedback type """
+        """Delete a feedback type"""
         name = typename.casefold()
         cursor = self.bot._conn.cursor()
 
@@ -214,7 +214,7 @@ class Feedback(commands.Cog):
 
     @commands.group()
     async def feedback(self, ctx: SalamanderContext):
-        """ Commands for sending feedback """
+        """Commands for sending feedback"""
 
         if ctx.invoked_subcommand is None:
             await ctx.send_help()
@@ -222,7 +222,7 @@ class Feedback(commands.Cog):
     @commands.cooldown(5, 40, commands.BucketType.user)
     @feedback.command()
     async def send(self, ctx: SalamanderContext, feedback_type: str, *, feedback: str):
-        """ Send feedback """
+        """Send feedback"""
 
         name = feedback_type.casefold()
         cursor = self.bot._conn.cursor()
@@ -279,7 +279,7 @@ class Feedback(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.channel)
     @feedback.command()
     async def types(self, ctx: SalamanderContext):
-        """ View the types of feedback """
+        """View the types of feedback"""
 
         cursor = self.bot._conn.cursor()
         type_names = tuple(

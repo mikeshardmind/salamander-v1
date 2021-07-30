@@ -71,7 +71,7 @@ def resevoir_sample(iterable):
 
 
 class QOTW(commands.Cog):
-    """ Question of the week """
+    """Question of the week"""
 
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
@@ -243,7 +243,7 @@ class QOTW(commands.Cog):
     @commands.guild_only()
     @commands.group(name="qotwset")
     async def qotw_set(self, ctx: SalamanderContext):
-        """ Commands to manage QOTW """
+        """Commands to manage QOTW"""
         if ctx.invoked_subcommand is None:
             await ctx.send_help()
 
@@ -251,7 +251,7 @@ class QOTW(commands.Cog):
     @commands.guild_only()
     @qotw_set.command(name="channel")
     async def qotw_set_channel(self, ctx: SalamanderContext, *, channel: discord.TextChannel):
-        """ Sets the channel for QOTW """
+        """Sets the channel for QOTW"""
 
         cursor = self.conn.cursor()
 
@@ -288,7 +288,7 @@ class QOTW(commands.Cog):
 
     @qotw_set.command(name="day")
     async def qotw_set_day(self, ctx: SalamanderContext, *, day: Weekday):
-        """ Sets the day of the week QOTW should be held on """
+        """Sets the day of the week QOTW should be held on"""
 
         cursor = self.conn.cursor()
         cursor.execute(
@@ -305,7 +305,7 @@ class QOTW(commands.Cog):
     @commands.guild_only()
     @qotw_set.command(name="force")
     async def force_qotw(self, ctx: SalamanderContext):
-        """ Force a new question to be asked """
+        """Force a new question to be asked"""
 
         cursor = self.conn.cursor()
 
@@ -333,7 +333,7 @@ class QOTW(commands.Cog):
     @commands.guild_only()
     @qotw_set.command(name="view")
     async def view_pending(self, ctx: SalamanderContext):
-        """ View the currently pending questions """
+        """View the currently pending questions"""
 
         cursor = self.conn.cursor()
 

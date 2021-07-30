@@ -192,7 +192,7 @@ class MessageMetaTrack(commands.Cog):
     @admin()
     @commands.group(name="activitytrackset")
     async def atrackset(self, ctx: SalamanderContext):
-        """ Commands for managing activity tracking """
+        """Commands for managing activity tracking"""
         if ctx.invoked_subcommand is None:
             await ctx.send_help()
 
@@ -235,7 +235,7 @@ class MessageMetaTrack(commands.Cog):
     @admin()
     @atrackset.command()
     async def drop(self, ctx: SalamanderContext):
-        """ Drop the data for this guild """
+        """Drop the data for this guild"""
 
         if not await ctx.yes_or_no("Are you sure? (yes/no)"):
             return
@@ -253,7 +253,7 @@ class MessageMetaTrack(commands.Cog):
     @owner_in_guild()
     @atrackset.command(name="retro")
     async def retroactive_filler(self, ctx: SalamanderContext, period: TimedeltaConverter):
-        """ (very slow, use with care) """
+        """(very slow, use with care)"""
 
         await ctx.send("This may take a while, I'll let you know when it's done.")
 
@@ -378,7 +378,7 @@ class MessageMetaTrack(commands.Cog):
     @mod()
     @commands.command("activityinrole")
     async def activity_for_role(self, ctx: SalamanderContext, role: str):
-        """ Get detailed activity for all members of a role """
+        """Get detailed activity for all members of a role"""
 
         roles = resolve_as_roles(ctx.guild, role)
         if not roles:

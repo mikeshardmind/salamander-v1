@@ -145,7 +145,7 @@ def mute_soundness_check(
 
 
 class Mod(commands.Cog):
-    """ Some basic mod tools """
+    """Some basic mod tools"""
 
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
@@ -373,7 +373,7 @@ class Mod(commands.Cog):
     @commands.bot_has_guild_permissions(kick_members=True)
     @commands.command(name="kick")
     async def kick_commnand(self, ctx: SalamanderContext, who: discord.Member, *, reason: str = ""):
-        """ Kick a member without removing messages """
+        """Kick a member without removing messages"""
 
         kick_soundness_check(bot_user=ctx.me, mod=ctx.author, target=who)
         await who.kick(reason=f"User kicked by command. (Authorizing mod: {ctx.author}({ctx.author.id})")
@@ -389,7 +389,7 @@ class Mod(commands.Cog):
         *,
         reason: str = "",
     ):
-        """ Ban a member without removing messages """
+        """Ban a member without removing messages"""
 
         if not who.id:
             raise commands.BadArgument("That wasn't a member or the ID of a user not in the server.")
@@ -674,7 +674,7 @@ class Mod(commands.Cog):
         *,
         reason: str = "",
     ):
-        """ Mute a user using the configure mute role """
+        """Mute a user using the configure mute role"""
 
         audit_reason = f"User muted by command. (Mod: {ctx.author}({ctx.author.id})"
 
@@ -692,7 +692,7 @@ class Mod(commands.Cog):
         *,
         reason: str = "",
     ):
-        """ Mute a user using the configure mute role for a duration. """
+        """Mute a user using the configure mute role for a duration."""
 
         if duration.delta < timedelta(minutes=2):
             raise UserFeedbackError(custom_message="Temp mutes must be at least 2 minutes long")
@@ -720,7 +720,7 @@ class Mod(commands.Cog):
         *,
         reason: str = "",
     ):
-        """ Unmute a user """
+        """Unmute a user"""
 
         audit_reason = f"User unmuted by command. (Mod: {ctx.author}({ctx.author.id})"
         cant_restore = await self.unmute_logic(ctx.guild.id, who.id, reason, audit_reason, mod=ctx.author)
@@ -842,7 +842,7 @@ class Mod(commands.Cog):
     @commands.bot_has_guild_permissions(manage_roles=True)
     @commands.command(name="setmuterole", ignore_extra=False)
     async def set_muterole_command(self, ctx: SalamanderContext, role: discord.Role):
-        """ Set the mute role for the server """
+        """Set the mute role for the server"""
 
         if role >= ctx.me.top_role and ctx.guild.owner != ctx.me:
             raise UserFeedbackError(

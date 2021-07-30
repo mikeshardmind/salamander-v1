@@ -35,7 +35,7 @@ class Dice(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.channel, wait=True)
     @commands.command(name="roll")
     async def roll(self, ctx: SalamanderContext, *, expression: str):
-        """ Roll some dice """
+        """Roll some dice"""
 
         if len(expression) > 500:
             return await ctx.send("I'm not even going to try and parse that one")

@@ -35,11 +35,11 @@ _CYA_TV = TypeVar("_CYA_TV")
 
 
 class CYAException(Exception):
-    """ Base for all CYA Exceptions """
+    """Base for all CYA Exceptions"""
 
 
 class InvalidState(Exception):
-    """ Raised when an action is being done from an incompatible state """
+    """Raised when an action is being done from an incompatible state"""
 
 
 class AlreadyDone(InvalidState):
@@ -56,7 +56,7 @@ class NotDone(InvalidState):
 
 
 class NoMatchingChoice(CYAException):
-    """ Raised if there is no matching choice to a user input """
+    """Raised if there is no matching choice to a user input"""
 
 
 class Termination(Generic[_CYA_TV]):
@@ -247,7 +247,7 @@ class ChooseYourOwnAdventure(Generic[_CYA_TV]):
             raise NoMatchingChoice()
 
     def check_if_done(self) -> bool:
-        """ Returns a bool signifying if we are eat a termination """
+        """Returns a bool signifying if we are eat a termination"""
         return isinstance(self._pages[self._pos], Termination)
 
     def get_result(self) -> _CYA_TV:
@@ -264,7 +264,7 @@ class ChooseYourOwnAdventure(Generic[_CYA_TV]):
         return page.result
 
     def reset(self) -> None:
-        """ Resets to the initial state """
+        """Resets to the initial state"""
         self._pos = 0
 
 
@@ -285,7 +285,7 @@ def _validate_cya(adventure: ChooseYourOwnAdventure[Any]) -> None:
     unseen: Set[int] = {k for k, v in pages.items() if k}
 
     def reachable_from(*page_numbers: int) -> Set[int]:
-        """ This is 1 choice reachability """
+        """This is 1 choice reachability"""
 
         ret: Set[int] = set()
 
@@ -310,7 +310,7 @@ def _validate_cya(adventure: ChooseYourOwnAdventure[Any]) -> None:
 
         return ret
 
-    while (newly_reachable := reachable_from(*seen) - seen) :
+    while newly_reachable := reachable_from(*seen) - seen:
 
         unseen -= newly_reachable
         seen |= newly_reachable
@@ -343,7 +343,7 @@ def _validate_cya(adventure: ChooseYourOwnAdventure[Any]) -> None:
 
         state_seen: Set[int] = {start_state}
 
-        while (state_newly_reachable := reachable_from(*state_seen) - state_seen) :
+        while state_newly_reachable := reachable_from(*state_seen) - state_seen:
             for page_number in state_newly_reachable:
                 if page_number in reaches_a_termination or page_number in terminations:
                     break
