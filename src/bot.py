@@ -63,24 +63,28 @@ def get_data_path() -> Path:
 
 
 @only_once
-def setup_logging() -> None:
+def setup_logging(nofile: bool = False) -> None:
     log = logging.getLogger("salamander")
     log.setLevel(logging.INFO)
     if __debug__:
         log.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(sys.stdout)
-
-    rotating_file_handler = RotatingFileHandler(get_data_path() / "salamander.log", maxBytes=10000000, backupCount=5)
-    # Log appliance use in future with aiologger.
-    formatter = logging.Formatter(
-        "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        style="%",
-    )
     handler.setFormatter(formatter)
-    rotating_file_handler.setFormatter(formatter)
     log.addHandler(handler)
-    log.addHandler(rotating_file_handler)
+
+    if not nofile:
+
+        rotating_file_handler = RotatingFileHandler(
+            get_data_path() / "salamander.log", maxBytes=10000000, backupCount=5
+        )
+        # Log appliance use in future with aiologger.
+        formatter = logging.Formatter(
+            "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+            style="%",
+        )
+        rotating_file_handler.setFormatter(formatter)
+        log.addHandler(rotating_file_handler)
 
 
 @only_once
@@ -326,17 +330,20 @@ class BehaviorFlags:
         Factory method for the defaults.
 
         The defaults are not guaranteed to be unchanging.
-
-        The current defaults depend partially on if running python with -O or not.
         """
 
         exts = (
             "src.contrib_extensions.activitymetadata",
             "src.contrib_extensions.dice",
             "src.contrib_extensions.qotw",
-            "src.extensions.mod",
-            "src.extensions.meta",
+            "src.contrib_extensions.say",
+            "src.extensions.annoyancefilters",
             "src.extensions.cleanup",
+            "src.extensions.feedback",
+            "src.extensions.filter",
+            "src.extensions.meta",
+            "src.extensions.mod",
+            "src.extensions.modnotes",
             "src.extensions.rolemanagement",
         )
 
@@ -1031,14 +1038,14 @@ class Salamander(commands.AutoShardedBot):
         await asyncio.sleep(1)
 
     @classmethod
-    def run_with_wrapping(cls, token: str, config=None):
+    def run_with_wrapping(cls, token: str, config=None, no_file_log: bool = False):
         """
         This wraps all asyncio behavior
 
         Don't use this with manual control of the loop as a requirement.
         """
 
-        setup_logging()
+        setup_logging(nofile=no_file_log)
         add_connection_hooks()
 
         if uvloop is not None:

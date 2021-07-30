@@ -73,8 +73,13 @@ def get_conf() -> Optional[BehaviorFlags]:
 
 def main():
 
+    if data_dir := os.environ.get("DATA_DIR", None):
+        _CUSTOM_DATA_DIR.set(data_dir)
+
+    no_file_log = bool(os.environ.get("NOLOG", False))
+
     if TOKEN := os.environ.get("SALAMANDER_TOKEN", None):
-        Salamander.run_with_wrapping(TOKEN, config=get_conf())
+        Salamander.run_with_wrapping(TOKEN, config=get_conf(), no_file_log=no_file_log)
     else:
         sys.exit("No token?")
 
