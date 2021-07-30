@@ -81,17 +81,11 @@ class Meta(commands.Cog):
         """Shuts down the bot"""
         await self.bot.logout()
 
-    @commands.command(name="info", aliases=["about"])
+    @commands.command(name="versioninfo")
     async def info_com(self, ctx: SalamanderContext):
-        """Get info about this bot."""
+        """Get version info about this bot."""
 
-        about_text = self.bot._behavior_flags.about_text or (
-            "This bot is an instance of [Project Salamander]"
-            "(https://github.com/unified-moderation-network/salamander)"
-            "\nIt is considered to be stable enough for use, "
-            "with lots of room to grow."
-        )
-        em = discord.Embed(color=ctx.me.color, description=about_text)
+        em = discord.Embed(color=ctx.me.color)
         em.add_field(name="Python", value=py_version)
         em.add_field(name="Discord.py", value=dpy_version)
         await ctx.send(embed=em)

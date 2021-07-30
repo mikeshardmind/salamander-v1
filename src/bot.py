@@ -315,12 +315,10 @@ class BehaviorFlags:
         no_basilisk: bool = False,
         no_serpent: bool = False,
         initial_exts: Sequence[str] = (),
-        about_text: Optional[str] = None,
     ):
         self.no_basilisk: bool = no_basilisk
         self.no_serpent: bool = no_serpent
         self.initial_exts: Sequence[str] = initial_exts
-        self.about_text: Final[Optional[str]] = about_text
 
     @classmethod
     def defaults(cls):

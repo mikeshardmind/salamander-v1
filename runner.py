@@ -38,7 +38,6 @@ def get_conf() -> Optional[BehaviorFlags]:
     no_basilisk = raw_data.pop("no_basilisk", False)
 
     ext_dict = raw_data.pop("exts", None)
-    about_text = raw_data.pop("about_text", None)
 
     # TODO: probably move this later to allow multiple bots in same proc to have different addresses here.
     if hydra_subscribe_addr := raw_data.pop("hydra_subscribe_addr", ""):
@@ -64,7 +63,6 @@ def get_conf() -> Optional[BehaviorFlags]:
         no_serpent=no_serpent,
         no_basilisk=no_basilisk,
         initial_exts=exts,
-        about_text=about_text,
     )
 
 
