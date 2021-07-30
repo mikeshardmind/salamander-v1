@@ -92,7 +92,13 @@ def setup_logging(nofile: bool = False) -> None:
 @only_once
 def add_connection_hooks() -> None:
     def setwal(connection):
-        connection.cursor().execute("pragma journal_mode=wal")
+        connection.cursor().execute(
+            """
+            PRAGMA journal_mode = wal;
+            PRAGMA synchronous = NORMAL;
+            PRAGMA foreign_keys=ON;
+            """
+        )
         connection.wal_autocheckpoint(1000)
 
     if setwal not in apsw.connection_hooks:
