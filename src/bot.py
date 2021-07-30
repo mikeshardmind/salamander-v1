@@ -69,6 +69,13 @@ def setup_logging(nofile: bool = False) -> None:
     if __debug__:
         log.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(sys.stdout)
+
+    formatter = logging.Formatter(
+        "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        style="%",
+    )
+
     handler.setFormatter(formatter)
     log.addHandler(handler)
 
@@ -78,11 +85,6 @@ def setup_logging(nofile: bool = False) -> None:
             get_data_path() / "salamander.log", maxBytes=10000000, backupCount=5
         )
         # Log appliance use in future with aiologger.
-        formatter = logging.Formatter(
-            "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-            style="%",
-        )
         rotating_file_handler.setFormatter(formatter)
         log.addHandler(rotating_file_handler)
 
