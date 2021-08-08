@@ -1,5 +1,5 @@
-discord.py>=1.7.3,<2
-msgpack==1.0.0
+discord.py @ https://github.com/unified-moderation-network/discord.py/archive/460a898836866f514eab9016b979fe12fc03e67c.zip
+msgpack==1.0.2
 numpy
 numba
 pyzmq
@@ -9,4 +9,4 @@ lru-dict
 toml
 typing-extensions>=3.10.0.0
 hyperscan
-git+https://github.com/Rapptz/discord-ext-menus
+discord-ext-menus @ https://github.com/unified-moderation-network/discord-ext-menus/archive/fbb8803779373357e274e1540b368365fd9d8074.zip

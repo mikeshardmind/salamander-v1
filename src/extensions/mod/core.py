@@ -700,7 +700,7 @@ class Mod(commands.Cog):
 
         audit_reason = f"User muted for {duration} by command. (Mod: {ctx.author}({ctx.author.id})"
 
-        expiration = datetime.utcnow().replace(tzinfo=timezone.utc) + duration.delta
+        expiration = datetime.now(timezone.utc) + duration.delta
 
         await self.mute_user_logic(
             mod=ctx.author,
@@ -1017,11 +1017,7 @@ class Mod(commands.Cog):
 
         if mute:
 
-            expiration = (
-                datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(minutes=mute_duration)
-                if mute_duration
-                else None
-            )
+            expiration = datetime.now(timezone.utc) + timedelta(minutes=mute_duration) if mute_duration else None
 
             try:
                 await self.mute_user_logic(

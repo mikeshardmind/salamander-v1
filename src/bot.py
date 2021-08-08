@@ -341,7 +341,6 @@ class BehaviorFlags:
         """
 
         exts = (
-            "src.contrib_extensions.activitymetadata",
             "src.contrib_extensions.dice",
             "src.contrib_extensions.qotw",
             "src.contrib_extensions.say",
@@ -680,7 +679,7 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
 
 class EmbedHelp(commands.HelpCommand):
     def get_ending_note(self):
-        return f"Use {self.clean_prefix}{self.invoked_with} [command] for help with a specific command"
+        return f"Use {self.context.clean_prefix}{self.invoked_with} [command] for help with a specific command"
 
     def get_command_signature(self, command):
         return f"{command.qualified_name} {command.signature}"

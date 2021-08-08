@@ -12,7 +12,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from .activitymetadata import MessageMetaTrack
 from .dice import Dice
 from .qotw import QOTW
 from .say import Say

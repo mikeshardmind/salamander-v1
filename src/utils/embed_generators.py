@@ -45,7 +45,7 @@ def embed_from_member(member: discord.Member) -> discord.Embed:
     em.add_field(name="Joined this server on", value=join_str)
     em.set_footer(text=f"Discord ID: {member.id}")
     a_name = f"{member} | {member.nick}" if member.nick else f"{member}"
-    avatar = member.avatar_url_as(static_format="png")
+    avatar = member.display_avatar.with_static_format("png")
     em.set_author(name=a_name, url=avatar)
     em.set_thumbnail(url=avatar)
 

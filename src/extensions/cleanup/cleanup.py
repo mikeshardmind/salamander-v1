@@ -65,7 +65,7 @@ class Cleanup(commands.Cog):
                             pass
 
                     # some wiggle room included
-                    cutoff = datetime.utcnow() - timedelta(days=13, hours=22)
+                    cutoff = datetime.now(timezone.utc) - timedelta(days=13, hours=22)
 
                     mass_deletable = []
                     for m in msgs:

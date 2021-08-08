@@ -79,7 +79,7 @@ class Meta(commands.Cog):
     @commands.command()
     async def shutdown(self, ctx: SalamanderContext):
         """Shuts down the bot"""
-        await self.bot.logout()
+        await self.bot.close()
 
     @commands.command(name="versioninfo")
     async def info_com(self, ctx: SalamanderContext):

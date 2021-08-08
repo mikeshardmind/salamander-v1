@@ -112,7 +112,7 @@ class QOTW(commands.Cog):
 
         while True:
             await asyncio.sleep(600)
-            now = datetime.utcnow().replace(tzinfo=timezone.utc)
+            now = datetime.now(timezone.utc)
             current_weekday = now.weekday()
 
             tsks = (

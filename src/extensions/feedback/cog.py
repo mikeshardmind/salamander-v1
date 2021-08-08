@@ -269,7 +269,7 @@ class Feedback(commands.Cog):
                 embed = discord.Embed(description=feedback, color=destination.guild.me.color)
                 embed.set_author(
                     name=f"Feedback from {ctx.author}",
-                    url=ctx.author.avatar_url_as(static_format="png"),
+                    url=ctx.author.display_avatar.with_static_format("png"),
                 )
                 embed.add_field(name="Feedback type", value=name)
                 embed.add_field(name="Feedback uuid", value=uuid4)
