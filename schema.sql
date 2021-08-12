@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS guild_settings (
 );
 
 BEGIN;
+PRAGMA foreign_keys = OFF;
 CREATE TABLE IF NOT EXISTS guild_settings_modadmin_migration (
 	guild_id INTEGER PRIMARY KEY NOT NULL,
 	mute_role INTEGER DEFAULT NULL,
@@ -53,6 +54,7 @@ FROM guild_settings;
 
 DROP TABLE guild_settings;
 ALTER TABLE guild_settings_modadmin_migration RENAME TO guild_settings;
+PRAGMA foreign_keys = ON;
 COMMIT;
 
 
@@ -107,6 +109,7 @@ CREATE TABLE IF NOT EXISTS guild_prefixes (
 -- "/" slash commands
 -- Additionally, any prefix above 15 characters or which constains <...> will be rejected
 BEGIN;
+PRAGMA foreign_keys = OFF;
 CREATE TABLE IF NOT EXISTS guild_prefixes_constraint_migration (
 	guild_id INTEGER NOT NULL REFERENCES guild_settings(guild_id),
 	prefix TEXT NOT NULL CHECK(
@@ -145,6 +148,7 @@ INSERT INTO guild_prefixes_constraint_migration
 		AND NOT prefix LIKE '%"%';
 DROP TABLE guild_prefixes;
 ALTER TABLE guild_prefixes_constraint_migration RENAME TO guild_prefixes;
+PRAGMA foreign_keys = ON;
 COMMIT;
 
 
