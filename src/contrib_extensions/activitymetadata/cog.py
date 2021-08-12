@@ -171,7 +171,7 @@ class MessageMetaTrack(commands.Cog):
 
     @commands.Cog.listener("on_message")
     async def on_message(self, message: discord.Message):
-        if message.guild and (not message.author.bot) and message.type.value == 0:
+        if message.guild and not message.author.bot:
             with contextlib.suppress(RuntimeError):
                 # can happen during cog unload
                 self._waterfall.put(message)
@@ -266,7 +266,7 @@ class MessageMetaTrack(commands.Cog):
                     async for message in channel.history(limit=None):
                         if message.created_at < cutoff:
                             break
-                        if not message.author.bot and message.type.value == 0:
+                        if not message.author.bot:
                             self._waterfall.put(message)
                         await asyncio.sleep(0.1)
                         # This is intentionally extremely slow.
