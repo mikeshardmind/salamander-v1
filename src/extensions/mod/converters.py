@@ -137,6 +137,7 @@ class SearchBanConverter(NamedTuple):
         parser = NoExitParser(description="SearchBan", add_help=False, allow_abbrev=True)
         parser.add_argument("--reason", dest="reason", nargs="*", default=[])
         parser.add_argument("--no-pfp", dest="nopfp", action="store_true", default=False)
+        parser.add_argument("--no-roles", dest="noroles", action="store_true", default=False)
         parser.add_argument("--joined-server-within", dest="js", default=[], nargs="*")
         parser.add_argument("--joined-discord-within", dest="jd", default=[], nargs="*")
         parser.add_argument("--username", dest="uname", nargs="*")
@@ -155,7 +156,7 @@ class SearchBanConverter(NamedTuple):
         if not reason:
             raise commands.BadArgument("Must provide a ban reason.")
 
-        if not any((ns.nopfp, ns.js, ns.jd, ns.uname)):
+        if not any((ns.nopfp, ns.js, ns.jd, ns.uname, ns.noroles)):
             raise commands.BadArgument("Must provide at least 1 search criterion.")
 
         joined_server: Optional[timedelta] = None
@@ -189,6 +190,9 @@ class SearchBanConverter(NamedTuple):
                 continue
 
             if ns.nopfp and m.avatar is not None:  # changes in d.py 2.0
+                continue
+
+            if ns.noroles and m._roles:
                 continue
 
             members.append(m)

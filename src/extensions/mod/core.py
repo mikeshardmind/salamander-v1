@@ -439,6 +439,7 @@ class Mod(commands.Cog):
 
         --reason some reason
         --no-pfp
+        --no-roles
         --joined-server-within 1h
         --joined-discord-within 1d
         --username Spammer's Name
