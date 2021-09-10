@@ -51,6 +51,42 @@ class Dice(commands.Cog):
         prepend = f"{ctx.author.mention} Results for {ex} \N{GAME DIE} Total: {v}\nBreakdown below"
         await ctx.send_paged(msg, box=True, prepend=prepend)
 
+    @commands.max_concurrency(1, commands.BucketType.channel, wait=True)
+    @commands.command(name="multiroll")
+    async def multiroll(self, ctx: SalamanderContext, times: int, *, expression: str):
+        """Roll some dice"""
+
+        if len(expression) > 500:
+            return await ctx.send("I'm not even going to try and parse that one")
+
+        if times < 1:
+            return await ctx.send("Try providing a positive quantity")
+
+        elif times > 20:
+            return await ctx.send(
+                "If you really need to repeat this that many times, you need to use minion/swarm/mob rules."
+            )
+
+        try:
+            ex = Expression.from_str(expression)
+        except DiceError as err:
+            return await ctx.send(f"{ctx.author.mention}: {err}", delete_after=15)
+
+        parts: list[str] = []
+
+        for i in range(1, times + 1):
+            try:
+                _, msg = ex.verbose_roll()
+            except ZeroDivisionError:
+                return await ctx.send("Oops, too many dice. I dropped them")
+            except DiceError as err:
+                return await ctx.send(f"{ctx.author.mention}: {err}", delete_after=15)
+
+            parts.append(f"{i}.\n{msg}\n---")
+
+        prepend = f"{ctx.author.mention} Results for  {times}x {ex} \N{GAME DIE}"
+        await ctx.send_paged("\n".join(parts), box=True, prepend=prepend)
+
     @commands.cooldown(3, 30, commands.BucketType.member)
     @commands.max_concurrency(1, commands.BucketType.channel, wait=True)
     @commands.command(name="diceinfo")

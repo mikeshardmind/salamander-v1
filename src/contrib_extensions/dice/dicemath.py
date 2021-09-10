@@ -12,6 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from __future__ import annotations
 
 """
 Dice parsing.
@@ -300,17 +301,30 @@ class Expression:
         parts = []
         next_operator = operator.add
 
+        partial_total = 0
+
         for component in self._components:
             if isinstance(component, int):
                 total = next_operator(total, component)
+                partial_total = next_operator(partial_total, component)
                 parts.append(f"{component}")
             elif isinstance(component, NumberofDice):
+                if parts:
+                    parts.pop()
+                if partial_total:
+                    parts.append(f"({partial_total})")
+                    partial_total = 0
+
                 amount, verbose_result = component.verbose_roll()
                 total = next_operator(total, amount)
+                partial_total = next_operator(partial_total, amount)
                 parts.append(f"\n{component}: {verbose_result} -> {amount}")
             else:
                 next_operator = component
                 parts.append(f"{ROPS[next_operator]}")
+        else:
+            if partial_total:
+                parts.append(f"({partial_total})")
 
         return total, " ".join(parts).strip()
 
