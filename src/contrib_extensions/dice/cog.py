@@ -42,13 +42,13 @@ class Dice(commands.Cog):
 
         try:
             ex = Expression.from_str(expression)
-            v, msg = ex.verbose_roll()
+            msg = ex.verbose_roll2()
         except ZeroDivisionError:
             return await ctx.send("Oops, too many dice. I dropped them")
         except DiceError as err:
             return await ctx.send(f"{ctx.author.mention}: {err}", delete_after=15)
 
-        prepend = f"{ctx.author.mention} Results for {ex} \N{GAME DIE} Total: {v}\nBreakdown below"
+        prepend = f"{ctx.author.mention} Results for {ex} \N{GAME DIE}"
         await ctx.send_paged(msg, box=True, prepend=prepend)
 
     @commands.max_concurrency(1, commands.BucketType.channel, wait=True)
@@ -76,16 +76,16 @@ class Dice(commands.Cog):
 
         for i in range(1, times + 1):
             try:
-                _, msg = ex.verbose_roll()
+                msg = ex.verbose_roll2()
             except ZeroDivisionError:
                 return await ctx.send("Oops, too many dice. I dropped them")
             except DiceError as err:
                 return await ctx.send(f"{ctx.author.mention}: {err}", delete_after=15)
 
-            parts.append(f"{i}.\n{msg}\n---")
+            parts.append(f"{i}.\n{msg}")
 
         prepend = f"{ctx.author.mention} Results for  {times}x {ex} \N{GAME DIE}"
-        await ctx.send_paged("\n".join(parts), box=True, prepend=prepend)
+        await ctx.send_paged("\n---\n".join(parts), box=True, prepend=prepend)
 
     @commands.cooldown(3, 30, commands.BucketType.member)
     @commands.max_concurrency(1, commands.BucketType.channel, wait=True)

@@ -296,6 +296,65 @@ class Expression:
 
         self._components.append(op)
 
+    @staticmethod
+    def _group_by_dice(components: list):
+
+        start = 0
+        for idx, component in enumerate(components):
+            if isinstance(component, NumberofDice):
+                if start != idx:
+                    yield components[start:idx]
+                start = idx
+        else:
+            yield components[start:]
+
+    def verbose_roll2(self):
+        total = 0
+        parts = []
+        next_operator = operator.add
+
+        for group in self._group_by_dice(self._components):
+            partial_total = 0
+            partial_parts = []
+            dice_part = ""
+            op_last = False
+            last_op = None
+
+            for component in group:
+                if isinstance(component, int):
+                    total = next_operator(total, component)
+                    partial_total = next_operator(partial_total, component)
+                    partial_parts.append(f"{component}")
+                    op_last = False
+                elif isinstance(component, NumberofDice):
+                    amount, verbose_result = component.verbose_roll()
+                    total = next_operator(total, amount)
+                    partial_total = next_operator(partial_total, amount)
+                    partial_parts.append(f"{component}")
+                    dice_part = f": {verbose_result} -> {amount}"
+                    op_last = False
+                else:
+                    next_operator = component
+                    partial_parts.append(f"{ROPS[next_operator]}")
+                    op_last = True
+
+            total += partial_total
+
+            if op_last:
+                last_op = partial_parts.pop()
+
+            st = " ".join(partial_parts).strip()
+            if dice_part:
+                ex = " ".join(partial_parts[1:]).strip()
+                parts.append(f"{st}{dice_part} {ex} ({partial_total})")
+            else:
+                parts.append(f"{st} ({partial_total})")
+
+            if last_op:
+                parts.append(last_op)
+
+        return "\n".join(parts).strip()
+
     def verbose_roll(self):
         total = 0
         parts = []
