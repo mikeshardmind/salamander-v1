@@ -36,6 +36,7 @@ import uvloop
 from discord.ext import commands, menus
 from lru import LRU
 
+from .bank_api import Bank
 from .ipc_layer import ZMQHandler
 from .modlog import ModlogHandler
 from .utils import MainThreadSingletonMeta, format_list, only_once, pagify
@@ -863,6 +864,8 @@ class Salamander(commands.AutoShardedBot):
         self._zmq_task: Optional[asyncio.Task] = None
 
         db_path = get_data_path() / "salamander.db"
+        # This is seperate to ensure 3rd party actions cannot lock up the core DB
+        bank_db = get_data_path() / "bank.db"
 
         self._conn = apsw.Connection(str(db_path))
 
@@ -870,6 +873,7 @@ class Salamander(commands.AutoShardedBot):
         self.prefix_manager: PrefixManager = PrefixManager(self)
         self.block_manager: BlockManager = BlockManager(self)
         self.privlevel_manager: PrivHandler = PrivHandler(self)
+        self.bank: Bank = Bank(apsw.Connection(str(bank_db)))
 
         for ext in dict.fromkeys(self._behavior_flags.initial_exts):
             if ext == "src.extensions.filter" and self._behavior_flags.no_basilisk:
