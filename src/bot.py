@@ -880,6 +880,9 @@ class Salamander(commands.AutoShardedBot):
                 continue
             self.load_extension(ext)
 
+        if not self._behavior_flags.no_basilisk:
+            self.load_extension("src.extensions._hydra_helper")
+
     async def __aenter__(self) -> Salamander:
         if self._zmq_task is None:
 

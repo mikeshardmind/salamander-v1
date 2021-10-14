@@ -12,12 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from ._hydra_helper import IPCEvents
-from .annoyancefilters import AnnoyanceFilters
-from .cleanup import Cleanup
-from .feedback import Feedback
-from .filter import Filter
-from .meta import Meta
-from .mod import Mod
-from .modnotes import ModNotes
-from .rolemanagement import RoleManagement
+from .ipc_events import IPCEvents
+
+
+def setup(bot):
+    bot.add_cog(IPCEvents(bot))
