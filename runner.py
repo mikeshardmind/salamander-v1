@@ -47,7 +47,6 @@ def get_conf() -> Optional[BehaviorFlags]:
 
     ext_dict = raw_data.pop("exts", None)
 
-    # TODO: probably move this later to allow multiple bots in same proc to have different addresses here.
     if hydra_subscribe_addr := raw_data.pop("hydra_subscribe_addr", ""):
         ipcl.MULTICAST_SUBSCRIBE_ADDR.set(hydra_subscribe_addr)
     if hydra_remote_recv_addr := raw_data.pop("hydra_remote_recv_addr", ""):
@@ -78,6 +77,11 @@ def main():
 
     if data_dir := os.environ.get("DATA_DIR", None):
         _CUSTOM_DATA_DIR.set(data_dir)
+
+    if hydra_subscribe_addr := os.getenv("MULTICAST_SUBSCRIBE_ADDR", None):
+        ipcl.MULTICAST_SUBSCRIBE_ADDR.set(hydra_subscribe_addr)
+    if hydra_remote_recv_addr := os.getenv("PULL_REMOTE_ADDR", None):
+        ipcl.PULL_REMOTE_ADDR.set(hydra_remote_recv_addr)
 
     no_file_log = bool(os.environ.get("NOLOG", False))
 
