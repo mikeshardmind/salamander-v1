@@ -32,28 +32,8 @@ from ...bot import Salamander
 
 class IPCEvents(commands.Cog, name="_hydra_helper"):
 
-    routes = {
-        "salamander.send_discord_message": self.send_discord_message,
-        "salamander.send_discord_webhook_message": self.send_discord_webhook_message,
-    }
-
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
-
-    @commands.Cog.listener("on_ipc_recv")
-    async def _lazy_way(self, topic, payload):
-        """
-        It might be better to make a route decorator that handles some of this later,
-        but this will do for now and keeps it isolated enough.
-        """
-
-        try:
-            method = self.routes[topic]
-        except KeyError:  # There are plenty of payloads we aren't responsible for here.
-            return  # nosec
-
-        # This *can* raise a TypeError if the payload is bad. Having this be a noisy failure is a good thing
-        return await method(self.bot, **payload)
 
     @staticmethod
     async def send_discord_message(
@@ -90,3 +70,23 @@ class IPCEvents(commands.Cog, name="_hydra_helper"):
         await hook.send(
             content=content, username=username, avatar_url=avatar_url, embeds=embeds, allowed_mentions=allowed_mentions
         )
+
+    routes = {
+        "salamander.send_discord_message": send_discord_message,
+        "salamander.send_discord_webhook_message": send_discord_webhook_message,
+    }
+
+    @commands.Cog.listener("on_ipc_recv")
+    async def _lazy_way(self, topic, payload):
+        """
+        It might be better to make a route decorator that handles some of this later,
+        but this will do for now and keeps it isolated enough.
+        """
+
+        try:
+            method = self.routes[topic]
+        except KeyError:  # There are plenty of payloads we aren't responsible for here.
+            return  # nosec
+
+        # This *can* raise a TypeError if the payload is bad. Having this be a noisy failure is a good thing
+        return await method(self.bot, **payload)
