@@ -1061,9 +1061,7 @@ class Salamander(commands.AutoShardedBot):
 
         setup_logging(nofile=no_file_log)
         add_connection_hooks()
-
-        if uvloop is not None:
-            uvloop.install()
+        uvloop.install()
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -1184,7 +1182,9 @@ class Salamander(commands.AutoShardedBot):
                                 stack,
                             )
 
-            loop.run_until_complete(limited_finalization())
+            if tasks:
+                loop.run_until_complete(limited_finalization())
+
             loop.run_until_complete(loop.shutdown_asyncgens())
             loop.run_until_complete(loop.shutdown_default_executor())
 
