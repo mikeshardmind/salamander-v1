@@ -9,6 +9,7 @@ if [ ! -f wheels/apsw-3.35.4.post1-cp39-cp39*.whl ]; then
   git am ../patches/apsw/*.patch
   python3.9 setup.py fetch --all --version=3.35.4
   python3.9 setup.py bdist_wheel
+  python3.9 -m pip install dist/apsw-3.35.4.post1-cp39-cp39*.whl
   cp dist/* ../wheels/
   popd
   rm -rf apsw
