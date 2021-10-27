@@ -168,8 +168,8 @@ chardet==4.0.0 \
 https://github.com/unified-moderation-network/discord-ext-menus/archive/fbb8803779373357e274e1540b368365fd9d8074.zip \
     --hash=sha256:7a4f2da99ac60b626d09015163903eba217271f957a800881e3617209613a349
 
-https://github.com/unified-moderation-network/discord.py/archive/460a898836866f514eab9016b979fe12fc03e67c.zip \
-    --hash=sha256:d212c936086d7f190b2422cd1a52f54e5f0c4578febbd3d3a2fd0cc36ea586f8
+https://github.com/unified-moderation-network/discord.py/archive/13eb3f027ea0cdbaba9a497eba452efdf15b3cdf.zip \
+    --hash=sha256:2c61ef86e1e7643dae40672222fe755c4f08517ccdf411ab41e2367f41ba5d11
 
 hyperscan==0.2.0 \
     --hash=sha256:10cb8939d7db85d522ed319031ff5ab86fd0133126b986290f01aa83dbfb9ff7 \
