@@ -18,7 +18,6 @@ import asyncio
 from pathlib import Path
 from typing import Optional
 
-
 import discord
 import hyperscan
 from discord.ext import commands
