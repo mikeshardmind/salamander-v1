@@ -31,7 +31,6 @@ from ...bot import Salamander
 
 
 class IPCEvents(commands.Cog, name="_hydra_helper"):
-
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
 

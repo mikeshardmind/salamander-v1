@@ -349,6 +349,7 @@ class BehaviorFlags:
             "src.extensions.cleanup",
             "src.extensions.feedback",
             "src.extensions.filter",
+            "src.extensions.knownphish",
             "src.extensions.meta",
             "src.extensions.mod",
             "src.extensions.modnotes",
