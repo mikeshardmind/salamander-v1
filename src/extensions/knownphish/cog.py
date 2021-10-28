@@ -31,7 +31,7 @@ class KnownPhish(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.db = hyperscan.Database()
+        self.db = hyperscan.Database(flags=hyperscan.HS_MODE_SOM_HORIZON_LARGE | hyperscan.HS_FLAG_SOM_LEFTMOST)
         path = (Path.cwd() / __file__).with_name("patterns.list")
         with path.open(mode="r") as fp:
             expressions = {e.strip() for e in fp.readlines() if e}
