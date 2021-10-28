@@ -31,11 +31,14 @@ class KnownPhish(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.db = hyperscan.Database(flags=hyperscan.HS_MODE_SOM_HORIZON_LARGE | hyperscan.HS_FLAG_SOM_LEFTMOST)
+        self.db = hyperscan.Database()
         path = (Path.cwd() / __file__).with_name("patterns.list")
         with path.open(mode="r") as fp:
             expressions = {e.strip() for e in fp.readlines() if e}
-        self.db.compile(expressions=tuple(expr.encode() for expr in expressions))
+        self.db.compile(
+            expressions=tuple(expr.encode() for expr in expressions),
+            flags=hyperscan.HS_MODE_SOM_HORIZON_LARGE | hyperscan.HS_FLAG_SOM_LEFTMOST
+        )
 
     @commands.Cog.listener()
     async def on_message(self, message):
