@@ -36,7 +36,7 @@ class KnownPhish(commands.Cog):
             expressions = {e.strip() for e in fp.readlines() if e}
         self.db.compile(
             expressions=tuple(expr.encode() for expr in expressions),
-            flags=hyperscan.HS_FLAG_SOM_LEFTMOST,
+            flags=hyperscan.HS_FLAG_SOM_LEFTMOST | hyperscan.HS_FLAG_CASELESS,
         )
 
     @commands.Cog.listener()
@@ -80,14 +80,13 @@ class KnownPhish(commands.Cog):
 
         nc = bytearray(byt)
         for start, stop in slices:
-            for idx in range(start, stop):
-                nc[idx] = 88  # X
+            nc[start:stop] = (88,) * (stop - start)
 
-        defanged = nc.decode()
+        replaced = nc.decode()
 
         await channel.send(
             f"Deleted message from {user_string} containing a potentially malicious url",
-            embed=discord.Embed(title="Original (links cleaned) for context", description=defanged).set_footer(
+            embed=discord.Embed(title="Original (links cleaned) for context", description=replaced).set_footer(
                 text="Do not access any links which are within. link cleaning is not 100%"
             ),
         )
