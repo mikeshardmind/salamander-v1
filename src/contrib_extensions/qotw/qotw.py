@@ -22,7 +22,7 @@ import logging
 import random
 from datetime import datetime, timezone
 from fractions import Fraction
-from typing import Optional
+from typing import Iterable, Optional, TypeVar
 
 import apsw
 import discord
@@ -63,11 +63,20 @@ DROP_HISTORICAL_1 = """DROP TABLE IF EXISTS contrib_qotw_all_history"""
 DROP_HISTORICAL_2 = """DROP TABLE IF EXISTS contrib_qotw_selected_history"""
 
 
-def resevoir_sample(iterable):
-    for n, x in enumerate(iterable, 1):
-        if random.randrange(n) == 0:  # nosec
+T = TypeVar("T")
+
+
+def resevoir_sample(iterable: Iterable[T]) -> T:
+    it = iter(iterable)
+    try:
+        pick = next(it)
+    except StopIteration:
+        raise RuntimeError("Must provide a non-empty Iterable.")
+
+    for n, x in enumerate(it, 2):
+        if random.randrange(n) == 0:
             pick = x
-    return pick
+    return pick 
 
 
 class QOTW(commands.Cog):
