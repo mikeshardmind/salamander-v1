@@ -27,12 +27,12 @@ from contextvars import ContextVar
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Callable, Final, Optional, Sequence, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Final, Optional, Sequence, Type, TypeVar, Union
 from uuid import uuid4
 
 import apsw
 import discord
-import uvloop
+import uvloop  # type: ignore
 from discord.ext import commands, menus
 from lru import LRU
 
@@ -56,7 +56,7 @@ def get_third_party_data_path(extension_name: str) -> Path:
 
     base = get_data_path() / "third_party_data"
     base.mkdir(exist_ok=True, parents=True)
-    
+
     p = (base / extension_name).resolve()
     if p.parent != base:
         raise RuntimeError("Really? name your extension something filesystem safe.")
@@ -64,11 +64,12 @@ def get_third_party_data_path(extension_name: str) -> Path:
     p.mkdir(exist_ok=True)
     return p
 
+
 def get_contrib_data_path(extension_name: str) -> Path:
 
     base = get_data_path() / "third_party_data"
     base.mkdir(exist_ok=True, parents=True)
-    
+
     p = (base / extension_name).resolve()
     if p.parent != base:
         raise RuntimeError("Really? name your extension something filesystem safe.")
@@ -190,6 +191,7 @@ class SalamanderContext(commands.Context):
     def clean_prefix(self) -> str:
         repl = f"@{self.me.display_name}".replace("\\", r"\\")
         pattern = re.compile(rf"<@!?{self.me.id}>")
+        assert self.prefix is not None, "typechecking madness"
         return pattern.sub(repl, self.prefix)
 
     async def send_help(self, command=None):
@@ -317,6 +319,10 @@ class SalamanderContext(commands.Context):
                 page = f"```\n{page}\n```"
             if i == 0 and prepend:
                 page = f"{prepend}\n{page}"
+            # TODO: fix typings in discord.py
+            if __debug__:
+                if TYPE_CHECKING:
+                    assert allowed_mentions
             await self.send(page, allowed_mentions=allowed_mentions)
 
     async def safe_send(self, content: str, **kwargs):
@@ -333,7 +339,7 @@ class SalamanderContext(commands.Context):
 _CT = TypeVar("_CT", bound=SalamanderContext)
 
 
-def _prefix(bot: Salamander, msg: discord.Message) -> Callable[[Salamander, discord.Message], list[str]]:
+def _prefix(bot: Salamander, msg: discord.Message) -> list[str]:
     guild = msg.guild
     base = bot.prefix_manager.get_guild_prefixes(guild.id) if guild else ()
     return commands.when_mentioned_or(*base)(bot, msg)
@@ -933,6 +939,13 @@ class Salamander(commands.AutoShardedBot):
             self._zmq_task.cancel()
             self._zmq_task = None
 
+    async def is_owner(self, user: Union[discord.User, discord.Member]) -> bool:
+        # TODO: fix d.py type for this
+        if TYPE_CHECKING:
+            # Escape hatch, sure, but this is a nonesencial assert.
+            assert isinstance(user, discord.User)
+        return await super().is_owner(user)
+
     async def on_command_error(self, ctx: SalamanderContext, exc: Exception):
 
         if isinstance(exc, commands.CommandNotFound):
@@ -948,7 +961,8 @@ class Salamander(commands.AutoShardedBot):
             original = exc.original
             if isinstance(original, SalamanderException):
                 if original.reset_cooldown:
-                    ctx.command.reset_cooldown(ctx)
+                    if ctx.command:
+                        ctx.command.reset_cooldown(ctx)
                 if original.custom_message:
                     await ctx.send_paged(original.custom_message)
             elif not isinstance(original, (discord.HTTPException, commands.TooManyArguments)):
@@ -956,7 +970,8 @@ class Salamander(commands.AutoShardedBot):
                 # it requires enabling ignore_extra=False (default is True)
                 # and the user facing message should be tailored to the situation.
                 # HTTP exceptions should never hit this logger from a command (faulty command)
-                log.exception(f"In {ctx.command.qualified_name}:", exc_info=original)
+                if ctx.command:
+                    log.exception(f"In {ctx.command.qualified_name}:", exc_info=original)
 
     async def check_basilisk(self, string: str) -> bool:
         """
@@ -1061,11 +1076,18 @@ class Salamander(commands.AutoShardedBot):
             return
 
         if ctx.guild:
+            if TYPE_CHECKING:
+                #: These are lies, but correct enough
+                assert isinstance(ctx.channel, (discord.TextChannel, discord.Thread))
+                assert isinstance(ctx.me, discord.Member)
 
             if self.block_manager.member_is_blocked(ctx.guild.id, message.author.id):
                 return
 
             if not ctx.channel.permissions_for(ctx.me).send_messages:
+                if TYPE_CHECKING:
+                    # This is a lie, and TODO: fix d.py typing.
+                    assert isinstance(ctx.author, discord.User)
                 if await self.is_owner(ctx.author):
                     await ctx.author.send("Hey, I don't even have send perms in that channel.")
                 return

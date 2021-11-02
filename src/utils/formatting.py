@@ -26,7 +26,7 @@ __all__ = [
 ]
 
 
-PERIODS: Final[tuple[tuple[str, str, int]]] = (
+PERIODS: Final[Sequence[tuple[str, str, int]]] = (
     ("year", "years", 60 * 60 * 24 * 365),
     ("month", "months", 60 * 60 * 24 * 30),
     ("day", "days", 60 * 60 * 24),

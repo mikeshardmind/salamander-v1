@@ -76,7 +76,7 @@ def resevoir_sample(iterable: Iterable[T]) -> T:
     for n, x in enumerate(it, 2):
         if random.randrange(n) == 0:
             pick = x
-    return pick 
+    return pick
 
 
 class QOTW(commands.Cog):

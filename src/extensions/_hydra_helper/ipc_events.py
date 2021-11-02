@@ -19,12 +19,10 @@ Leveraging the way discord.py extensions work to make the event logic more easil
 from __future__ import annotations
 
 import asyncio
-from typing import List, Optional
+from typing import Optional
 
-import discord
 from discord.ext import commands
 from discord.types import embed, message, snowflake
-from discord.utils import MISSING
 from discord.webhook import Webhook
 
 from ...bot import Salamander
@@ -41,7 +39,7 @@ class IPCEvents(commands.Cog, name="_hydra_helper"):
         *,
         channel_id: snowflake.Snowflake,
         content: Optional[str] = None,
-        embeds: Optional[List[embed.Embed]] = None,
+        embeds: Optional[list[embed.Embed]] = None,
         allowed_mentions: Optional[message.AllowedMentions] = None,
         message_reference: Optional[message.MessageReference] = None,
     ):
@@ -59,16 +57,16 @@ class IPCEvents(commands.Cog, name="_hydra_helper"):
         /,
         *,
         webhook_url: str,
-        content: str = MISSING,
-        username: str = MISSING,
-        avatar_url: str = MISSING,
-        embeds: List[embed.Embed] = MISSING,
-        allowed_mentions: message.AllowedMentions = MISSING,
+        content: Optional[str] = None,
+        username: Optional[str] = None,
+        avatar_url: Optional[str] = None,
+        embeds: Optional[list[embed.Embed]] = None,
+        allowed_mentions: message.AllowedMentions = None,
     ):
         hook = Webhook.from_url(webhook_url, session=bot.session)
         await hook.send(
             content=content, username=username, avatar_url=avatar_url, embeds=embeds, allowed_mentions=allowed_mentions
-        )
+        )  # type: ignore  # *sigh*
 
     routes = {
         "salamander.send_discord_message": send_discord_message,
