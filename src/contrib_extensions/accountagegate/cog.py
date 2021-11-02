@@ -21,7 +21,7 @@ import logging
 import random
 from datetime import datetime, timezone
 from fractions import Fraction
-from typing import Iterable, Optional, TypeVar, MutableMapping
+from typing import Iterable, Optional, Tuple, TypeVar, MutableMapping
 
 import apsw
 import discord
@@ -39,16 +39,18 @@ class AccountAgeGate(commands.Cog):
         self.bot: Salamander = bot
         path = get_contrib_data_path("accountagegate")
         self._conn = apsw.Connection(str(path))
-        self._cache: MutableMapping[int, int] = LRU(512)
+        self._cache: MutableMapping[int, Tuple[int, int]] = LRU(512)
 
         cursor = self._conn.cursor()
 
+        # Removal actions: 1 BAN, 2 KICK
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS guild_settings (
                 guild_id INTEGER NOT NULL PRIMARY KEY,
                 active BOOLEAN DEFAULT false,
-                seconds_offset INTEGER NOT NULL DEFAULT 0
+                seconds_offset INTEGER NOT NULL DEFAULT 0,
+                removal_action INTEGER NOT NULL DEFAULT 1
             );
             CREATE TABLE IF NOT EXISTS autobans (
                 guild_id INTEGER NOT NULL
@@ -73,19 +75,19 @@ class AccountAgeGate(commands.Cog):
         if not guild.me.guild_permissions.ban_members:
             return
 
-        min_age = self._cache.get(guild.id, None)
+        gsettings = self._cache.get(guild.id, None)
 
-        if min_age is None:
+        if gsettings is None:
             # This ensures that without an active row, we still cache enough to work with
-            min_age, = self._conn.cursor().execute(
+            gsettings = self._conn.cursor().execute(
                 """
                 WITH gs AS (
-                    SELECT seconds_offset
+                    SELECT seconds_offset, removal_action
                     FROM guild_settings
                     WHERE active AND guild_id = ?
                 ),
                 gs_defaults AS (
-                    SELECT 0 as seconds_offset
+                    SELECT 0 as seconds_offset, 1 as removal_action
                 )
                 SELECT * FROM gs
                 UNION ALL
@@ -94,7 +96,9 @@ class AccountAgeGate(commands.Cog):
                 (guild.id,),
             ).fetchone()
 
-            self._cache[member.guild.id] = min_age
+            self._cache[member.guild.id] = gsettings
+        
+        min_age, removal_action = gsettings
         
         if min_age == 0:
             return
@@ -102,11 +106,15 @@ class AccountAgeGate(commands.Cog):
         now = datetime.now(timezone.utc)
 
         if (now - member.created_at).total_seconds() < min_age:
-            await member.ban(reason="Account age (automated ban)")
-            self.bot.modlog.member_ban(guild.me, member, "[AccountAgeGate] Account age")
-            self._conn.cursor().execute(
-                """
-                INSERT INTO autobans (guild_id, user_id) VALUES (?,?)
-                """,
-                (guild.id, member.id),
-            )
+            if removal_action == 1:
+                await member.ban(reason="Account age (automated ban)")
+                self.bot.modlog.member_ban(guild.me, member, "[AccountAgeGate] Account age")
+                self._conn.cursor().execute(
+                    """
+                    INSERT INTO autobans (guild_id, user_id) VALUES (?,?)
+                    """,
+                    (guild.id, member.id),
+                )
+            elif removal_action == 2:
+                await member.kick(reason="Account age (automated kick)")
+                self.bot.modlog.member_kick(guild.me, member, "[AccountAgeGate] Account age")
