@@ -47,9 +47,34 @@ BASILISK_GAZE = "basilisk.gaze"
 BASILISK_OFFER = "basilisk.offer"
 
 
-__all__ = ["setup_logging", "Salamander", "SalamanderContext"]
+__all__ = ["Salamander", "SalamanderContext"]
 
 _CUSTOM_DATA_DIR: ContextVar[Optional[str]] = ContextVar("DATA_DIR", default=None)
+
+
+def get_third_party_data_path(extension_name: str) -> Path:
+
+    base = get_data_path() / "third_party_data"
+    base.mkdir(exist_ok=True, parents=True)
+    
+    p = (base / extension_name).resolve()
+    if p.parent != base:
+        raise RuntimeError("Really? name your extension something filesystem safe.")
+
+    p.mkdir(exist_ok=True)
+    return p
+
+def get_contrib_data_path(extension_name: str) -> Path:
+
+    base = get_data_path() / "third_party_data"
+    base.mkdir(exist_ok=True, parents=True)
+    
+    p = (base / extension_name).resolve()
+    if p.parent != base:
+        raise RuntimeError("Really? name your extension something filesystem safe.")
+
+    p.mkdir(exist_ok=True)
+    return p
 
 
 def get_data_path() -> Path:
@@ -365,8 +390,8 @@ class PrefixManager(metaclass=MainThreadSingletonMeta):
         self._cache = LRU(128)
 
     def get_guild_prefixes(self, guild_id: int) -> Sequence[str]:
-        base = self._cache.get(guild_id, ())
-        if base:
+        base = self._cache.get(guild_id, None)
+        if base is not None:
             return base
 
         cursor = self._bot._conn.cursor()
