@@ -376,6 +376,7 @@ class BehaviorFlags:
             "src.contrib_extensions.dice",
             "src.contrib_extensions.qotw",
             "src.contrib_extensions.say",
+            "src.contrib_extensions.tweaks",
             "src.extensions.annoyancefilters",
             "src.extensions.cleanup",
             "src.extensions.feedback",
