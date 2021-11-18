@@ -30,7 +30,7 @@ class Tweaks(commands.Cog):
 
     @admin_or_perms(manage_guild=True)
     @commands.bot_has_guild_permissions(manage_guild=True)
-    @commands.command(name="nowelcomestickes")
+    @commands.command(name="nowelcomestickers")
     async def disable_welcome_stickers(self, ctx: SalamanderContext):
         """Disable stickers on welcome messages."""
         assert ctx.guild
@@ -38,10 +38,11 @@ class Tweaks(commands.Cog):
         flags = ctx.guild.system_channel_flags
         flags.value |= 8
         await ctx.guild.edit(system_channel_flags=flags)
+        await ctx.send("Welcome messages won't have sticker prompts anymore.")
 
     @admin_or_perms(manage_guild=True)
     @commands.bot_has_guild_permissions(manage_guild=True)
-    @commands.command(name="bringbackwelcomestickes")
+    @commands.command(name="bringbackwelcomestickers")
     async def enable_welcome_stickers(self, ctx: SalamanderContext):
         """re-enable stickers on welcome messages."""
         assert ctx.guild
@@ -49,3 +50,4 @@ class Tweaks(commands.Cog):
         flags = ctx.guild.system_channel_flags
         flags.value &= ~8
         await ctx.guild.edit(system_channel_flags=flags)
+        await ctx.send("I guess if you want them...")
