@@ -179,7 +179,7 @@ class Bank(metaclass=Singleton):
 
     async def deposit(self, guild_id: int, user_id: int, value: int):
         try:
-            await asyncio.to_thread(_deposit_saturating, self._conn, guild_id, user_id, value)
+            await asyncio.to_thread(_deposit, self._conn, guild_id, user_id, value)
         except apsw.ConstraintError:
             raise BalanceIssue("This would exceed the maximum account balance.")
 
