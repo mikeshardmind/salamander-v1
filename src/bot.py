@@ -320,10 +320,7 @@ class SalamanderContext(commands.Context):
             if i == 0 and prepend:
                 page = f"{prepend}\n{page}"
             # TODO: fix typings in discord.py
-            if __debug__:
-                if TYPE_CHECKING:
-                    assert allowed_mentions
-            await self.send(page, allowed_mentions=allowed_mentions)
+            await self.send(page, allowed_mentions=allowed_mentions)  # type: ignore
 
     async def safe_send(self, content: str, **kwargs):
         if kwargs.pop("file", None):
@@ -376,7 +373,6 @@ class BehaviorFlags:
             "src.contrib_extensions.dice",
             "src.contrib_extensions.qotw",
             "src.contrib_extensions.say",
-            "src.contrib_extensions.tweaks",
             "src.extensions.annoyancefilters",
             "src.extensions.cleanup",
             "src.extensions.feedback",

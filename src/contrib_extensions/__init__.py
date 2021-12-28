@@ -15,4 +15,3 @@
 from .dice import Dice
 from .qotw import QOTW
 from .say import Say
-from .tweaks import Tweaks
