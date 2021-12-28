@@ -9,7 +9,7 @@ hydra_remote_recv_addr = ""  # Leave empty for default
 data_dir = ""  # leave empty to store data in working dir. Should be an absolute path, be careful.
 
 [exts]
-core = [ "mod", "meta", "cleanup", "rolemanagement",]  # refers to module names in src/extensions
+core = [ "annoyancefilters", "cleanup", "feedback", "filter", "knownphish", "meta", "mod", "modnotes", "rolemanagement", ]  # refers to module names in src/extensions
 contrib = [ "dice", "qotw",]  # refers to module names in src/contrib_extensions
 local = []  # refers to module names in src/local_extensions
 global = []  # refers to discord.py extensions which are installed as modules (ie. `jishaku`)
