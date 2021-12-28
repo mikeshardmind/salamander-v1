@@ -181,18 +181,19 @@ class Bank(metaclass=Singleton):
         try:
             await asyncio.to_thread(_deposit_saturating, self._conn, guild_id, user_id, value)
         except apsw.ConstraintError:
-            raise BalanceIssue("This would exceed the maximum account balance")
+            raise BalanceIssue("This would exceed the maximum account balance.")
 
     async def withdraw(self, guild_id: int, user_id: int, value: int):
         try:
-            await asyncio.to_thread(_deposit_saturating, self._conn, guild_id, user_id, value)
+            await asyncio.to_thread(_withdraw, self._conn, guild_id, user_id, value)
         except apsw.ConstraintError:
-            raise BalanceIssue("This would exceed the maximum account balance")
+            raise BalanceIssue("Insufficient balance.")
 
-    async def transfer(self, guild_id: int, sender_id: int, recipient_id: int, value):
+    async def transfer(self, guild_id: int, sender_id: int, recipient_id: int, value: int):
         try:
-            await asyncio.to_thread(_deposit_saturating, self._conn, guild_id, user_id, value)
+            await asyncio.to_thread(_transfer, self._conn, guild_id, sender_id, recipient_id, value)
         except apsw.ConstraintError:
+            # We don't attempt to detect which case here.
             raise BalanceIssue(
                 "This would either cause the sender to go negative or the recipient to overflow their account"
             )
