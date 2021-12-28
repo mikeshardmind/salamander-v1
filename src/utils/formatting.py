@@ -36,18 +36,23 @@ PERIODS: Final[Sequence[tuple[str, str, int]]] = (
 )
 
 
-def format_list(to_format: Sequence[str], *, joiner: str = "and") -> str:
+def format_list(to_format: Sequence[str], /, *, comma: str = ",") -> str:
     """
     Formats a sequence of strings for display.
 
     Opinionated choices on formatting below.
 
     Single item sequences return their only item
-    Two items return the items seperated by and,
+    Two items return the items seperated by "and"
     Three or more returns a comma seperated list
-    with the last values having "and"
-    (or other providided joiner)
-    but without an oxford comma.
+    with an oxford comma and the word "and".
+
+    Parameters
+    ----------
+    to_format: Sequence[str]
+    comma: str
+        An optionally provided string to use in place of a standard comma
+        (such as a semicolon used to seperate lists of comma seperated lists)
 
     Raises
     ------
@@ -68,8 +73,8 @@ def format_list(to_format: Sequence[str], *, joiner: str = "and") -> str:
         return " and ".join(to_format)
     if length > 2:
         *most, last = to_format
-        # I really wanna leave out that oxford comma
-        return f'{", ".join(most)} {joiner} {last}'
+        h = f"{comma} ".join(most)
+        return f"{h}{comma} and {last}"
     return next(iter(to_format))
 
 
@@ -109,7 +114,7 @@ def humanize_seconds(seconds: float) -> str:
             unit = plural_period_name if period_value > 1 else period_name
             strings.append(f"{period_value} {unit}")
 
-    return format_list(strings)
+    return format_list(strings, comma="")
 
 
 def humanize_timedelta(delta: timedelta) -> str:
