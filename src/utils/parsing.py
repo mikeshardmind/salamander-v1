@@ -28,11 +28,13 @@ _2EPSILON: Final[float] = sys.float_info.epsilon * 2
 
 TIMEDELTA_RE_STRING: Final[str] = r"\s?".join(
     [
+        r"^",
         r"((?P<weeks>\d+?)\s?(weeks?|w))?",
         r"((?P<days>\d+?)\s?(days?|d))?",
         r"((?P<hours>\d+?)\s?(hours?|hrs|hr?))?",
         r"((?P<minutes>\d+?)\s?(minutes?|mins?|m(?!o)))?",  # prevent matching "months"
         r"((?P<seconds>\d+?)\s?(seconds?|secs?|s))?",
+        r"$",
     ]
 )
 
