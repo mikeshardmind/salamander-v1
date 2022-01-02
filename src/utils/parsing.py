@@ -22,8 +22,6 @@ from datetime import timedelta
 from decimal import Decimal
 from typing import Final, Optional, Union
 
-from dateutil.relativedelta import relativedelta
-
 #: It sucks to have a mathematically sound solution fail on an implementation detail of floats
 _2EPSILON: Final[float] = sys.float_info.epsilon * 2
 
@@ -38,18 +36,7 @@ TIMEDELTA_RE_STRING: Final[str] = r"\s?".join(
     ]
 )
 
-RELATIVEDELTA_RE_STRING: Final[str] = r"\s?".join(
-    [
-        r"((?P<years>\d+?)\s?(years?|y))?" r"((?P<months>\d+?)\s?(months?|mo))?" r"((?P<weeks>\d+?)\s?(weeks?|w))?",
-        r"((?P<days>\d+?)\s?(days?|d))?",
-        r"((?P<hours>\d+?)\s?(hours?|hrs|hr?))?",
-        r"((?P<minutes>\d+?)\s?(minutes?|mins?|m(?!o)))?",  # prevent matching "months"
-        r"((?P<seconds>\d+?)\s?(seconds?|secs?|s))?",
-    ]
-)
-
 TIMEDELTA_RE = re.compile(TIMEDELTA_RE_STRING, re.I)
-RELATIVEDELTA_RE = re.compile(RELATIVEDELTA_RE_STRING, re.I)
 
 
 def parse_timedelta(argument: str) -> Optional[timedelta]:
@@ -58,15 +45,6 @@ def parse_timedelta(argument: str) -> Optional[timedelta]:
         params = {k: int(v) for k, v in matches.groupdict().items() if v}
         if params:
             return timedelta(**params)
-    return None
-
-
-def parse_relativedelta(argument: str) -> Optional[relativedelta]:
-    matches = RELATIVEDELTA_RE.match(argument)
-    if matches:
-        params = {k: int(v) for k, v in matches.groupdict().items() if v}
-        if params:
-            return relativedelta(None, None, **params)  # The Nones are to satisfy mypy
     return None
 
 
