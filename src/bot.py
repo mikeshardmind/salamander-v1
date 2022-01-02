@@ -27,10 +27,11 @@ from contextvars import ContextVar
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Callable, Final, Optional, Sequence, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, List, Optional, Sequence, Type, TypeVar, Union
 from uuid import uuid4
 
 import apsw
+import attr
 import discord
 import uvloop  # type: ignore
 from discord.ext import commands, menus
@@ -47,9 +48,25 @@ BASILISK_GAZE = "basilisk.gaze"
 BASILISK_OFFER = "basilisk.offer"
 
 
-__all__ = ["Salamander", "SalamanderContext"]
+__all__ = ["Salamander", "SalamanderContext", "get_third_party_data_path", "get_contrib_data_path"]
 
 _CUSTOM_DATA_DIR: ContextVar[Optional[str]] = ContextVar("DATA_DIR", default=None)
+
+
+@attr.s(auto_attribs=True, frozen=True, kw_only=True)
+class ExtensionManifest:
+    required_bot_perms: int
+    author: str
+    url: str
+    top_level_command_names: List[str]
+    cog_names: List[str]
+    license_info: str
+    data_retention_description: str
+    version: Optional[str] = None
+    remove_user_data: Callable[[int], Awaitable]
+    remove_guild_data: Callable[[int], Awaitable]
+    bulk_remove_user_data: Callable[[Sequence[int]], Awaitable]
+    bulk_remove_guild_data: Callable[[Sequence[int]], Awaitable]
 
 
 def get_third_party_data_path(extension_name: str) -> Path:
