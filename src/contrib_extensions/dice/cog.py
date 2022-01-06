@@ -19,12 +19,8 @@ from typing import TYPE_CHECKING
 
 from discord.ext import commands
 
+from ...bot import SalamanderContext
 from .dicemath import DiceError, Expression
-
-if TYPE_CHECKING:
-    from ...bot import SalamanderContext
-else:
-    SalamanderContext = commands.Context
 
 
 class Dice(commands.Cog):

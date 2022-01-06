@@ -13,7 +13,33 @@
 #   limitations under the License.
 
 
+from ...bot import ExtensionManifest
 from .meta import Meta
+
+extension_info = ExtensionManifest(
+    required_bot_perms=2048,
+    cog_names=["Meta"],
+    top_level_command_names=[
+        "shutdown",
+        "versioninfo",
+        "invitelink",
+        "prefix",
+        "addmod",
+        "removemod",
+        "addadmin",
+        "removeadmin",
+        "setadminrole",
+        "setmodrole",
+        "clearadminrole",
+        "clearmodrole",
+    ],
+    url="https://github.com/unified-moderation-network/salamander",
+    authors=["https://github.com/unified-moderation-network/"],
+    license_info="https://github.com/unified-moderation-network/salamander/raw/main/LICENSE",
+    data_retention_description="This extension does not store any user data.",
+    remove_guild_data=ExtensionManifest.no_removal_handling_required,
+    remove_user_data=ExtensionManifest.no_removal_handling_required,
+)
 
 
 def setup(bot):

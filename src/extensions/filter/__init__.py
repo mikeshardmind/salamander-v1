@@ -13,7 +13,20 @@
 #   limitations under the License.
 
 
+from ...bot import ExtensionManifest
 from .filter import Filter
+
+extension_info = ExtensionManifest(
+    required_bot_perms=75776,
+    cog_names=["Filter"],
+    top_level_command_names=["filterset"],
+    url="https://github.com/unified-moderation-network/salamander",
+    authors=["https://github.com/unified-moderation-network/"],
+    license_info="https://github.com/unified-moderation-network/salamander/raw/main/LICENSE",
+    data_retention_description="This extension does not store any user data.",
+    remove_guild_data=ExtensionManifest.no_removal_handling_required,
+    remove_user_data=ExtensionManifest.no_removal_handling_required,
+)
 
 
 def setup(bot):

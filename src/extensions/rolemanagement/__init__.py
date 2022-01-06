@@ -14,7 +14,30 @@
 
 from __future__ import annotations
 
+from ...bot import ExtensionManifest
 from .cog import RoleManagement
+
+extension_info = ExtensionManifest(
+    required_bot_perms=268453952,
+    cog_names=["RoleManagement"],
+    top_level_command_names=[
+        "massrole",
+        "mrole",
+        "hackrole",
+        "clearmessagebinds",
+        "rolebind",
+        "bulkrolebind",
+        "roleunbind",
+        "roleset",
+        "srole",
+    ],
+    url="https://github.com/unified-moderation-network/salamander",
+    authors=["https://github.com/unified-moderation-network/"],
+    license_info="https://github.com/unified-moderation-network/salamander/raw/main/LICENSE",
+    data_retention_description="This extension does not store any user data.",
+    remove_guild_data=ExtensionManifest.no_removal_handling_required,
+    remove_user_data=ExtensionManifest.no_removal_handling_required,
+)
 
 
 def setup(bot):

@@ -27,7 +27,7 @@ from contextvars import ContextVar
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, List, Optional, Sequence, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Sequence, Type, TypeVar, Union
 from uuid import uuid4
 
 import apsw
@@ -56,17 +56,19 @@ _CUSTOM_DATA_DIR: ContextVar[Optional[str]] = ContextVar("DATA_DIR", default=Non
 @attr.s(auto_attribs=True, frozen=True, kw_only=True)
 class ExtensionManifest:
     required_bot_perms: int
-    author: str
-    url: str
-    top_level_command_names: List[str]
-    cog_names: List[str]
+    authors: list[str]
+    url: Optional[str] = None
+    top_level_command_names: list[str]
+    cog_names: list[str]
     license_info: str
     data_retention_description: str
     version: Optional[str] = None
-    remove_user_data: Callable[[int], Awaitable]
-    remove_guild_data: Callable[[int], Awaitable]
-    bulk_remove_user_data: Callable[[Sequence[int]], Awaitable]
-    bulk_remove_guild_data: Callable[[Sequence[int]], Awaitable]
+    remove_user_data: Callable[[Sequence[int]], Awaitable]
+    remove_guild_data: Callable[[Sequence[int]], Awaitable]
+
+    @staticmethod
+    async def no_removal_handling_required(_ids: Sequence[int]):
+        ...
 
 
 def get_third_party_data_path(extension_name: str) -> Path:

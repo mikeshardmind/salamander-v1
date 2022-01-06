@@ -12,7 +12,20 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from ...bot import ExtensionManifest
 from .qotw import QOTW
+
+extension_info = ExtensionManifest(
+    required_bot_perms=26688,
+    cog_names=["QOTW"],
+    top_level_command_names=["qotwset", "qotwodds", "qotwask"],
+    url="https://github.com/unified-moderation-network/salamander",
+    authors=["https://github.com/mikeshardmind"],
+    license_info="https://github.com/unified-moderation-network/salamander/raw/main/LICENSE",
+    data_retention_description="This extension stores questions provided by the user for a short period of time.",
+    remove_guild_data=QOTW.remove_guilds,
+    remove_user_data=QOTW.remove_users,
+)
 
 
 def setup(bot):

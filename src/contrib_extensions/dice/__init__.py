@@ -13,7 +13,20 @@
 #   limitations under the License.
 
 
+from ...bot import ExtensionManifest
 from .cog import Dice
+
+extension_info = ExtensionManifest(
+    required_bot_perms=2048,
+    cog_names=["Dice"],
+    top_level_command_names=["roll", "multiroll", "diceinfo"],
+    url="https://github.com/unified-moderation-network/salamander",
+    authors=["https://github.com/mikeshardmind"],
+    license_info="https://github.com/unified-moderation-network/salamander/raw/main/LICENSE",
+    data_retention_description="This extension does not store any user data.",
+    remove_guild_data=ExtensionManifest.no_removal_handling_required,
+    remove_user_data=ExtensionManifest.no_removal_handling_required,
+)
 
 
 def setup(bot):

@@ -12,7 +12,20 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from ...bot import ExtensionManifest
 from .cog import Feedback
+
+extension_info = ExtensionManifest(
+    required_bot_perms=18432,
+    cog_names=["Feedback"],
+    top_level_command_names=["feedback", "feedbackset"],
+    url="https://github.com/unified-moderation-network/salamander",
+    authors=["https://github.com/unified-moderation-network/"],
+    license_info="https://github.com/unified-moderation-network/salamander/raw/main/LICENSE",
+    data_retention_description="This extension does not store any user data. It does store feedback specifically provided to the bot.",
+    remove_guild_data=ExtensionManifest.no_removal_handling_required,
+    remove_user_data=ExtensionManifest.no_removal_handling_required,
+)
 
 
 def setup(bot):

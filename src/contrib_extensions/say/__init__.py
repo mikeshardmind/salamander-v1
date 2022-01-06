@@ -12,7 +12,20 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from ...bot import ExtensionManifest
 from .cog import Say
+
+extension_info = ExtensionManifest(
+    required_bot_perms=2048,
+    cog_names=["Say"],
+    top_level_command_names=["say", "sayhere", "sayecho", "sayedit"],
+    url="https://github.com/unified-moderation-network/salamander",
+    authors=["https://github.com/mikeshardmind"],
+    license_info="https://github.com/unified-moderation-network/salamander/raw/main/LICENSE",
+    data_retention_description="This extension does not store any user data.",
+    remove_guild_data=ExtensionManifest.no_removal_handling_required,
+    remove_user_data=ExtensionManifest.no_removal_handling_required,
+)
 
 
 def setup(bot):
