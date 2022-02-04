@@ -19,7 +19,6 @@ import asyncio
 import io
 import linecache
 import logging
-import platform
 import re
 import signal
 import sys
@@ -54,36 +53,7 @@ __all__ = ["Salamander", "SalamanderContext", "get_third_party_data_path", "get_
 _CUSTOM_DATA_DIR: ContextVar[Optional[str]] = ContextVar("DATA_DIR", default=None)
 
 
-impl = platform.python_implementation()
-
-
-if impl == "PyPy":
-    # pre-empt all these issues at once.
-    # this won't be an issue currently (pypy ~3.6 vs our minimum of ~3.9 (currently))
-    # but it was noticed as a point of incompatibility when exploring what minimum we should use originally.
-    raise RuntimeError(
-        """
-        PyPy is not currently supported. This is due to incompatibility with apsw and hyperscan.
-        If you would like to see support for PyPy, please open an issue.
-        If this incompatibility no longer exists and this warning is still here, please also open an issue.
-        """
-    )
-    # I'm not including `numba` in the list of incompatibilities,
-    # as falling back to pure python code on pypy would be acceptible where it is used.
-
-
-elif impl != "CPython":
-    raise RuntimeError(
-        """
-        The implementation of python you are using has not been tested for
-        compatibility with native and JIT code used in this project.
-
-        I have chosen to have this fail early in a predictable way now, than to possibly have it break during operation in unepected ways.
-
-        If you would like to see support for it, please open an issue with details
-        about the implementation and version of python you are using
-        """
-    )
+impl = sys.implementation.name
 
 
 if hasattr(sys, "pyston_version_info"):
@@ -116,6 +86,35 @@ if hasattr(sys, "pyston_version_info"):
         ##     doSpecialPyPyThing()
         ## else:
         ##    raise Exception("not supported")
+    )
+
+
+if impl == "pypy":
+    # pre-empt all these issues at once.
+    # this won't be an issue currently (pypy ~3.6 vs our minimum of ~3.9 (currently))
+    # but it was noticed as a point of incompatibility when exploring what minimum python version we should target.
+    raise RuntimeError(
+        """
+        PyPy is not currently supported. This is due to incompatibility with apsw and hyperscan.
+        If you would like to see support for PyPy, please open an issue.
+        If this incompatibility no longer exists and this warning is still here, please also open an issue.
+        """
+    )
+    # I'm not including `numba` in the list of incompatibilities,
+    # as falling back to pure python code on pypy would be acceptible where it is used.
+
+
+elif impl != "cpython":
+    raise RuntimeError(
+        """
+        The implementation of python you are using has not been tested for
+        compatibility with native and JIT code used in this project.
+
+        I have chosen to have this fail early in a predictable way now, than to possibly have it break during operation in unepected ways.
+
+        If you would like to see support for it, please open an issue with details
+        about the implementation and version of python you are using
+        """
     )
 
 
