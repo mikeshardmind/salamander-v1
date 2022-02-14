@@ -41,13 +41,13 @@ The network will have components which track various trends
 and pass data about those trends between services to make better on the fly-decisions.
 
 Project Salamander's role in this is as a moderation focused discord bot that
-is designed to be hooked up to such a network. 
+is designed to be hooked up to such a network.
 
 ## You still have questions?
 
 This is a relatively new project based on a mix of old ideas and newer motivations.
 
-Development will happen based on discussions with invested parties. 
+Development will happen based on discussions with invested parties.
 
 If you'd like to learn more, contact links will be added when we are ready to take questions and input from a wider audience. Stay tuned.
 
@@ -74,13 +74,13 @@ including through docker, terraform, ansible and others.
 This section is not in a polished state as there is a lot left to streamline on this to make it more accessible.
 For now, it serves as a very minimal documentation of what's needed to get this up, running and tested on ubuntu 20.04
 
-Currently, this requires [hydra](https://github.com/unified-moderation-network/hydra) to be running.
+While this does not require [hydra](https://github.com/unified-moderation-network/hydra) to be running, some features will not work without it.
 
 The filter is designed as an external service (see [basilisk](https://github.com/unified-moderation-network/basilisk))
 though there may be an option to enable a local filter in the future.
 
 
-1. Install dependencies 
+1. Install dependencies
 
 These are the specific packages required to build *everything* associated with the network
 on Ubuntu 20.04 (to be streamlined in the future)
@@ -103,7 +103,7 @@ libgdbm-dev uuid-dev python3-openssl git libhyperscan5 libhyperscan-dev sqlite3
   These steps do not need to be done together, and the wheel step specifically may be slow, while creating a resource which can be reused.
   This also needs improvement, but if run in the same directory, (or if the wheel is copied to an appropriate location before running again)
   this won't be regenerated.
-  
+
   There's a lot to improve here.
 
 4. copy default_config.toml -> config.toml and edit as appropriate
