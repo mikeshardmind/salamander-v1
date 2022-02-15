@@ -79,7 +79,7 @@ class StorageBackend(ABC):
         ...
 
     @abstractmethod
-    async def clear_by_keys(self, group_name: str, *keys: str):
+    async def clear_by_keys(self, group_name: str, *keys: Union[str, int]):
         ...
 
     @abstractmethod
@@ -87,7 +87,7 @@ class StorageBackend(ABC):
         ...
 
     @abstractmethod
-    async def clear_by_key_prefix(self, group_name: str, *keys: str):
+    async def clear_by_key_prefix(self, group_name: str, *keys: Union[str, int]):
         ...
 
     @abstractmethod
@@ -216,7 +216,7 @@ class SQLiteBackend(StorageBackend):
             (group_name,),
         )
 
-    async def clear_by_key_prefix(self, group_name: str, *keys: str):
+    async def clear_by_key_prefix(self, group_name: str, *keys: Union[str, int]):
         cursor = self._connection.cursor()
         sqlite_args = (group_name,) + keys
         key_len = len(keys)
@@ -233,7 +233,7 @@ class SQLiteBackend(StorageBackend):
             sqlite_args,
         )
 
-    async def clear_by_keys(self, group_name: str, *keys: str):
+    async def clear_by_keys(self, group_name: str, *keys: Union[str, int]):
 
         cursor = self._connection.cursor()
         sqlite_args = (group_name,) + keys
