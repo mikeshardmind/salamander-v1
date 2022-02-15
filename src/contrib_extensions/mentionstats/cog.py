@@ -197,6 +197,12 @@ class MentionStats(commands.Cog):
         self.guild_settings_cache[guild.id] = settings = attr.evolve(
             self.guild_settings_cache[guild.id], last_mass_mention_notice=(channel.id, msg.id)
         )
+        if settings.last_mass_mention_ts is None:
+            ts = int(msg.created_at.timestamp())
+            await self.storage.last_mass_mention_ts(guild).set_value(ts)
+            self.guild_settings_cache[guild.id] = attr.evolve(
+                self.guild_settings_cache[guild.id], last_mass_mention_ts=ts
+            )
         await self._update_notice(guild, settings)
 
     @mentionstatset.command(hidden=True)
