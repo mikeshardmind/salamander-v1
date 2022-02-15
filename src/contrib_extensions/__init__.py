@@ -13,5 +13,6 @@
 #   limitations under the License.
 
 from .dice import Dice
+from .mentionstats import MentionStats
 from .qotw import QOTW
 from .say import Say
