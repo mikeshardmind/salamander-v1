@@ -33,7 +33,7 @@ from src.extensions import *
 from src.local_extensions import *
 
 
-def get_conf() -> Optional[BehaviorFlags]:
+def get_conf() -> BehaviorFlags | None:
 
     path = pathlib.Path("config.toml")
 

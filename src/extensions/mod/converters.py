@@ -19,7 +19,7 @@ import asyncio
 import re
 import shlex
 from datetime import timedelta
-from typing import Final, Iterator, NamedTuple, Optional, Sequence, TypeVar
+from typing import Final, Iterator, NamedTuple, Sequence, TypeVar
 
 import discord
 from discord.ext import commands
@@ -159,14 +159,14 @@ class SearchBanConverter(NamedTuple):
         if not any((ns.nopfp, ns.js, ns.jd, ns.uname, ns.noroles)):
             raise commands.BadArgument("Must provide at least 1 search criterion.")
 
-        joined_server: Optional[timedelta] = None
+        joined_server: timedelta | None = None
         if ns.js:
             joined_server = parse_timedelta(" ".join(ns.js))
             if joined_server is None:
                 raise commands.BadArgument("That did not appear to be a valid amount of time.")
                 # It's allowed to not be provided, but if provided, we won't silent error
 
-        joined_discord: Optional[timedelta] = None
+        joined_discord: timedelta | None = None
         if ns.jd:
             joined_discord = parse_timedelta(" ".join(ns.jd))
             if joined_discord is None:
@@ -175,7 +175,7 @@ class SearchBanConverter(NamedTuple):
 
         members: list[discord.Member] = []
 
-        uname: Optional[str] = " ".join(ns.uname) if ns.uname else None
+        uname: str | None = " ".join(ns.uname) if ns.uname else None
 
         m: discord.Member
         for m in guild.members:

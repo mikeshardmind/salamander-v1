@@ -12,7 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from .dice import Dice
-from .mentionstats import MentionStats
-from .qotw import QOTW
-from .say import Say
+from .dice import Dice as Dice
+from .mentionstats import MentionStats as MentionStats
+from .qotw import QOTW as QOTW
+from .say import Say as Say

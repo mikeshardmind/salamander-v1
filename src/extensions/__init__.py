@@ -12,13 +12,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from ._hydra_helper import IPCEvents
-from .annoyancefilters import AnnoyanceFilters
-from .cleanup import Cleanup
-from .feedback import Feedback
-from .filter import Filter
-from .knownphish import KnownPhish
-from .meta import Meta
-from .mod import Mod
-from .modnotes import ModNotes
-from .rolemanagement import RoleManagement
+from ._hydra_helper import IPCEvents as IPCEvents
+from .annoyancefilters import AnnoyanceFilters as AnnoyanceFilters
+from .cleanup import Cleanup as Cleanup
+from .feedback import Feedback as Feedback
+from .filter import Filter as Filter
+from .knownphish import KnownPhish as KnownPhish
+from .meta import Meta as Meta
+from .mod import Mod as Mod
+from .modnotes import ModNotes as ModNotes
+from .rolemanagement import RoleManagement as RoleManagement

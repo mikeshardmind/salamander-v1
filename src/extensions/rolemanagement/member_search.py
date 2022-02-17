@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import AsyncIterator, Callable, Optional
+from typing import AsyncIterator, Callable
 
 import discord
 
@@ -66,7 +66,7 @@ async def search_filter(members: set[discord.Member], query: dict) -> set[discor
     return members
 
 
-def _non_set_filter(query: dict) -> Optional[Callable[[discord.Member], bool]]:
+def _non_set_filter(query: dict) -> Callable[[discord.Member], bool] | None:
     """
     This could be unironically imporved by use of exec
     to create a more optimal function.
@@ -81,7 +81,7 @@ def _non_set_filter(query: dict) -> Optional[Callable[[discord.Member], bool]]:
     Returns None if there are no applicable conditions in the query.
     """
 
-    minimum_perms: Optional[discord.Permissions] = None
+    minimum_perms: discord.Permissions | None = None
     if required_perms := query["hasperm"]:
         minimum_perms = discord.Permissions(**{x: True for x in required_perms})
 

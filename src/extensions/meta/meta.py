@@ -18,7 +18,6 @@ from __future__ import annotations
 import asyncio
 import re
 import sys
-from typing import Optional, Union
 
 import discord
 from discord.ext import commands
@@ -35,9 +34,9 @@ class AppInfoCache:
 
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
-        self._cached_info: Optional[discord.AppInfo] = None
+        self._cached_info: discord.AppInfo | None = None
         self._lock = asyncio.Lock()
-        self._invalidate_task: Optional[asyncio.Task] = None
+        self._invalidate_task: asyncio.Task | None = None
 
     async def get_app_info(self) -> discord.AppInfo:
 
@@ -205,7 +204,7 @@ class Meta(commands.Cog):
 
     @admin_or_perms(manage_guild=True)
     @commands.command(name="removemod", ignore_extra=False)
-    async def rem_mod(self, ctx: SalamanderContext, who: Union[discord.Member, int]):
+    async def rem_mod(self, ctx: SalamanderContext, who: discord.Member | int):
         """
         Remove a mod.
         """
@@ -231,7 +230,7 @@ class Meta(commands.Cog):
 
     @guildowner_or_perms(manage_guild=True)
     @commands.command(name="removeadmin", ignore_extra=False)
-    async def rem_admin(self, ctx: SalamanderContext, who: Union[discord.Member, int]):
+    async def rem_admin(self, ctx: SalamanderContext, who: discord.Member | int):
         """
         Remove an admin.
         """

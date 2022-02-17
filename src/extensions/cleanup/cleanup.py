@@ -16,8 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
-from typing import Optional
+from datetime import datetime, timedelta, timezone
 
 import discord
 from discord.ext import commands
@@ -220,9 +219,9 @@ class Cleanup(commands.Cog):
         self,
         ctx: SalamanderContext,
         *,
-        limit: Optional[int] = None,
-        before: Optional[discord.Snowflake] = None,
-        after: Optional[discord.Snowflake] = None,
+        limit: int | None = None,
+        before: discord.Snowflake | None = None,
+        after: discord.Snowflake | None = None,
     ):
 
         # I think waterfall use might make sense here? IDK --Liz

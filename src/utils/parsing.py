@@ -20,7 +20,7 @@ import re
 import sys
 from datetime import timedelta
 from decimal import Decimal
-from typing import Final, Optional, Union
+from typing import Final
 
 #: It sucks to have a mathematically sound solution fail on an implementation detail of floats
 _2EPSILON: Final[float] = sys.float_info.epsilon * 2
@@ -41,7 +41,7 @@ TIMEDELTA_RE_STRING: Final[str] = r"\s?".join(
 TIMEDELTA_RE = re.compile(TIMEDELTA_RE_STRING, re.I)
 
 
-def parse_timedelta(argument: str) -> Optional[timedelta]:
+def parse_timedelta(argument: str) -> timedelta | None:
     matches = TIMEDELTA_RE.match(argument)
     if matches:
         params = {k: int(v) for k, v in matches.groupdict().items() if v}
@@ -50,7 +50,7 @@ def parse_timedelta(argument: str) -> Optional[timedelta]:
     return None
 
 
-def parse_positive_number(argument: str, upper_bound: Union[int, float] = 18446744073709551615) -> Optional[int]:
+def parse_positive_number(argument: str, upper_bound: int | float = 18446744073709551615) -> int | None:
     """
     Parse a positive number with an inclusive upper bound
     """
@@ -80,7 +80,7 @@ def parse_positive_number(argument: str, upper_bound: Union[int, float] = 184467
     return None
 
 
-def parse_snowflake(argument: str) -> Optional[int]:
+def parse_snowflake(argument: str) -> int | None:
 
     if m := re.match(r"([0-9]{7,20})$", argument):
         return int(m.group(1))

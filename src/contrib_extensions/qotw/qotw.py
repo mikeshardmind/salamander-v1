@@ -22,7 +22,7 @@ import logging
 import random
 from datetime import datetime, timezone
 from fractions import Fraction
-from typing import Iterable, Optional, Sequence, TypeVar
+from typing import Iterable, Sequence, TypeVar
 
 import apsw
 import discord
@@ -90,7 +90,7 @@ class QOTW(commands.Cog):
             cursor.execute(statement)
         cursor.close()
 
-        self._loop: Optional[asyncio.Task] = None
+        self._loop: asyncio.Task | None = None
 
     @staticmethod
     async def remove_users(ids: Sequence[int]):

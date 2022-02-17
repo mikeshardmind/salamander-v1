@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import re
 from datetime import timedelta
-from typing import Final, NamedTuple, Optional, Sequence
+from typing import Final, NamedTuple, Sequence
 
 import discord
 from discord.ext import commands
@@ -112,8 +112,8 @@ class StrictMemberConverter(NamedTuple):
     """
 
     user_input: str
-    member: Optional[discord.Member]
-    id: Optional[int]
+    member: discord.Member | None
+    id: int | None
 
     @classmethod
     async def convert(cls, ctx, argument):

@@ -19,7 +19,7 @@ import functools
 import keyword
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Dict, List, Literal, Tuple, Union
+from typing import Any, AsyncIterator, Awaitable, Literal, Sequence
 
 import apsw
 import msgpack
@@ -33,7 +33,7 @@ __all__ = [
     "StoredValue",
 ]
 
-AnyStorable = Union[Dict[str, Any], List[Any], int, float, str, None]
+AnyStorable = dict[str, Any] | list[Any] | int | float | str | None
 
 
 class _NoValueType:
@@ -62,7 +62,7 @@ class StorageBackend(ABC):
         ...
 
     @abstractmethod
-    async def get_data(self, group_name: str, *keys: str) -> Union[AnyStorable, _NoValueType]:
+    async def get_data(self, group_name: str, *keys: str) -> AnyStorable | _NoValueType:
         ...
 
     @classmethod
@@ -79,7 +79,7 @@ class StorageBackend(ABC):
         ...
 
     @abstractmethod
-    async def clear_by_keys(self, group_name: str, *keys: Union[str, int]):
+    async def clear_by_keys(self, group_name: str, *keys: str | int):
         ...
 
     @abstractmethod
@@ -87,18 +87,18 @@ class StorageBackend(ABC):
         ...
 
     @abstractmethod
-    async def clear_by_key_prefix(self, group_name: str, *keys: Union[str, int]):
+    async def clear_by_key_prefix(self, group_name: str, *keys: str | int):
         ...
 
     @abstractmethod
-    def get_all_by_group(self, group_name: str) -> AsyncIterator[Tuple[Tuple[str, ...], AnyStorable]]:
+    def get_all_by_group(self, group_name: str) -> AsyncIterator[tuple[tuple[str, ...], AnyStorable]]:
         """Concrete implmentations must asynchronously yield a 2-tuple of (key tuple, value)"""
         ...
 
     @abstractmethod
     def get_all_by_key_prefix(
-        self, group_name: str, *keys: Union[str, int]
-    ) -> AsyncIterator[Tuple[Tuple[str, ...], AnyStorable]]:
+        self, group_name: str, *keys: str | int
+    ) -> AsyncIterator[tuple[tuple[str, ...], AnyStorable]]:
         """Concrete implementations must asynchronously yield a 2-tuple of (key tuple, value)"""
         ...
 
@@ -110,7 +110,7 @@ class StoredValue:
 
     def __init__(self, backend: StorageBackend, group_name: str, *keys: str):
         self.backend: StorageBackend = backend
-        self._keys: Tuple[str, ...] = keys
+        self._keys: tuple[str, ...] = keys
         self._group_name: str = group_name
 
     def set_value(self, value: AnyStorable) -> Awaitable[None]:
@@ -119,7 +119,7 @@ class StoredValue:
         """
         return self.backend.write_data(self._group_name, *self._keys, value=value)
 
-    def get_value(self) -> Awaitable[Union[AnyStorable, _NoValueType]]:
+    def get_value(self) -> Awaitable[AnyStorable | _NoValueType]:
         """
         Gets a value if it exists, otherwise returns ``NoValue``
         """
@@ -145,7 +145,7 @@ class StorageGroup:
         if not 0 < k_l < 5:
             raise ValueError(f"Must provide between 1 and 5 keys, got {k_l}")
         if None in keys:
-            raise TypeError(f"Keys must not be None")
+            raise TypeError("Keys must not be None")
 
         return StoredValue(self.backend, self._group_name, *keys)
 
@@ -153,7 +153,7 @@ class StorageGroup:
         """Clears an entire group"""
         return self.backend.clear_group(self._group_name)
 
-    async def all_items(self) -> AsyncIterator[Tuple[Tuple[Union[str, int], ...], AnyStorable]]:
+    async def all_items(self) -> AsyncIterator[tuple[Sequence[str | int], AnyStorable]]:
         """
         Iterates over all items stored in the group
         The data is yielded as a 2-tuple consisting of the tuple key,
@@ -216,7 +216,7 @@ class SQLiteBackend(StorageBackend):
             (group_name,),
         )
 
-    async def clear_by_key_prefix(self, group_name: str, *keys: Union[str, int]):
+    async def clear_by_key_prefix(self, group_name: str, *keys: str | int):
         cursor = self._connection.cursor()
         sqlite_args = (group_name,) + keys
         key_len = len(keys)
@@ -233,7 +233,7 @@ class SQLiteBackend(StorageBackend):
             sqlite_args,
         )
 
-    async def clear_by_keys(self, group_name: str, *keys: Union[str, int]):
+    async def clear_by_keys(self, group_name: str, *keys: str | int):
 
         cursor = self._connection.cursor()
         sqlite_args = (group_name,) + keys
@@ -255,7 +255,7 @@ class SQLiteBackend(StorageBackend):
             sqlite_args,
         )
 
-    async def write_data(self, group_name: str, *keys: str, value: Union[AnyStorable, _NoValueType]):
+    async def write_data(self, group_name: str, *keys: str, value: AnyStorable | _NoValueType):
         v = self._serializer(value)
         sqlite_args = (group_name,) + keys + (5 - len(keys)) * (None,) + (v,)
         cursor = self._connection.cursor()
@@ -269,7 +269,7 @@ class SQLiteBackend(StorageBackend):
             sqlite_args,
         )
 
-    async def get_data(self, group_name: str, *keys: str) -> Union[AnyStorable, _NoValueType]:
+    async def get_data(self, group_name: str, *keys: str) -> AnyStorable | _NoValueType:
 
         cursor = self._connection.cursor()
         sqlite_args = (group_name,) + keys
@@ -296,7 +296,7 @@ class SQLiteBackend(StorageBackend):
     @classmethod
     async def create_backend_instance(
         cls,
-        path: Union[Path, Literal[":memory:"]],
+        path: Path | Literal[":memory:"],
         name: str,
         unique_identifier: int,
         *,
@@ -341,7 +341,7 @@ class SQLiteBackend(StorageBackend):
     @classmethod
     def create_backend_instance_sync(
         cls,
-        path: Union[Path, Literal[":memory:"]],
+        path: Path | Literal[":memory:"],
         name: str,
         unique_identifier: int,
         *,
@@ -400,7 +400,7 @@ class SQLiteBackend(StorageBackend):
             data = self._deserializer(raw_data)
             yield keys, data
 
-    async def get_all_by_key_prefix(self, group_name: str, *keys: Union[str, int]):
+    async def get_all_by_key_prefix(self, group_name: str, *keys: str | int):
 
         cursor = self._connection.cursor()
         sqlite_args = (group_name,) + keys

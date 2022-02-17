@@ -18,9 +18,6 @@ Leveraging the way discord.py extensions work to make the event logic more easil
 
 from __future__ import annotations
 
-import asyncio
-from typing import Optional
-
 from discord.ext import commands
 from discord.types import embed, message, snowflake
 from discord.webhook import Webhook
@@ -38,10 +35,10 @@ class IPCEvents(commands.Cog, name="_hydra_helper"):
         /,
         *,
         channel_id: snowflake.Snowflake,
-        content: Optional[str] = None,
-        embeds: Optional[list[embed.Embed]] = None,
-        allowed_mentions: Optional[message.AllowedMentions] = None,
-        message_reference: Optional[message.MessageReference] = None,
+        content: str | None = None,
+        embeds: list[embed.Embed] | None = None,
+        allowed_mentions: message.AllowedMentions | None = None,
+        message_reference: message.MessageReference | None = None,
     ):
         await bot.http.send_message(
             channel_id,
@@ -57,10 +54,10 @@ class IPCEvents(commands.Cog, name="_hydra_helper"):
         /,
         *,
         webhook_url: str,
-        content: Optional[str] = None,
-        username: Optional[str] = None,
-        avatar_url: Optional[str] = None,
-        embeds: Optional[list[embed.Embed]] = None,
+        content: str | None = None,
+        username: str | None = None,
+        avatar_url: str | None = None,
+        embeds: list[embed.Embed] | None = None,
         allowed_mentions: message.AllowedMentions = None,
     ):
         hook = Webhook.from_url(webhook_url, session=bot.session)
