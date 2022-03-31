@@ -23,7 +23,7 @@ import discord
 
 from .utils import MainThreadSingletonMeta as Singleton
 
-MAX_BALANCE = 2 ** 63 - 1
+MAX_BALANCE = 2**63 - 1
 
 
 class BalanceIssue(Exception):

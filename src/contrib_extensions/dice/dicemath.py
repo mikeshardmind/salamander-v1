@@ -50,7 +50,7 @@ except ImportError:
 
 __all__ = ["Expression", "DiceError"]
 
-_USE_P = sys.maxsize > 2 ** 32
+_USE_P = sys.maxsize > 2**32
 
 _OP_T = TypeVar("_OP_T")
 
