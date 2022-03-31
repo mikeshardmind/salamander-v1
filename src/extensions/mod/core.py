@@ -48,13 +48,13 @@ def kick_soundness_check(bot_user: discord.Member, mod: discord.Member, target: 
 
     if target == mod:
         raise UserFeedbackError(
-            custom_message=("You can't kick yourself, " "but Discord does have an option to leave servers.")
+            custom_message=("You can't kick yourself, but Discord does have an option to leave servers.")
         )
 
     if target == bot_user:
         raise UserFeedbackError(
             custom_message=(
-                "I can't kick myself from the server. " "If you don't want me here, use the leave command instead."
+                "I can't kick myself from the server. If you don't want me here, use the leave command instead."
             )
         )
 
@@ -84,13 +84,13 @@ def ban_soundness_check(
 
     if target == mod:
         raise UserFeedbackError(
-            custom_message=("You can't ban yourself, " "but Discord does have an option to leave servers.")
+            custom_message=("You can't ban yourself, but Discord does have an option to leave servers.")
         )
 
     if target == bot_user:
         raise UserFeedbackError(
             custom_message=(
-                "I can't ban myself from the server. " "If you don't want me here, use the leave command instead."
+                "I can't ban myself from the server. If you don't want me here, use the leave command instead."
             )
         )
 

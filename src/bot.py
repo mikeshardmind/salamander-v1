@@ -440,7 +440,13 @@ class BehaviorFlags:
         no_basilisk: bool = False,
         no_serpent: bool = False,
         initial_exts: Sequence[str] = (),
+        disable_all_message_commands: bool = False,
+        disable_replaced_message_commands: bool = False,
+        enable_slash_commands: bool = False,
     ):
+        self.disable_all_message_commands: bool = disable_all_message_commands
+        self.disable_replaced_message_commands: bool = disable_replaced_message_commands
+        self.enable_slash_commands: bool = enable_slash_commands
         self.no_basilisk: bool = no_basilisk
         self.no_serpent: bool = no_serpent
         self.initial_exts: Sequence[str] = initial_exts
@@ -1145,6 +1151,8 @@ class Salamander(commands.AutoShardedBot):
         await self.process_commands(message)
 
     async def process_commands(self, message: discord.Message):
+        if self._behavior_flags.disable_all_message_commands:
+            return
         try:
             await asyncio.wait_for(self.wait_until_ready(), timeout=5)
         except asyncio.TimeoutError:

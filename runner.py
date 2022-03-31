@@ -45,6 +45,10 @@ def get_conf() -> Optional[BehaviorFlags]:
     no_serpent = raw_data.pop("no_serpent", False)
     no_basilisk = raw_data.pop("no_basilisk", False)
 
+    disable_all_message_commands = raw_data.pop("disable_all_message_commands", False)
+    disable_replaced_message_commands = raw_data.pop("disable_replaced_message_commands", False)
+    enable_slash_commands = raw_data.pop("enable_slash_commands", False)
+
     ext_dict = raw_data.pop("exts", None)
 
     if hydra_subscribe_addr := raw_data.pop("hydra_subscribe_addr", ""):
@@ -70,6 +74,9 @@ def get_conf() -> Optional[BehaviorFlags]:
         no_serpent=no_serpent,
         no_basilisk=no_basilisk,
         initial_exts=exts,
+        disable_all_message_commands=disable_all_message_commands,
+        disable_replaced_message_commands=disable_replaced_message_commands,
+        enable_slash_commands=enable_slash_commands,
     )
 
 

@@ -81,6 +81,28 @@ class Meta(commands.Cog):
         """Shuts down the bot"""
         await self.bot.close()
 
+    @commands.is_owner()
+    @commands.group()
+    async def servers(self, ctx: SalamanderContext):
+        """List/leave servers"""
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help()
+
+    @servers.command(name="list")
+    async def s_list(self, ctx: SalamanderContext):
+        servers = "\n".join(f"{g.id} | {g.name} | {g.member_count}" for g in ctx.bot.guilds)
+        await ctx.send_paged(servers, box=True, prepend="ID | name | member count")
+
+    @servers.command(name="leave")
+    async def s_leave(self, ctx: SalamanderContext, guild_id: int):
+        g = ctx.bot.get_guild(guild_id)
+        if not g:
+            raise UserFeedbackError(
+                custom_message="That didn't seem like a server ID, Try using the `servers list` command to get the ID"
+            )
+        else:
+            await g.leave()
+
     @commands.command(name="versioninfo")
     async def info_com(self, ctx: SalamanderContext):
         """Get version info about this bot."""
