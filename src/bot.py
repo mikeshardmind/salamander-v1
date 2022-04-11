@@ -1217,6 +1217,7 @@ class Salamander(commands.AutoShardedBot):
                 guild_reactions=True,
                 dm_messages=True,
                 dm_reactions=True,
+                emojis=True,
             )
 
             instance = cls(
