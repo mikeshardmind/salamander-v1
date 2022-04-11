@@ -28,5 +28,5 @@ extension_info = ExtensionManifest(
 )
 
 
-def setup(bot):
-    bot.add_cog(Cleanup())
+async def setup(bot):
+    await bot.add_cog(Cleanup())

@@ -28,6 +28,6 @@ extension_info = ExtensionManifest(
 )
 
 
-def setup(bot):
+async def setup(bot):
 
-    bot.add_cog(Say())
+    await bot.add_cog(Say())

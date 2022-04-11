@@ -28,7 +28,7 @@ extension_info = ExtensionManifest(
 )
 
 
-def setup(bot):
+async def setup(bot):
     cog = QOTW(bot)
-    bot.add_cog(cog)
+    await bot.add_cog(cog)
     cog.init()

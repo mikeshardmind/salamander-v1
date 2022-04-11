@@ -995,15 +995,16 @@ class Salamander(commands.AutoShardedBot):
         self.privlevel_manager: PrivHandler = PrivHandler(self)
         self.bank: Bank = Bank(apsw.Connection(str(bank_db)))
 
+    async def __aenter__(self) -> Salamander:
+
         for ext in dict.fromkeys(self._behavior_flags.initial_exts):
             if ext == "src.extensions.filter" and self._behavior_flags.no_basilisk:
                 continue
-            self.load_extension(ext)
+            await self.load_extension(ext)
 
         if not self._behavior_flags.no_basilisk:
-            self.load_extension("src.extensions._hydra_helper")
+            await self.load_extension("src.extensions._hydra_helper")
 
-    async def __aenter__(self) -> Salamander:
         if self._zmq_task is None:
 
             async def zmq_injest_task() -> None:
@@ -1026,6 +1027,9 @@ class Salamander(commands.AutoShardedBot):
         if self._zmq_task is not None:
             self._zmq_task.cancel()
             self._zmq_task = None
+
+        if not self.is_closed():
+            await self.close()
 
     async def is_owner(self, user: discord.User | discord.Member) -> bool:
         # TODO: fix d.py type for this
