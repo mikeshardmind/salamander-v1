@@ -36,12 +36,12 @@ from ...utils.provisional import rapid_storage
 @attr.s(auto_attribs=True, frozen=True, kw_only=True)
 class GuildSettings:
     track_mass_mentions: bool = True
-    last_mass_mention_ts: Optional[int] = None
-    last_mass_mention_notice: Optional[tuple[int, int]] = None
+    last_mass_mention_ts: int | None = None
+    last_mass_mention_notice: tuple[int, int] | None = None
     mass_mention_notice_template: str = "This server has lasted $days without a mass mention."
 
     @property
-    def days_since_last_mass_mention(self) -> Optional[int]:
+    def days_since_last_mass_mention(self) -> int | None:
         if self.last_mass_mention_ts:
             return (dt.now(tz.utc) - dt.utcfromtimestamp(self.last_mass_mention_ts).replace(tzinfo=tz.utc)).days
 

@@ -97,8 +97,8 @@ class RoleManagement(commands.Cog):
         self,
         *,
         who: discord.Member,
-        give: list[discord.Role] = None,
-        remove: list[discord.Role] = None,
+        give: list[discord.Role] | None = None,
+        remove: list[discord.Role] | None = None,
     ):
         """
         Give and remove roles as a single op with some slight wrapping
@@ -329,7 +329,7 @@ class RoleManagement(commands.Cog):
         self,
         who: discord.Member,
         role: discord.Role,
-        role_settings: Optional[RoleSettings] = None,
+        role_settings: RoleSettings | None = None,
     ) -> list[discord.Role]:
         """
         Returns a list of roles to be removed if this one is added, or raises an
@@ -352,7 +352,7 @@ class RoleManagement(commands.Cog):
         self,
         who: discord.Member,
         role: discord.Role,
-        role_settings: Optional[RoleSettings] = None,
+        role_settings: RoleSettings | None = None,
     ) -> None:
         """
         Raises an error on missing reqs
@@ -378,7 +378,7 @@ class RoleManagement(commands.Cog):
         self,
         who: discord.Member,
         role: discord.Role,
-        role_settings: Optional[RoleSettings] = None,
+        role_settings: RoleSettings | None = None,
     ) -> list[discord.Role]:
         """
         Returns a list of roles to remove, or raises an error
@@ -602,7 +602,7 @@ class RoleManagement(commands.Cog):
         await ctx.send("Done.")
 
     @staticmethod
-    def check_emoji_usable(channel: discord.TextChannel, emoji: Optional[discord.Emoji]):
+    def check_emoji_usable(channel: discord.TextChannel, emoji: discord.Emoji | None):
         """
         Checks if an emoji is usable in a channel, raising if not.
 
@@ -628,7 +628,7 @@ class RoleManagement(commands.Cog):
                 )
 
     @staticmethod
-    async def wrapped_reaction_add(message: discord.Message, reaction: Union[discord.Emoji, str]):
+    async def wrapped_reaction_add(message: discord.Message, reaction: discord.Emoji | str):
         """
         Attempts to react to a message with the specified reaction.
 
@@ -687,7 +687,7 @@ class RoleManagement(commands.Cog):
             return await ctx.send("No such message")
 
         to_store: dict[str, discord.Role] = {}
-        _emoji: Optional[Union[discord.Emoji, str]]
+        _emoji: discord.Emoji | str | None
 
         for emoji, role in pairs.items():
             eid = normalize_emoji(emoji)
@@ -1049,7 +1049,7 @@ class RoleManagement(commands.Cog):
         Lists the selfroles.
         """
         rids = RoleSettings.self_assignable_ids_in_guild(self.bot._conn, ctx.guild.id)
-        output = "\n".join((r.name for r in ctx.guild.roles if r.id in rids))
+        output = "\n".join(r.name for r in ctx.guild.roles if r.id in rids)
         await ctx.send_paged(output, box=True, prepend="Self-Assignable Roles")
 
     @commands.guild_only()
@@ -1142,7 +1142,7 @@ class RoleManagement(commands.Cog):
             )
 
             emoji_info = record.reaction_string
-            emoji: Union[discord.Emoji, str]
+            emoji: discord.Emoji | str
             if emoji_info.isdigit():
                 emoji = discord.utils.get(self.bot.emojis, id=int(emoji_info)) or f"A custom enoji with id {emoji_info}"
             else:

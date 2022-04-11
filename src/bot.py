@@ -50,7 +50,7 @@ BASILISK_OFFER = "basilisk.offer"
 
 __all__ = ["Salamander", "SalamanderContext", "get_third_party_data_path", "get_contrib_data_path"]
 
-_CUSTOM_DATA_DIR: ContextVar[Optional[str]] = ContextVar("DATA_DIR", default=None)
+_CUSTOM_DATA_DIR: ContextVar[str | None] = ContextVar("DATA_DIR", default=None)
 
 
 impl = sys.implementation.name
@@ -122,12 +122,12 @@ elif impl != "cpython":
 class ExtensionManifest:
     required_bot_perms: int
     authors: list[str]
-    url: Optional[str] = None
+    url: str | None = None
     top_level_command_names: list[str]
     cog_names: list[str]
     license_info: str
     data_retention_description: str
-    version: Optional[str] = None
+    version: str | None = None
     remove_user_data: Callable[[Sequence[int]], Awaitable]
     remove_guild_data: Callable[[Sequence[int]], Awaitable]
 
@@ -288,10 +288,10 @@ class SalamanderContext(commands.Context):
 
     async def list_menu(
         self,
-        pages: list[Union[discord.Embed, str]],
+        pages: list[discord.Embed | str],
         *,
         timeout: float = 180,
-        alt_destination: Optional[discord.abc.Messageable] = None,
+        alt_destination: discord.abc.Messageable | None = None,
         wait: bool = False,
     ) -> menus.Menu:
         """
@@ -392,9 +392,9 @@ class SalamanderContext(commands.Context):
         content: str,
         *,
         box: bool = False,
-        prepend: Optional[str] = None,
+        prepend: str | None = None,
         page_size: int = 1800,
-        allowed_mentions: Optional[discord.AllowedMentions] = None,
+        allowed_mentions: discord.AllowedMentions | None = None,
     ):
         """Send something paged out"""
 
@@ -981,7 +981,7 @@ class Salamander(commands.AutoShardedBot):
         )
 
         self._zmq = ZMQHandler()
-        self._zmq_task: Optional[asyncio.Task] = None
+        self._zmq_task: asyncio.Task | None = None
 
         db_path = get_data_path() / "salamander.db"
         # This is seperate to ensure 3rd party actions cannot lock up the core DB
@@ -1019,15 +1019,15 @@ class Salamander(commands.AutoShardedBot):
 
     async def __aexit__(
         self,
-        exc_type: Optional[Type[BaseException]] = None,
-        exc_value: Optional[BaseException] = None,
-        traceback: Optional[TracebackType] = None,
+        exc_type: type[BaseException] | None = None,
+        exc_value: BaseException | None = None,
+        traceback: TracebackType | None = None,
     ):
         if self._zmq_task is not None:
             self._zmq_task.cancel()
             self._zmq_task = None
 
-    async def is_owner(self, user: Union[discord.User, discord.Member]) -> bool:
+    async def is_owner(self, user: discord.User | discord.Member) -> bool:
         # TODO: fix d.py type for this
         if TYPE_CHECKING:
             # Escape hatch, sure, but this is a nonesencial assert.
@@ -1141,7 +1141,7 @@ class Salamander(commands.AutoShardedBot):
 
         return False
 
-    async def get_context(self, message: discord.Message, *, cls: Type[_CT] = SalamanderContext) -> _CT:
+    async def get_context(self, message: discord.Message, *, cls: type[_CT] = SalamanderContext) -> _CT:
         return await super().get_context(message, cls=cls)
 
     async def on_message(self, message: discord.Message):

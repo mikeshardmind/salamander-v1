@@ -18,7 +18,6 @@ from __future__ import annotations
 import asyncio
 import re
 import sys
-from typing import Optional, Union
 
 import discord
 from discord.ext import commands
@@ -35,9 +34,9 @@ class AppInfoCache:
 
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
-        self._cached_info: Optional[discord.AppInfo] = None
+        self._cached_info: discord.AppInfo | None = None
         self._lock = asyncio.Lock()
-        self._invalidate_task: Optional[asyncio.Task] = None
+        self._invalidate_task: asyncio.Task | None = None
 
     async def get_app_info(self) -> discord.AppInfo:
 
@@ -117,6 +116,7 @@ class Meta(commands.Cog):
     @commands.command(name="invitelink")
     async def invite_link_command(self, ctx: SalamanderContext):
         """Get the bot's invite link."""
+        assert ctx.bot.user is not None
 
         url = discord.utils.oauth_url(
             client_id=ctx.bot.user.id,
@@ -135,6 +135,8 @@ class Meta(commands.Cog):
     @prefix.command(name="list")
     async def prefix_list(self, ctx: SalamanderContext):
         """List the prefixes currently configured for this server."""
+
+        assert ctx.guild is not None
 
         prefixes = self.bot.prefix_manager.get_guild_prefixes(ctx.guild.id)[::-1]
         if prefixes:
@@ -155,6 +157,8 @@ class Meta(commands.Cog):
 
         Multi-word prefixes should also be quoted.
         """
+
+        assert ctx.guild is not None
 
         current_prefixes = self.bot.prefix_manager.get_guild_prefixes(ctx.guild.id)
         if len(current_prefixes) >= 5:
@@ -195,6 +199,9 @@ class Meta(commands.Cog):
 
         Multi-word prefixes should also be quoted.
         """
+
+        assert ctx.guild is not None
+
         if prefix.startswith((f"<@{ctx.me.id}>", f"<@!{ctx.me.id}>")):
             raise UserFeedbackError(custom_message="I won't remove mentioning me as a prefix")
 
@@ -222,15 +229,19 @@ class Meta(commands.Cog):
         Mention them for best matching success.
         """
 
+        assert ctx.guild is not None
+
         self.bot.privlevel_manager.give_mod(ctx.guild.id, who.id)
         await ctx.send("User is considered a mod in this server.")
 
     @admin_or_perms(manage_guild=True)
     @commands.command(name="removemod", ignore_extra=False)
-    async def rem_mod(self, ctx: SalamanderContext, who: Union[discord.Member, int]):
+    async def rem_mod(self, ctx: SalamanderContext, who: discord.Member | int):
         """
         Remove a mod.
         """
+
+        assert ctx.guild is not None
 
         if isinstance(who, discord.Member):
             self.bot.privlevel_manager.remove_mod(ctx.guild.id, who.id)
@@ -248,15 +259,19 @@ class Meta(commands.Cog):
         Mention them for best matching success.
         """
 
+        assert ctx.guild is not None
+
         self.bot.privlevel_manager.give_admin(ctx.guild.id, who.id)
         await ctx.send("User is considered an admin in this server.")
 
     @guildowner_or_perms(manage_guild=True)
     @commands.command(name="removeadmin", ignore_extra=False)
-    async def rem_admin(self, ctx: SalamanderContext, who: Union[discord.Member, int]):
+    async def rem_admin(self, ctx: SalamanderContext, who: discord.Member | int):
         """
         Remove an admin.
         """
+
+        assert ctx.guild is not None
 
         if isinstance(who, discord.Member):
             self.bot.privlevel_manager.remove_admin(ctx.guild.id, who.id)
@@ -284,6 +299,8 @@ class Meta(commands.Cog):
         Set the bot admin role for the server.
         """
 
+        assert ctx.guild is not None
+
         cursor = self.bot._conn.cursor()
 
         cursor.execute(
@@ -306,6 +323,8 @@ class Meta(commands.Cog):
         Set the bot mod role for the server.
         """
 
+        assert ctx.guild is not None
+
         cursor = self.bot._conn.cursor()
 
         cursor.execute(
@@ -326,6 +345,8 @@ class Meta(commands.Cog):
     async def clear_adminrole(self, ctx: commands.Context):
         """Clears the bot admin role setting."""
 
+        assert ctx.guild is not None
+
         cursor = self.bot._conn.cursor()
 
         cursor.execute(
@@ -345,6 +366,8 @@ class Meta(commands.Cog):
     @commands.command(name="clearmodrole", ignore_extra=False)
     async def clear_modrole(self, ctx: commands.Context):
         """Clears the bot mod role setting."""
+
+        assert ctx.guild is not None
 
         cursor = self.bot._conn.cursor()
 

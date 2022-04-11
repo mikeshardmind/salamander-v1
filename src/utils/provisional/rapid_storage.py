@@ -19,7 +19,7 @@ import functools
 import keyword
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Dict, List, Literal, Tuple, Union
+from typing import Any, AsyncIterator, Awaitable, Literal, Union
 
 import apsw
 import msgpack
@@ -33,7 +33,7 @@ __all__ = [
     "StoredValue",
 ]
 
-AnyStorable = Union[Dict[str, Any], List[Any], int, float, str, None]
+AnyStorable = Union[dict[str, Any], list[Any], int, float, str, None]
 
 
 class _NoValueType:
@@ -91,14 +91,14 @@ class StorageBackend(ABC):
         ...
 
     @abstractmethod
-    def get_all_by_group(self, group_name: str) -> AsyncIterator[Tuple[Tuple[str, ...], AnyStorable]]:
+    def get_all_by_group(self, group_name: str) -> AsyncIterator[tuple[tuple[str, ...], AnyStorable]]:
         """Concrete implmentations must asynchronously yield a 2-tuple of (key tuple, value)"""
         ...
 
     @abstractmethod
     def get_all_by_key_prefix(
         self, group_name: str, *keys: Union[str, int]
-    ) -> AsyncIterator[Tuple[Tuple[str, ...], AnyStorable]]:
+    ) -> AsyncIterator[tuple[tuple[str, ...], AnyStorable]]:
         """Concrete implementations must asynchronously yield a 2-tuple of (key tuple, value)"""
         ...
 
@@ -110,7 +110,7 @@ class StoredValue:
 
     def __init__(self, backend: StorageBackend, group_name: str, *keys: str):
         self.backend: StorageBackend = backend
-        self._keys: Tuple[str, ...] = keys
+        self._keys: tuple[str, ...] = keys
         self._group_name: str = group_name
 
     def set_value(self, value: AnyStorable) -> Awaitable[None]:
@@ -153,7 +153,7 @@ class StorageGroup:
         """Clears an entire group"""
         return self.backend.clear_group(self._group_name)
 
-    async def all_items(self) -> AsyncIterator[Tuple[Tuple[Union[str, int], ...], AnyStorable]]:
+    async def all_items(self) -> AsyncIterator[tuple[tuple[Union[str, int], ...], AnyStorable]]:
         """
         Iterates over all items stored in the group
         The data is yielded as a 2-tuple consisting of the tuple key,

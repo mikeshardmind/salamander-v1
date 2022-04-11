@@ -457,9 +457,7 @@ class Mod(commands.Cog):
         async with lock:
             await self.handle_mass_or_search_ban(ctx, ban_args)
 
-    async def handle_mass_or_search_ban(
-        self, ctx: SalamanderContext, ban_args: Union[MultiBanConverter, SearchBanConverter]
-    ):
+    async def handle_mass_or_search_ban(self, ctx: SalamanderContext, ban_args: MultiBanConverter | SearchBanConverter):
 
         for member in ban_args.matched_members:
             ban_soundness_check(bot_user=ctx.me, mod=ctx.author, target=member)
@@ -468,7 +466,7 @@ class Mod(commands.Cog):
         users_to_ban = len(ban_args.unmatched_user_ids)
         total_to_ban = members_to_ban + users_to_ban
 
-        progress: Optional[discord.Message] = None
+        progress: discord.Message | None = None
 
         if total_to_ban > 50 or users_to_ban > 25:
             # Ratelimiting is worse on users no longer in the server
@@ -584,7 +582,7 @@ class Mod(commands.Cog):
         target: discord.Member,
         reason: str,
         audit_reason: str,
-        expiration: Optional[datetime] = None,
+        expiration: datetime | None = None,
     ):
         guild = mod.guild
         async with self._mute_locks[guild.id]:
@@ -739,7 +737,7 @@ class Mod(commands.Cog):
         reason: str,
         audit_reason: str,
         *,
-        mod: Optional[discord.Member] = None,
+        mod: discord.Member | None = None,
     ) -> list[discord.Role]:
 
         cursor = self.bot._conn.cursor()

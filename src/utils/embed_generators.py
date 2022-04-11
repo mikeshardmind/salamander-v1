@@ -23,7 +23,7 @@ def embed_from_member(member: discord.Member) -> discord.Embed:
     em = discord.Embed(colour=member.color)
 
     if ln := len(member._roles):
-        r_str = " ".join((r.mention for r in reversed(member.roles) if not r.is_default()))
+        r_str = " ".join(r.mention for r in reversed(member.roles) if not r.is_default())
 
         if len(r_str) > 1024:
             # This will break an embed field limit,

@@ -19,7 +19,7 @@ import asyncio
 import re
 import shlex
 from datetime import timedelta
-from typing import Final, Iterator, NamedTuple, Optional, Sequence, TypeVar
+from typing import Final, Iterator, NamedTuple, TypeVar
 
 import discord
 from discord.ext import commands
@@ -36,7 +36,7 @@ __all__ = ("MultiBanConverter",)
 T = TypeVar("T")
 
 
-def list_chunker(iter: Sequence[T], size: int) -> Iterator[Sequence[T]]:  # Consider exposing this
+def list_chunker(iter: list[T], size: int) -> Iterator[list[T]]:  # Consider exposing this
     if size < 1:
         raise ValueError("Chunk size must be greater than 0.")
     for i in range(0, len(iter), size):
@@ -53,7 +53,7 @@ class MultiBanConverter(NamedTuple):
     Handles strict matching semantics + multiple targets, search, and reason
     """
 
-    matched_members: list[discord.Member]
+    matched_members: list[discord.Member | discord.User]
     unmatched_user_ids: list[int]
     reason: str
 
@@ -80,7 +80,7 @@ class MultiBanConverter(NamedTuple):
         if not reason:
             raise commands.BadArgument("Must provide a ban reason.")
 
-        matched_members: list[discord.Member] = []
+        matched_members: list[discord.Member | discord.User] = []
         seen_ids: set[int] = set()
         to_search: set[int] = set()
 
@@ -159,14 +159,14 @@ class SearchBanConverter(NamedTuple):
         if not any((ns.nopfp, ns.js, ns.jd, ns.uname, ns.noroles)):
             raise commands.BadArgument("Must provide at least 1 search criterion.")
 
-        joined_server: Optional[timedelta] = None
+        joined_server: timedelta | None = None
         if ns.js:
             joined_server = parse_timedelta(" ".join(ns.js))
             if joined_server is None:
                 raise commands.BadArgument("That did not appear to be a valid amount of time.")
                 # It's allowed to not be provided, but if provided, we won't silent error
 
-        joined_discord: Optional[timedelta] = None
+        joined_discord: timedelta | None = None
         if ns.jd:
             joined_discord = parse_timedelta(" ".join(ns.jd))
             if joined_discord is None:
@@ -175,7 +175,7 @@ class SearchBanConverter(NamedTuple):
 
         members: list[discord.Member] = []
 
-        uname: Optional[str] = " ".join(ns.uname) if ns.uname else None
+        uname: str | None = " ".join(ns.uname) if ns.uname else None
 
         m: discord.Member
         for m in guild.members:
@@ -183,7 +183,9 @@ class SearchBanConverter(NamedTuple):
             if uname and uname == m.name:
                 continue
 
-            if joined_server and m.joined_at + joined_server < ctx.message.created_at:
+            joined_at = m.joined_at or ctx.message.created_at
+
+            if joined_server and joined_at + joined_server < ctx.message.created_at:
                 continue
 
             if joined_discord and m.created_at + joined_discord < ctx.message.created_at:

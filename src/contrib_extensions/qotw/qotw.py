@@ -90,7 +90,7 @@ class QOTW(commands.Cog):
             cursor.execute(statement)
         cursor.close()
 
-        self._loop: Optional[asyncio.Task] = None
+        self._loop: asyncio.Task | None = None
 
     @staticmethod
     async def remove_users(ids: Sequence[int]):
@@ -172,6 +172,7 @@ class QOTW(commands.Cog):
         channel = guild.get_channel(channel_id)
         if channel is None:
             return
+        assert isinstance(channel, discord.TextChannel)
 
         if guild.large and not guild.chunked:
             await guild.chunk()
@@ -279,6 +280,7 @@ class QOTW(commands.Cog):
     @qotw_set.command(name="channel")
     async def qotw_set_channel(self, ctx: SalamanderContext, *, channel: discord.TextChannel):
         """Sets the channel for QOTW"""
+        assert ctx.guild is not None
 
         cursor = self.conn.cursor()
 
@@ -301,6 +303,7 @@ class QOTW(commands.Cog):
 
         This will effectively disable QOTW in this server.
         """
+        assert ctx.guild is not None
 
         cursor = self.conn.cursor()
         cursor.execute(
@@ -316,6 +319,7 @@ class QOTW(commands.Cog):
     @qotw_set.command(name="day")
     async def qotw_set_day(self, ctx: SalamanderContext, *, day: Weekday):
         """Sets the day of the week QOTW should be held on"""
+        assert ctx.guild is not None
 
         cursor = self.conn.cursor()
         cursor.execute(
@@ -333,6 +337,7 @@ class QOTW(commands.Cog):
     @qotw_set.command(name="force")
     async def force_qotw(self, ctx: SalamanderContext):
         """Force a new question to be asked"""
+        assert ctx.guild is not None
 
         cursor = self.conn.cursor()
 
@@ -351,16 +356,20 @@ class QOTW(commands.Cog):
             channel_id, last_pinned_message_id = row
             channel = ctx.guild.get_channel(channel_id)
 
-        if not channel:
-            raise UserFeedbackError(custom_message="No QOTW channel has been set")
+            if not channel:
+                raise UserFeedbackError(custom_message="No QOTW channel has been set")
 
-        await self.handle_qotw(ctx.guild.id, channel_id, last_pinned_message_id)
+            await self.handle_qotw(ctx.guild.id, channel_id, last_pinned_message_id)
+
+        else:
+            raise UserFeedbackError(custom_message="No QOTW channel has been set")
 
     @admin_or_perms(manage_messages=True)
     @commands.guild_only()
     @qotw_set.command(name="view")
     async def view_pending(self, ctx: SalamanderContext):
         """View the currently pending questions"""
+        assert ctx.guild is not None
 
         cursor = self.conn.cursor()
 
@@ -408,6 +417,7 @@ class QOTW(commands.Cog):
         """
         Get the current odds that your question is selected next.
         """
+        assert ctx.guild is not None
 
         cursor = self.conn.cursor()
 
@@ -451,6 +461,10 @@ class QOTW(commands.Cog):
     @commands.guild_only()
     @commands.command()
     async def qotwask(self, ctx: SalamanderContext, *, question: str):
+        """Ask a question."""
+
+        assert ctx.guild is not None
+
         if len(question) > 1500:
             return await ctx.send("Please ask a shorter question (max 1500 characters).")
 
@@ -475,8 +489,10 @@ class QOTW(commands.Cog):
         except Exception as exc:
             log.exception("Couldn't delete", exc_info=exc)
 
-    @qotwask.before_invoke
+    @qotwask.before_invoke  # type: ignore # TODO: Generic context handling
     async def ask_before_invoke(self, ctx: SalamanderContext):
+        assert ctx.guild is not None
+
         cursor = self.conn.cursor()
 
         row = cursor.execute(

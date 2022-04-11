@@ -18,7 +18,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from typing import Awaitable, Callable, Generic, Literal, Optional, Sequence, TypeVar, overload
+from typing import Awaitable, Callable, Generic, Literal, Sequence, TypeVar, overload
 
 _T = TypeVar("_T")
 
@@ -43,7 +43,7 @@ class Waterfall(Generic[_T]):
         self.max_wait_finalize: int = max_wait_finalize
         self.max_quantity: int = max_quantity
         self.callback: Callable[[Sequence[_T]], Awaitable] = async_callback
-        self.task: Optional[asyncio.Task] = None
+        self.task: asyncio.Task | None = None
         self._alive: bool = False
 
     def start(self):
@@ -62,7 +62,7 @@ class Waterfall(Generic[_T]):
         ...
 
     @overload
-    def stop(self, wait: bool = False) -> Optional[Awaitable]:
+    def stop(self, wait: bool = False) -> Awaitable | None:
         ...
 
     def stop(self, wait: bool = False):

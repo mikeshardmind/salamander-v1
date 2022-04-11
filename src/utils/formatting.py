@@ -16,7 +16,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Final, Iterator, Optional, Sequence
+from typing import Final, Iterator, Sequence
 
 __all__ = [
     "format_list",
@@ -82,7 +82,7 @@ def pagify(
     text: str,
     *,
     page_size: int = 1800,
-    delims: Optional[list[str]] = None,
+    delims: list[str] | None = None,
     strip_before_yield: bool = True,
 ) -> Iterator[str]:
 

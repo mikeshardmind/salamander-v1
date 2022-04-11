@@ -1,4 +1,4 @@
-discord.py @ https://github.com/unified-moderation-network/discord.py/archive/5063660b956112be4e13fdcaef6de114486279c3.zip
+discord.py @ https://github.com/unified-moderation-network/discord.py/archive/6265723a352ee77f418ef3004012cc5693ba390f.zip
 msgpack==1.0.2
 numpy
 numba

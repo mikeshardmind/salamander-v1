@@ -252,7 +252,7 @@ class NumberofDice:
         return fast_roll(self.quant, self.sides, low, high)  # type: ignore
 
 
-def _try_die_or_int(expr: str) -> tuple[Union[NumberofDice, int], str]:
+def _try_die_or_int(expr: str) -> tuple[NumberofDice | int, str]:
 
     if m := DIE_COMPONENT_RE.search(expr):
         assert m is not None, "mypy#8128"  # nosec
@@ -280,7 +280,7 @@ class Expression:
     def __str__(self):
         return " ".join(ROPS.get(c, str(c)) for c in self._components)
 
-    def add_dice(self, die: Union[NumberofDice, int]):
+    def add_dice(self, die: NumberofDice | int):
         if len(self._components) % 2:
             raise DiceError(f"Expected an operator next (Current: {self})")
 

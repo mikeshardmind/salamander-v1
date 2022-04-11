@@ -14,9 +14,7 @@
 
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
-from typing import Optional
 
 import discord
 import hyperscan
@@ -62,9 +60,7 @@ class KnownPhish(commands.Cog):
                     author_id = raw_payload.data.get("author", {}).get("id", None)
                     await self.process_content(channel, raw_payload.message_id, author_id, content)
 
-    async def process_content(
-        self, channel: discord.TextChannel, message_id: int, author_id: Optional[int], content: str
-    ):
+    async def process_content(self, channel: discord.TextChannel, message_id: int, author_id: int | None, content: str):
         # author id is optional because discord doesn't actually guarantee it ....
 
         slices = []

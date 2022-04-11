@@ -16,7 +16,7 @@
 from __future__ import annotations
 
 import operator
-from typing import Any, Callable, Generic, Optional, Sequence, TypeVar, Union
+from typing import Any, Callable, Generic, Sequence, TypeVar
 
 __all__ = [
     "AlreadyDone",
@@ -167,16 +167,12 @@ class ChooseYourOwnAdventure(Generic[_CYA_TV]):
 
     def __init__(
         self,
-        initial_pages: Optional[dict[int, Union[Decision, Termination[_CYA_TV]]]] = None,
+        initial_pages: dict[int, Decision | Termination[_CYA_TV]] | None = None,
     ):
-        self._pages: dict[int, Union[Decision, Termination[_CYA_TV]]] = (
-            initial_pages if initial_pages is not None else {}
-        )
+        self._pages: dict[int, Decision | Termination[_CYA_TV]] = initial_pages if initial_pages is not None else {}
         self._pos = 0
 
-    def add_page(
-        self, page_number: int, page: Union[Decision, Termination[_CYA_TV]]
-    ) -> ChooseYourOwnAdventure[_CYA_TV]:
+    def add_page(self, page_number: int, page: Decision | Termination[_CYA_TV]) -> ChooseYourOwnAdventure[_CYA_TV]:
         """
         Add a page.
 

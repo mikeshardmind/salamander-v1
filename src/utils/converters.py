@@ -112,8 +112,8 @@ class StrictMemberConverter(NamedTuple):
     """
 
     user_input: str
-    member: Optional[discord.Member]
-    id: Optional[int]
+    member: discord.Member | None
+    id: int | None
 
     @classmethod
     async def convert(cls, ctx, argument):

@@ -169,8 +169,8 @@ discord-ext-menus @ https://github.com/unified-moderation-network/discord-ext-me
     --hash=sha256:7a4f2da99ac60b626d09015163903eba217271f957a800881e3617209613a349
 
 
-discord.py @ https://github.com/unified-moderation-network/discord.py/archive/5063660b956112be4e13fdcaef6de114486279c3.zip \
-    --hash=sha256:6006d14155c811b5dd46dc1416cae6b4cd17b560243e0eabf5f3354969d86103
+discord.py @ https://github.com/unified-moderation-network/discord.py/archive/6265723a352ee77f418ef3004012cc5693ba390f.zip \
+    --hash=sha256:712f4657f877dd0aed584eaf443db311e5dc08b0b186b881ded0ba58bb996d16
 
 hyperscan==0.2.0 \
     --hash=sha256:10cb8939d7db85d522ed319031ff5ab86fd0133126b986290f01aa83dbfb9ff7 \
