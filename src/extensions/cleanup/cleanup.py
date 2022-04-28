@@ -113,7 +113,7 @@ class Cleanup(commands.Cog):
                 allowed_mentions=discord.AllowedMentions(users=[ctx.author]),
             )
 
-    @removegone.error  # type: ignore
+    @removegone.error
     async def concurrency_fail(self, ctx: SalamanderContext, exc: commands.CommandError):
         if isinstance(exc, commands.MaxConcurrencyReached):
             await ctx.send("That command is already running for a channel in this server.")

@@ -57,7 +57,10 @@ class Feedback(commands.Cog):
             (name,),
         )
 
-        (already_exists,) = cursor.fetchone()  # type: ignore # see query above
+        if not (row := cursor.fetchone()):
+            return
+
+        (already_exists,) = row
 
         if already_exists:
             raise UserFeedbackError(custom_message="That's already a feedback type")
@@ -71,7 +74,7 @@ class Feedback(commands.Cog):
 
         await ctx.send("Feedback type created.")
 
-    @createtype.error  # type: ignore
+    @createtype.error
     async def create_type_error(self, ctx: SalamanderContext, exc: Exception):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
@@ -88,12 +91,17 @@ class Feedback(commands.Cog):
         name = typename.casefold()
         cursor = self.bot._conn.cursor()
 
-        (already_exists,) = cursor.execute(
+        cursor.execute(
             """
             SELECT EXISTS(SELECT 1 FROM feedback_types WHERE feedback_type = ?)
             """,
             (name,),
-        ).fetchone()  # type: ignore
+        )
+
+        if not (row := cursor.fetchone()):
+            return
+
+        (already_exists,) = row
 
         if not already_exists:
             raise UserFeedbackError(custom_message="That type doesn't exist.")
@@ -120,12 +128,14 @@ class Feedback(commands.Cog):
         name = typename.casefold()
         cursor = self.bot._conn.cursor()
 
-        (already_exists,) = cursor.execute(
+        already_exists = False
+        for row in cursor.execute(
             """
             SELECT EXISTS(SELECT 1 FROM feedback_types WHERE feedback_type = ?)
             """,
             (name,),
-        ).fetchone()  # type: ignore
+        ):
+            (already_exists,) = row
 
         if not already_exists:
             raise UserFeedbackError(custom_message="That type doesn't exist.")
@@ -189,12 +199,14 @@ class Feedback(commands.Cog):
         name = typename.casefold()
         cursor = self.bot._conn.cursor()
 
-        (already_exists,) = cursor.execute(
+        already_exists = False
+        for row in cursor.execute(
             """
             SELECT EXISTS(SELECT 1 FROM feedback_types WHERE feedback_type = ?)
             """,
             (name,),
-        ).fetchone()  # type: ignore
+        ):
+            (already_exists,) = row
 
         if not already_exists:
             raise UserFeedbackError(custom_message="That type doesn't exist.")
@@ -228,12 +240,14 @@ class Feedback(commands.Cog):
 
         name = feedback_type.casefold()
         cursor = self.bot._conn.cursor()
-        row = cursor.execute(
+        cursor.execute(
             """
             SELECT autoresponse, destination_id FROM feedback_types WHERE feedback_type = ?
             """,
             (name,),
-        ).fetchone()  # type: ignore
+        )
+
+        row = cursor.fetchone()
 
         if not row:
             raise IncompleteInputError(

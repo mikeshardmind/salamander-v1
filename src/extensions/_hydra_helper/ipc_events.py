@@ -17,6 +17,7 @@ Leveraging the way discord.py extensions work to make the event logic more easil
 """
 
 from __future__ import annotations
+
 from typing import Any
 
 import discord

@@ -83,12 +83,19 @@ class Filter(commands.Cog):
     @commands.Cog.listener("on_message")
     async def on_message(self, msg: discord.Message):
 
-        if not (
-            (not msg.author.bot)
-            and msg.guild
-            and msg.channel.permissions_for(msg.guild.me).manage_messages  # type: ignore
-            and self.check_enabled_in_guild(msg.guild.id)
-        ):
+        if msg.author.bot:
+            return
+
+        if not msg.guild:
+            return
+
+        if isinstance(msg.channel, discord.PartialMessageable):
+            return
+
+        if not msg.channel.permissions_for(msg.guild.me).manage_channels:
+            return
+
+        if not self.check_enabled_in_guild(msg.guild.id):
             return
 
         if msg.content and await self.bot.check_basilisk(msg.content):
@@ -96,7 +103,9 @@ class Filter(commands.Cog):
             return
 
         for attachment in msg.attachments:
-            if match := CONTENT_TYPE_PATTERN.search(attachment.content_type):  # type: ignore
+            if not attachment.content_type:
+                continue
+            if match := CONTENT_TYPE_PATTERN.search(attachment.content_type):
                 encoding = match.group(1)
 
                 if attachment.size > MAX_REASONABLE_TEXT_SIZE:
@@ -125,7 +134,7 @@ class Filter(commands.Cog):
                         await msg.delete()
                         return
 
-    @commands.check_any(commands.is_owner(), admin_or_perms(manage_guild=True))  # type: ignore
+    @admin_or_perms(manage_guild=True)
     @commands.group(name="filterset")
     async def filterset(self, ctx: SalamanderContext):
         """Commands for managing the network filter"""

@@ -211,7 +211,7 @@ class NumberofDice:
         return (self.keep_low or self.keep_high) if self._kd_expr else self.quant
 
     def get_ev(self) -> float:
-        return fast_analytic_ev(self.quant, self.sides, self.keep_low, self.keep_high)  # type: ignore
+        return fast_analytic_ev(self.quant, self.sides, self.keep_low, self.keep_high)
 
     def verbose_roll(self) -> tuple[int, list[int]]:
         choices = random.choices(range(1, self.sides + 1), k=self.quant)
@@ -249,7 +249,7 @@ class NumberofDice:
             else:
                 high = self.keep_low
 
-        return fast_roll(self.quant, self.sides, low, high)  # type: ignore
+        return fast_roll(self.quant, self.sides, low, high)
 
 
 def _try_die_or_int(expr: str) -> tuple[NumberofDice | int, str]:

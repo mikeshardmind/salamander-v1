@@ -19,7 +19,7 @@ import discord
 from discord.ext import commands
 
 from ...bot import SalamanderContext, UserFeedbackError
-from ...checks import mod, owner_in_guild
+from ...checks import mod_or_perms
 
 
 class Say(commands.Cog):
@@ -27,7 +27,7 @@ class Say(commands.Cog):
 
     #: This is a good canidate for conversion to /command later
 
-    @commands.check_any(mod(), owner_in_guild())
+    @mod_or_perms()
     @commands.command(name="sayhere")
     async def say_here(self, ctx: SalamanderContext, *, content: str):
         """Say something in this channel."""
@@ -40,7 +40,7 @@ class Say(commands.Cog):
 
         await ctx.send(content)
 
-    @commands.check_any(mod(), owner_in_guild())
+    @mod_or_perms()
     @commands.command(name="say")
     async def say_command(self, ctx: SalamanderContext, channel: discord.TextChannel, *, content: str):
         """Say something in a specific channel."""
@@ -56,7 +56,7 @@ class Say(commands.Cog):
 
         await channel.send(content)
 
-    @commands.check_any(mod(), owner_in_guild())
+    @mod_or_perms()
     @commands.command(name="sayecho")
     async def say_echo_command(self, ctx: SalamanderContext, channel: discord.TextChannel, message: discord.Message):
         """Copy a message's content into another channel."""
@@ -74,10 +74,11 @@ class Say(commands.Cog):
 
         await channel.send(content)
 
-    @commands.check_any(mod(), owner_in_guild())
+    @mod_or_perms()
     @commands.command(name="sayedit")
     async def edit_bot_message(self, ctx: SalamanderContext, message: discord.Message, *, content: str):
         """Edit an existing bot message."""
+        assert ctx.guild is not None
         if not content:
             await ctx.send_help()
             return

@@ -65,7 +65,7 @@ def bot_is_public():
         assert isinstance(ctx.cog, Meta), "safe enough"  # nosec
         cog: Meta = ctx.cog
         info = await cog.cached_info.get_app_info()
-        return info.bot_public
+        return info.bot_public or await ctx.bot.is_owner(ctx.author)
 
     return commands.check(bot_public)
 
@@ -114,7 +114,7 @@ class Meta(commands.Cog):
         em.add_field(name="Discord.py", value=dpy_version)
         await ctx.send(embed=em)
 
-    @commands.check_any(commands.is_owner(), bot_is_public())  # type: ignore
+    @bot_is_public()
     @commands.cooldown(1, 300, commands.BucketType.channel)
     @commands.command(name="invitelink")
     async def invite_link_command(self, ctx: SalamanderContext):
@@ -124,6 +124,7 @@ class Meta(commands.Cog):
         url = discord.utils.oauth_url(
             client_id=ctx.bot.user.id,
             permissions=discord.Permissions(470150262),
+            scopes=("bot", "applications.commands"),
         )  # TODO
 
         await ctx.send(url)
@@ -216,7 +217,7 @@ class Meta(commands.Cog):
         await ctx.send("Prefix removed.")
 
     @prefix_remove.error
-    @prefix_add.error  # type: ignore
+    @prefix_add.error
     async def prefix_addremove_too_many_args(self, ctx: SalamanderContext, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
@@ -286,7 +287,7 @@ class Meta(commands.Cog):
     @add_mod.error
     @rem_mod.error
     @add_admin.error
-    @rem_admin.error  # type: ignore
+    @rem_admin.error
     async def add_rem_mod_admin_too_many(self, ctx, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
@@ -388,7 +389,7 @@ class Meta(commands.Cog):
         await ctx.send("Mod role setting has been reset. (None configured)")
 
     @set_modrole.error
-    @set_adminrole.error  # type: ignore
+    @set_adminrole.error
     async def set_roles_too_many(self, ctx, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(

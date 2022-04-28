@@ -1,12 +1,12 @@
-discord.py @ https://github.com/unified-moderation-network/discord.py/archive/10af1ea25523a898d03eb45a0a2bb4cdbcc41bdd.zip
+discord.py @ git+https://github.com/unified-moderation-network/discord.py.git@10af1ea25523a898d03eb45a0a2bb4cdbcc41bdd
 msgpack==1.0.2
 numpy
 numba
 pyzmq
-uvloop
+uvloop; sys.platform == "linux"
 lru-dict
 toml
 typing-extensions>=3.10.0.0
-hyperscan
-discord-ext-menus @ https://github.com/unified-moderation-network/discord-ext-menus/archive/fbb8803779373357e274e1540b368365fd9d8074.zip
+hyperscan; sys.platform == "linux"
+discord-ext-menus @ git+https://github.com/unified-moderation-network/discord-ext-menus.git@fbb8803779373357e274e1540b368365fd9d8074
 aiohttp[speedups]

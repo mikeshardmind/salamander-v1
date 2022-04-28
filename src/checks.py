@@ -20,65 +20,88 @@ from discord.ext import commands
 from .bot import SalamanderContext
 
 
+# prevents commands.is_owner()
+# being mixed in requiring commands.guild_only() stacked on guild checks
+async def _owner_in_guild_predicate(ctx: SalamanderContext) -> bool:
+    if ctx.guild:
+        return await ctx.bot.is_owner(ctx.author)
+    return False
+
+
 def owner_in_guild():
-    # prevents commands.is_owner()
-    # being mixed in requiring commands.guild_only() stacked on guild checks
+    return commands.check(_owner_in_guild_predicate)
 
-    async def predicate(ctx: SalamanderContext) -> bool:
-        if ctx.guild:
-            return await ctx.bot.is_owner(ctx.author)
-        return False
 
-    return commands.check(predicate)
+def _mod_predicate(ctx: SalamanderContext) -> bool:
+    if ctx.guild:
+        if ctx.guild.owner == ctx.author:
+            return True
+        return ctx.bot.privlevel_manager.member_is_mod(ctx.author)
+    return False
 
 
 def mod():
-    def predicate(ctx: SalamanderContext) -> bool:
-        if ctx.guild:
-            if ctx.guild.owner == ctx.author:
-                return True
-            return ctx.bot.privlevel_manager.member_is_mod(ctx.author)
-        return False
+    return commands.check(_mod_predicate)
 
-    return commands.check(predicate)
+
+def _guildowner_predicate(ctx: SalamanderContext) -> bool:
+    if ctx.guild:
+        return ctx.author == ctx.guild.owner
+    return False
 
 
 def guildowner():
-    def predicate(ctx: SalamanderContext) -> bool:
-        if ctx.guild:
-            return ctx.author == ctx.guild.owner
-        return False
+    return commands.check(_guildowner_predicate)
 
-    return commands.check(predicate)
+
+def _admin_predicate(ctx: SalamanderContext) -> bool:
+    if ctx.guild:
+        if ctx.guild.owner == ctx.author:
+            return True
+        return ctx.bot.privlevel_manager.member_is_admin(ctx.author)
+    return False
 
 
 def admin():
-    def predicate(ctx: SalamanderContext) -> bool:
-        if ctx.guild:
-            if ctx.guild.owner == ctx.author:
-                return True
-            return ctx.bot.privlevel_manager.member_is_admin(ctx.author)
+    return commands.check(_admin_predicate)
+
+
+def mod_or_perms(**perms):
+
+    commands_predicate = commands.has_guild_permissions(**perms).predicate
+
+    async def predicate(ctx: SalamanderContext) -> bool:
+        if _mod_predicate(ctx) or await _owner_in_guild_predicate(ctx):
+            return True
+        if perms and await commands_predicate(ctx):
+            return True
         return False
 
     return commands.check(predicate)
 
 
-def mod_or_perms(**perms):
-    if perms:
-        return commands.check_any(commands.has_guild_permissions(**perms), mod(), owner_in_guild())
-    else:
-        return commands.check_any(mod(), owner_in_guild())
-
-
 def admin_or_perms(**perms):
-    if perms:
-        return commands.check_any(commands.has_guild_permissions(**perms), admin(), owner_in_guild())
-    else:
-        return commands.check_any(admin(), owner_in_guild())
+
+    commands_predicate = commands.has_guild_permissions(**perms).predicate
+
+    async def predicate(ctx: SalamanderContext) -> bool:
+        if _admin_predicate(ctx) or await _owner_in_guild_predicate(ctx):
+            return True
+        if perms and await commands_predicate(ctx):
+            return True
+        return False
+
+    return commands.check(predicate)
 
 
 def guildowner_or_perms(**perms):
-    if perms:
-        return commands.check_any(commands.has_guild_permissions(**perms), guildowner(), owner_in_guild())
-    else:
-        return commands.check_any(guildowner(), owner_in_guild())
+    commands_predicate = commands.has_guild_permissions(**perms).predicate
+
+    async def predicate(ctx: SalamanderContext) -> bool:
+        if _guildowner_predicate(ctx) or await _owner_in_guild_predicate(ctx):
+            return True
+        if perms and await commands_predicate(ctx):
+            return True
+        return False
+
+    return commands.check(predicate)

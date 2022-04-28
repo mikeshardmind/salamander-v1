@@ -179,14 +179,16 @@ class QOTW(commands.Cog):
 
         cursor = self.conn.cursor()
 
-        questions = cursor.execute(
+        cursor.execute(
             """
             SELECT user_id, current_question, questions_since_select
             FROM member_questions
             WHERE current_question IS NOT NULL AND guild_id=?
             """,
             (guild_id,),
-        ).fetchall()  # type: ignore
+        )
+
+        questions = cursor.fetchall()
 
         if not questions:
             cursor.execute(
@@ -374,14 +376,16 @@ class QOTW(commands.Cog):
 
         cursor = self.conn.cursor()
 
-        questions = cursor.execute(
+        cursor.execute(
             """
             SELECT user_id, current_question, questions_since_select
             FROM member_questions
             WHERE current_question IS NOT NULL AND guild_id=?
             """,
             (ctx.guild.id,),
-        ).fetchall()  # type: ignore
+        )
+
+        questions = cursor.fetchall()
 
         if not questions:
             return await ctx.send("No current questions.")
@@ -422,14 +426,16 @@ class QOTW(commands.Cog):
 
         cursor = self.conn.cursor()
 
-        questions = cursor.execute(
+        cursor.execute(
             """
             SELECT user_id, current_question, questions_since_select
             FROM member_questions
             WHERE current_question IS NOT NULL AND guild_id=?
             """,
             (ctx.guild.id,),
-        ).fetchall()  # type: ignore
+        )
+
+        questions = cursor.fetchall()
 
         total = 0
         user_has_question = False
@@ -490,7 +496,7 @@ class QOTW(commands.Cog):
         except Exception as exc:
             log.exception("Couldn't delete", exc_info=exc)
 
-    @qotwask.before_invoke  # type: ignore # TODO: Generic context handling
+    @qotwask.before_invoke
     async def ask_before_invoke(self, ctx: SalamanderContext):
         assert ctx.guild is not None
 

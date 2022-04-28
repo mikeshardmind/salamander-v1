@@ -90,9 +90,6 @@ if hasattr(sys, "pyston_version_info"):
 
 
 if impl == "pypy":
-    # pre-empt all these issues at once.
-    # this won't be an issue currently (pypy ~3.6 vs our minimum of ~3.9 (currently))
-    # but it was noticed as a point of incompatibility when exploring what minimum python version we should target.
     raise RuntimeError(
         """
         PyPy is not currently supported. This is due to incompatibility with apsw and hyperscan.
@@ -403,8 +400,7 @@ class SalamanderContext(commands.Context["Salamander"]):
                 page = f"```\n{page}\n```"
             if i == 0 and prepend:
                 page = f"{prepend}\n{page}"
-            # TODO: fix typings in discord.py
-            await self.send(page, allowed_mentions=allowed_mentions)  # type: ignore
+            await self.send(page, allowed_mentions=allowed_mentions)
 
     async def safe_send(self, content: str, **kwargs):
         if kwargs.pop("file", None):
@@ -415,9 +411,6 @@ class SalamanderContext(commands.Context["Salamander"]):
 
         fp = io.BytesIO(content.encode())
         return await self.send(file=discord.File(fp, filename="message.txt"), **kwargs)
-
-
-_CT = TypeVar("_CT", bound=SalamanderContext)
 
 
 def _prefix(bot: Salamander, msg: discord.Message) -> list[str]:
@@ -554,15 +547,14 @@ class BlockManager(metaclass=MainThreadSingletonMeta):
 
     def guild_is_blocked(self, guild_id: int) -> bool:
         cursor = self._bot._conn.cursor()
-        cursor.execute(
+        for row in cursor.execute(
             """
             SELECT is_blocked from guild_settings
             WHERE guild_id =?
             """,
             (guild_id,),
-        )
-        if r := cursor.fetchone():
-            return r[0]
+        ):
+            return row[0]
         return False
 
     def _modify_guild_block(self, val: bool, guild_id: int):
@@ -585,28 +577,26 @@ class BlockManager(metaclass=MainThreadSingletonMeta):
 
     def user_is_blocked(self, user_id: int) -> bool:
         cursor = self._bot._conn.cursor()
-        cursor.execute(
+        for row in cursor.execute(
             """
             SELECT is_blocked from user_settings
             WHERE user_id = ?
             """,
             (user_id,),
-        )
-        if r := cursor.fetchone():
-            return r[0]
+        ):
+            return row[0]
         return False
 
     def member_is_blocked(self, guild_id: int, user_id: int) -> bool:
         cursor = self._bot._conn.cursor()
-        cursor.execute(
+        for row in cursor.execute(
             """
             SELECT is_blocked from member_settings
             WHERE guild_id = ? AND user_id = ?
             """,
             (guild_id, user_id),
-        )
-        if r := cursor.fetchone():
-            return r[0]
+        ):
+            return row[0]
         return False
 
     def _modify_user_block(self, val: bool, user_ids: Sequence[int]):
@@ -965,9 +955,7 @@ class Salamander(commands.AutoShardedBot):
             (guild.id, member.id),
         )
 
-        (has_mute_entry,) = cursor.fetchone()  # type: ignore # See query above.
-
-        if has_mute_entry:
+        if (row := cursor.fetchone()) and row[0]:
             return True
 
         cursor.execute(
@@ -985,12 +973,10 @@ class Salamander(commands.AutoShardedBot):
 
         return False
 
-    async def get_context(self, message: discord.Message, *, cls: type[_CT] = SalamanderContext) -> _CT:
-        ctx = await super().get_context(
-            message,
-            cls=cls,  # type: ignore
-        )
-        return ctx  # type: ignore
+    async def get_context(
+        self, message: discord.Message, *, cls: type[SalamanderContext] = SalamanderContext
+    ) -> SalamanderContext:
+        return await super().get_context(message, cls=cls)
 
     async def on_message(self, message: discord.Message):
         if message.author.bot:
