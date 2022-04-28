@@ -384,7 +384,7 @@ class FrontPageSource(menus.PageSource):
             "This is the help page."
             "\nYou can use {hc_text} for help with a specific command."
             "\nYou can use {hc_text} or select an entry from the dropdown menu for help with a category."
-        ).format(hc_text='"{menu.ctx.clean_prefix}help command"')
+        ).format(hc_text=f'"{menu.ctx.clean_prefix}help command"')
 
         embed.add_field(
             name="How to read the help",
