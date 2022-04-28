@@ -1057,16 +1057,9 @@ class Salamander(commands.AutoShardedBot):
 
         async def runner():
 
-            intents = discord.Intents(
-                guilds=True,
-                members=True,
-                voice_states=True,
-                guild_messages=True,
-                guild_reactions=True,
-                dm_messages=True,
-                dm_reactions=True,
-                emojis=True,
-            )
+            intents = discord.Intents.all()
+            intents.dm_typing = False
+            intents.guild_typing = False
 
             instance = cls(
                 intents=intents,
