@@ -79,7 +79,7 @@ class AnnoyanceFilters(commands.Cog):
             """,
             (guild_id,),
         )
-        res=cursor.fetchone()
+        res = cursor.fetchone()
 
         cursor.close()
 

@@ -166,7 +166,7 @@ class MentionStats(commands.Cog):
             formatted = string.Template(settings.mass_mention_notice_template).safe_substitute(days=days_str)
             try:
                 async with self.sem:
-                    params=handle_message_parameters(content=formatted)
+                    params = handle_message_parameters(content=formatted)
                     await self.bot.http.edit_message(channel_id, message_id, params=params)
                     await asyncio.sleep(1)
             except discord.NotFound:

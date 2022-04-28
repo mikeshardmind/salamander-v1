@@ -53,7 +53,7 @@ class Filter(commands.Cog):
             """,
             (guild_id,),
         )
-        if row:=cursor.fetchone():
+        if row := cursor.fetchone():
             return row[0]
         return False
 

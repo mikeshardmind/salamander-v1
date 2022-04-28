@@ -710,7 +710,7 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
             """,
             (member.guild.id, member.id),
         )
-        r=cursor.fetchone()
+        r = cursor.fetchone()
 
         if r and r[0]:
             return True
@@ -723,7 +723,7 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
             """,
             (member.guild.id,),
         )
-        r=cursor.fetchone()
+        r = cursor.fetchone()
 
         if r and r[0]:
             if member._roles.has(r[0]):
@@ -972,7 +972,7 @@ class Salamander(commands.AutoShardedBot):
             """,
             (guild.id,),
         )
-        row=cursor.fetchone()
+        row = cursor.fetchone()
 
         if row:
             mute_role_id = row[0]
@@ -984,7 +984,7 @@ class Salamander(commands.AutoShardedBot):
     async def get_context(self, message: discord.Message, *, cls: type[_CT] = SalamanderContext) -> _CT:
         ctx = await super().get_context(
             message,
-            cls=cls, # type: ignore
+            cls=cls,  # type: ignore
         )
         return ctx  # type: ignore
 

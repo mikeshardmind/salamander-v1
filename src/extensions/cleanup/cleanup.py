@@ -79,7 +79,9 @@ class Cleanup(commands.Cog):
                             await asyncio.sleep(2)
 
                     if mass_deletable:
-                        assert not isinstance(ctx.channel, (discord.DMChannel, discord.PartialMessageable, discord.GroupChannel))
+                        assert not isinstance(
+                            ctx.channel, (discord.DMChannel, discord.PartialMessageable, discord.GroupChannel)
+                        )
                         await ctx.channel.delete_messages(mass_deletable)
                         await asyncio.sleep(1)
 

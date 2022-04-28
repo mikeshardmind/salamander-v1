@@ -349,7 +349,7 @@ class QOTW(commands.Cog):
             """,
             (ctx.guild.id,),
         )
-        row=cursor.fetchone()
+        row = cursor.fetchone()
 
         channel = None
 
@@ -502,7 +502,7 @@ class QOTW(commands.Cog):
             """,
             (ctx.guild.id,),
         )
-        row=cursor.fetchone()
+        row = cursor.fetchone()
 
         if not row:
             raise commands.CheckFailure()
