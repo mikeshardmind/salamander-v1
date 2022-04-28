@@ -1076,8 +1076,8 @@ class Salamander(commands.AutoShardedBot):
 
             tasks: set[asyncio.Task] = {t for t in asyncio.all_tasks(loop) if not t.done()}
             for t in tasks:
-                if not t.get_name().startswith("salamander.waterfall"):
-                    # Waterfall has a few named tasks that should be allowed to clean up.
+                if not t.get_name().startswith("waterfall.finalizer"):
+                    # Waterfalls should be allowed to clean up.
                     # If these tasks are already in progress because the waterfall was closing before we
                     # reached cancellation here, we should (try to) allow them to finish.
                     t.cancel()
