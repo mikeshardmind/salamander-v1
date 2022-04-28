@@ -44,19 +44,18 @@ class IPCEvents(commands.Cog, name="_hydra_helper"):
         # TODO: fix this up
 
         kwargs = {
-            k: v for k, v in (
+            k: v
+            for k, v in (
                 ("content", content),
                 ("embeds", [discord.Embed.from_dict(d) for d in embeds] if embeds else []),
-                ("allowed_mentions", discord.AllowedMentions(**allowed_mentions) if allowed_mentions else None)
-            ) if v
+                ("allowed_mentions", discord.AllowedMentions(**allowed_mentions) if allowed_mentions else None),
+            )
+            if v
         }
 
         kwargs = {k: v for k, v in kwargs.items()}
 
-        await bot.http.send_message(
-            channel_id,
-            params=handle_message_parameters(**kwargs)
-        )
+        await bot.http.send_message(channel_id, params=handle_message_parameters(**kwargs))
 
     routes = {
         "salamander.send_discord_message": send_discord_message,
