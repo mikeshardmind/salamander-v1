@@ -668,7 +668,9 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
     def __init__(self, bot: Salamander):
         self._bot: Salamander = bot
 
-    def member_is_mod(self, member: discord.Member) -> bool:
+    def member_is_mod(self, member: discord.Member | discord.User) -> bool:
+        if not isinstance(member, discord.Member):
+            return False
         cursor = self._bot._conn.cursor()
         cursor.execute(
             """
@@ -700,7 +702,9 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
 
         return False
 
-    def member_is_admin(self, member: discord.Member) -> bool:
+    def member_is_admin(self, member: discord.Member | discord.User) -> bool:
+        if not isinstance(member, discord.Member):
+            return False
         cursor = self._bot._conn.cursor()
         cursor.execute(
             """

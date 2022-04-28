@@ -196,8 +196,8 @@ class AnnoyanceFilters(commands.Cog):
                     await self.bot.http.delete_message(channel.id, raw_payload.message_id)
 
                 if not (
-                    (settings.mods_immune and self.bot.priv_handler.member_is_mod(member))
-                    or (settings.admins_immune and self.bot.priv_handler.member_is_admin(member))
+                    (settings.mods_immune and self.bot.privlevel_manager.member_is_mod(member))
+                    or (settings.admins_immune and self.bot.privlevel_manager.member_is_admin(member))
                 ):
                     await self.bot.http.delete_message(channel.id, raw_payload.message_id)
 
