@@ -17,10 +17,11 @@ Leveraging the way discord.py extensions work to make the event logic more easil
 """
 
 from __future__ import annotations
+from typing import Any
 
+import discord
 from discord.ext import commands
-from discord.types import embed, message, snowflake
-from discord.webhook import Webhook
+from discord.http import handle_message_parameters
 
 from ...bot import Salamander
 
@@ -31,21 +32,30 @@ class IPCEvents(commands.Cog, name="_hydra_helper"):
 
     @staticmethod
     async def send_discord_message(
-        bot,
+        bot: Salamander,
         /,
         *,
-        channel_id: snowflake.Snowflake,
+        channel_id: int,
         content: str | None = None,
-        embeds: list[embed.Embed] | None = None,
-        allowed_mentions: message.AllowedMentions | None = None,
-        message_reference: message.MessageReference | None = None,
+        embeds: list[dict] | None = None,
+        allowed_mentions: dict[str, Any] | None = None,
     ):
+
+        # TODO: fix this up
+
+        kwargs = {
+            k: v for k, v in (
+                ("content", content),
+                ("embeds", [discord.Embed.from_dict(d) for d in embeds] if embeds else []),
+                ("allowed_mentions", discord.AllowedMentions(**allowed_mentions) if allowed_mentions else None)
+            ) if v
+        }
+
+        kwargs = {k: v for k, v in kwargs.items()}
+
         await bot.http.send_message(
             channel_id,
-            content=content,
-            embeds=embeds,
-            allowed_mentions=allowed_mentions,
-            message_reference=message_reference,
+            params=handle_message_parameters(**kwargs)
         )
 
     routes = {

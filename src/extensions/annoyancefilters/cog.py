@@ -21,7 +21,7 @@ import discord
 from discord.ext import commands
 from lru import LRU
 
-from ...bot import SalamanderContext
+from ...bot import Salamander, SalamanderContext
 from ...checks import admin_or_perms
 
 # left in it's own file for peace of source code
@@ -61,7 +61,7 @@ class AnnoyanceFilters(commands.Cog):
     """Filter out content which is poorly behaved on Discord"""
 
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: Salamander = bot
         self._settings_cache = LRU(1024)
 
     def get_guild_settings(self, guild_id: int) -> GuildSettings:
@@ -157,8 +157,8 @@ class AnnoyanceFilters(commands.Cog):
 
         settings = self.get_guild_settings(guild.id)
 
-        if (settings.mods_immune and self.bot.priv_handler.member_is_mod(message.author)) or (
-            settings.admins_immune and self.bot.priv_handler.member_is_admin(message.author)
+        if (settings.mods_immune and self.bot.privlevel_manager.member_is_mod(message.author)) or (
+            settings.admins_immune and self.bot.privlevel_manager.member_is_admin(message.author)
         ):
             return
 
