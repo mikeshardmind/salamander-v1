@@ -20,7 +20,7 @@ import logging
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from typing import MutableMapping, Optional, Union
+from typing import MutableMapping
 from weakref import WeakValueDictionary
 
 import discord

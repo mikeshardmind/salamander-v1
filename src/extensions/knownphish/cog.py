@@ -57,7 +57,7 @@ class KnownPhish(commands.Cog):
 
             if channel.permissions_for(guild.me).manage_messages:
                 if content := raw_payload.data.get("content", None):
-                    author_id = raw_payload.data.get("author", {}).get("id", None)
+                    author_id = int(raw_payload.data.get("author", {}).get("id"))
                     await self.process_content(channel, raw_payload.message_id, author_id, content)
 
     async def process_content(self, channel: discord.TextChannel, message_id: int, author_id: int | None, content: str):

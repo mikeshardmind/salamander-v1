@@ -27,7 +27,7 @@ import operator
 import random
 import re
 import sys
-from typing import Any, Callable, TypeVar, Union
+from typing import Any, Callable, TypeVar
 
 import numpy as np
 

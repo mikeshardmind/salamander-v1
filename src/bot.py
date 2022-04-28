@@ -27,7 +27,7 @@ from contextvars import ContextVar
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Sequence, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Sequence, TypeVar
 from uuid import uuid4
 
 import apsw
@@ -267,7 +267,7 @@ class PreFormattedListSource(menus.ListPageSource):
         return page
 
 
-class SalamanderContext(commands.Context):
+class SalamanderContext(commands.Context["Salamander"]):
 
     bot: Salamander
 
@@ -554,14 +554,14 @@ class BlockManager(metaclass=MainThreadSingletonMeta):
 
     def guild_is_blocked(self, guild_id: int) -> bool:
         cursor = self._bot._conn.cursor()
-        r = cursor.execute(
+        cursor.execute(
             """
             SELECT is_blocked from guild_settings
             WHERE guild_id =?
             """,
             (guild_id,),
-        ).fetchone()
-        if r:
+        )
+        if r := cursor.fetchone():
             return r[0]
         return False
 
@@ -585,27 +585,27 @@ class BlockManager(metaclass=MainThreadSingletonMeta):
 
     def user_is_blocked(self, user_id: int) -> bool:
         cursor = self._bot._conn.cursor()
-        r = cursor.execute(
+        cursor.execute(
             """
             SELECT is_blocked from user_settings
             WHERE user_id = ?
             """,
             (user_id,),
-        ).fetchone()
-        if r:
+        )
+        if r := cursor.fetchone():
             return r[0]
         return False
 
     def member_is_blocked(self, guild_id: int, user_id: int) -> bool:
         cursor = self._bot._conn.cursor()
-        r = cursor.execute(
+        cursor.execute(
             """
             SELECT is_blocked from member_settings
             WHERE guild_id = ? AND user_id = ?
             """,
             (guild_id, user_id),
-        ).fetchone()
-        if r:
+        )
+        if r := cursor.fetchone():
             return r[0]
         return False
 
@@ -670,26 +670,28 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
 
     def member_is_mod(self, member: discord.Member) -> bool:
         cursor = self._bot._conn.cursor()
-        r = cursor.execute(
+        cursor.execute(
             """
             SELECT is_mod OR is_admin
             FROM member_settings
             WHERE guild_id = ? and user_id = ?
             """,
             (member.guild.id, member.id),
-        ).fetchone()
+        )
+        r = cursor.fetchone()
 
         if r and r[0]:
             return True
 
-        r = cursor.execute(
+        cursor.execute(
             """
             SELECT mod_role, admin_role
             FROM guild_settings
             WHERE guild_id = ?
             """,
             (member.guild.id,),
-        ).fetchone()
+        )
+        r = cursor.fetchone()
 
         if r:
             for role_id in r:
@@ -700,14 +702,15 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
 
     def member_is_admin(self, member: discord.Member) -> bool:
         cursor = self._bot._conn.cursor()
-        r = cursor.execute(
+        cursor.execute(
             """
             SELECT is_admin
             FROM member_settings
             WHERE guild_id = ? and user_id = ?
             """,
             (member.guild.id, member.id),
-        ).fetchone()
+        )
+        r=cursor.fetchone()
 
         if r and r[0]:
             return True
@@ -719,7 +722,8 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
             WHERE guild_id = ?
             """,
             (member.guild.id,),
-        ).fetchone()
+        )
+        r=cursor.fetchone()
 
         if r and r[0]:
             if member._roles.has(r[0]):
@@ -798,177 +802,6 @@ class PrivHandler(metaclass=MainThreadSingletonMeta):
         self._modify_admin_status(False, guild_id, user_ids)
 
 
-class EmbedHelp(commands.HelpCommand):
-    def get_ending_note(self):
-        return f"Use {self.context.clean_prefix}{self.invoked_with} [command] for help with a specific command"
-
-    def get_command_signature(self, command):
-        return f"{command.qualified_name} {command.signature}"
-
-    async def send_bot_help(self, mapping):
-        embed = discord.Embed(title="Bot Commands", color=self.context.me.color)
-
-        embeds = []
-
-        def add_field(embed: discord.Embed, name: str, value: str) -> discord.Embed:
-            if embed.fields and len(embed.fields) > 24:
-                embeds.append(embed)
-                r = discord.Embed(color=self.context.me.color)
-                r.add_field(name=name, value=value)
-                return r
-            else:
-                embed.add_field(name=name, value=value)
-                return embed
-
-        async def predicate(cmd):
-            try:
-                return await cmd.can_run(self.context)
-            except commands.CommandError:
-                return False
-
-        for cog, cog_commands in sorted(
-            mapping.items(),
-            key=lambda kv: kv[0].qualified_name if kv[0] else "\U0010FFFF",
-        ):
-            name = "No Category" if cog is None else cog.qualified_name
-            filtered = await self.filter_commands(cog_commands, sort=True)
-            if filtered:
-                value = "\N{EN SPACE}".join([c.name for c in cog_commands if await predicate(c)])
-                embed = add_field(embed, name, value)
-
-        if embed.fields:  # needed in case the very last add field rolled it over
-            embeds.append(embed)
-
-        emb_l = len(embeds)
-        end_note = self.get_ending_note()
-        for index, embed in enumerate(embeds, 1):
-            embed.set_footer(text=f"Page {index} of {emb_l} | {end_note}")
-
-        if embeds:
-
-            menu = menus.MenuPages(
-                source=PreFormattedListSource(embeds),
-                check_embeds=True,
-                clear_reactions_after=True,
-            )
-            await menu.start(self.context, channel=self.get_destination())
-
-    async def send_cog_help(self, cog):
-        embed = discord.Embed(
-            title=f"{cog.qualified_name} Commands",
-            colour=self.context.me.color,
-        )
-        if cog.description:
-            embed.description = cog.description
-
-        filtered = await self.filter_commands(cog.get_commands(), sort=True)
-
-        embeds = []
-
-        def add_field(embed: discord.Embed, name: str, value: str) -> discord.Embed:
-            if embed.fields and len(embed.fields) > 24:
-                embeds.append(embed)
-                r = discord.Embed(color=self.context.me.color)
-                r.add_field(name=name, value=value, inline=False)
-                return r
-            else:
-                embed.add_field(name=name, value=value, inline=False)
-                return embed
-
-        for command in filtered:
-            embed = add_field(
-                embed,
-                self.get_command_signature(command),
-                (command.short_doc or "...").replace("[p]", self.context.clean_prefix),
-            )
-
-        if embed.fields:  # needed in case the very last add field rolled it over
-            embeds.append(embed)
-
-        emb_l = len(embeds)
-        end_note = self.get_ending_note()
-        for index, embed in enumerate(embeds, 1):
-            embed.set_footer(text=f"Page {index} of {emb_l} | {end_note}")
-
-        if embeds:
-
-            menu = menus.MenuPages(
-                source=PreFormattedListSource(embeds),
-                check_embeds=True,
-                clear_reactions_after=True,
-            )
-            await menu.start(self.context, channel=self.get_destination())
-
-    async def send_group_help(self, group):
-
-        try:
-            if not await group.can_run(self.context):
-                return
-        except commands.CommandError:
-            return
-
-        embed = discord.Embed(title=group.qualified_name, colour=self.context.me.color)
-        if group.help:
-            embed.description = group.help.replace("[p]", self.context.clean_prefix)
-
-        embeds = []
-
-        def add_field(embed: discord.Embed, name: str, value: str) -> discord.Embed:
-            if embed.fields and len(embed.fields) > 24:
-                embeds.append(embed)
-                r = discord.Embed(color=self.context.me.color)
-                r.add_field(name=name, value=value, inline=False)
-                return r
-            else:
-                embed.add_field(name=name, value=value, inline=False)
-                return embed
-
-        if isinstance(group, commands.Group):
-            filtered = await self.filter_commands(group.commands, sort=True)
-            for command in filtered:
-                embed = add_field(
-                    embed,
-                    self.get_command_signature(command),
-                    (command.short_doc or "...").replace("[p]", self.context.clean_prefix),
-                )
-
-        if embed.fields:  # needed in case the very last add field rolled it over
-            embeds.append(embed)
-
-        emb_l = len(embeds)
-        end_note = self.get_ending_note()
-        for index, embed in enumerate(embeds, 1):
-            embed.set_footer(text=f"Page {index} of {emb_l} | {end_note}")
-
-        if embeds:
-
-            menu = menus.MenuPages(
-                source=PreFormattedListSource(embeds),
-                check_embeds=True,
-                clear_reactions_after=True,
-            )
-            await menu.start(self.context, channel=self.get_destination())
-
-    async def send_command_help(self, command):
-        try:
-            if await command.can_run(self.context):
-                embed = discord.Embed(
-                    title=self.get_command_signature(command),
-                    colour=self.context.me.color,
-                )
-                if command.help:
-                    embed.description = command.help.replace("[p]", self.context.clean_prefix)
-
-                menu = menus.MenuPages(
-                    source=PreFormattedListSource([embed]),
-                    check_embeds=True,
-                    clear_reactions_after=True,
-                )
-                await menu.start(self.context, channel=self.get_destination())
-        except commands.CommandError:
-            pass
-
-
 class Salamander(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
         self._behavior_flags: BehaviorFlags = kwargs.pop("behavior", None) or BehaviorFlags.defaults()
@@ -976,7 +809,7 @@ class Salamander(commands.AutoShardedBot):
             *args,
             command_prefix=_prefix,
             description="Project Salamander",
-            help_command=EmbedHelp(),
+            help_command=None,
             **kwargs,
         )
 
@@ -1118,7 +951,7 @@ class Salamander(commands.AutoShardedBot):
 
         cursor = self._conn.cursor()
         guild = member.guild
-        (has_mute_entry,) = cursor.execute(
+        cursor.execute(
             """
             SELECT EXISTS(
                 SELECT 1 FROM guild_mutes
@@ -1126,17 +959,20 @@ class Salamander(commands.AutoShardedBot):
             )
             """,
             (guild.id, member.id),
-        ).fetchone()
+        )
+
+        (has_mute_entry,) = cursor.fetchone()  # type: ignore # See query above.
 
         if has_mute_entry:
             return True
 
-        row = cursor.execute(
+        cursor.execute(
             """
             SELECT mute_role FROM guild_settings WHERE guild_id = ?
             """,
             (guild.id,),
-        ).fetchone()
+        )
+        row=cursor.fetchone()
 
         if row:
             mute_role_id = row[0]
@@ -1146,7 +982,11 @@ class Salamander(commands.AutoShardedBot):
         return False
 
     async def get_context(self, message: discord.Message, *, cls: type[_CT] = SalamanderContext) -> _CT:
-        return await super().get_context(message, cls=cls)
+        ctx = await super().get_context(
+            message,
+            cls=cls, # type: ignore
+        )
+        return ctx  # type: ignore
 
     async def on_message(self, message: discord.Message):
         if message.author.bot:

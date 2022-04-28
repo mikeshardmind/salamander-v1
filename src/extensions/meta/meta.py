@@ -24,6 +24,7 @@ from discord.ext import commands
 
 from ...bot import Salamander, SalamanderContext, UserFeedbackError
 from ...checks import admin_or_perms, guildowner_or_perms
+from ...help import PaginatedHelpCommand
 
 dpy_version = discord.__version__
 py_version = ".".join(f"{i}" for i in sys.version_info[:3])
@@ -73,6 +74,8 @@ class Meta(commands.Cog):
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
         self.cached_info = AppInfoCache(bot)
+        self.bot.help_command = PaginatedHelpCommand()
+        self.bot.help_command.cog = self
 
     @commands.is_owner()
     @commands.command()
@@ -111,7 +114,7 @@ class Meta(commands.Cog):
         em.add_field(name="Discord.py", value=dpy_version)
         await ctx.send(embed=em)
 
-    @commands.check_any(commands.is_owner(), bot_is_public())
+    @commands.check_any(commands.is_owner(), bot_is_public())  # type: ignore
     @commands.cooldown(1, 300, commands.BucketType.channel)
     @commands.command(name="invitelink")
     async def invite_link_command(self, ctx: SalamanderContext):
@@ -213,7 +216,7 @@ class Meta(commands.Cog):
         await ctx.send("Prefix removed.")
 
     @prefix_remove.error
-    @prefix_add.error
+    @prefix_add.error  # type: ignore
     async def prefix_addremove_too_many_args(self, ctx: SalamanderContext, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
@@ -283,7 +286,7 @@ class Meta(commands.Cog):
     @add_mod.error
     @rem_mod.error
     @add_admin.error
-    @rem_admin.error
+    @rem_admin.error  # type: ignore
     async def add_rem_mod_admin_too_many(self, ctx, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
@@ -385,7 +388,7 @@ class Meta(commands.Cog):
         await ctx.send("Mod role setting has been reset. (None configured)")
 
     @set_modrole.error
-    @set_adminrole.error
+    @set_adminrole.error  # type: ignore
     async def set_roles_too_many(self, ctx, exc):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(

@@ -47,13 +47,13 @@ class Filter(commands.Cog):
     def check_enabled_in_guild(self, guild_id: int) -> bool:
 
         cursor = self.bot._conn.cursor()
-        row = cursor.execute(
+        cursor.execute(
             """
             SELECT feature_flags & 1 FROM guild_settings WHERE guild_id = ?
             """,
             (guild_id,),
-        ).fetchone()
-        if row:
+        )
+        if row:=cursor.fetchone():
             return row[0]
         return False
 
@@ -86,7 +86,7 @@ class Filter(commands.Cog):
         if not (
             (not msg.author.bot)
             and msg.guild
-            and msg.channel.permissions_for(msg.guild.me).manage_messages
+            and msg.channel.permissions_for(msg.guild.me).manage_messages  # type: ignore
             and self.check_enabled_in_guild(msg.guild.id)
         ):
             return
@@ -96,7 +96,7 @@ class Filter(commands.Cog):
             return
 
         for attachment in msg.attachments:
-            if match := CONTENT_TYPE_PATTERN.search(attachment.content_type):
+            if match := CONTENT_TYPE_PATTERN.search(attachment.content_type):  # type: ignore
                 encoding = match.group(1)
 
                 if attachment.size > MAX_REASONABLE_TEXT_SIZE:
@@ -120,12 +120,12 @@ class Filter(commands.Cog):
                     # While I could do similar using errors='replace'
                     # I have no interest in such.
                     await msg.delete()
+                else:
+                    if await self.bot.check_basilisk(data):
+                        await msg.delete()
+                        return
 
-                if await self.bot.check_basilisk(data):
-                    await msg.delete()
-                    return
-
-    @commands.check_any(commands.is_owner(), admin_or_perms(manage_guild=True))
+    @commands.check_any(commands.is_owner(), admin_or_perms(manage_guild=True))  # type: ignore
     @commands.group(name="filterset")
     async def filterset(self, ctx: SalamanderContext):
         """Commands for managing the network filter"""
@@ -136,6 +136,7 @@ class Filter(commands.Cog):
     @filterset.command()
     async def enable(self, ctx: SalamanderContext):
         """Enable the network wide filter in this server"""
+        assert ctx.guild is not None
         self.enable_in_guild(ctx.guild.id)
         await ctx.send("Filtering enabled.")
 
@@ -143,6 +144,7 @@ class Filter(commands.Cog):
     @filterset.command()
     async def disable(self, ctx: SalamanderContext):
         """Disable the network wide filter in this server"""
+        assert ctx.guild is not None
         self.disable_in_guild(ctx.guild.id)
         await ctx.send("Filtering disabled.")
 

@@ -26,6 +26,7 @@ from typing import MutableMapping, Optional, Sequence
 import attr
 import discord
 from discord.ext import commands, tasks
+from discord.http import handle_message_parameters
 from lru import LRU
 
 from ...bot import Salamander, SalamanderContext, UserFeedbackError, get_contrib_data_path
@@ -132,7 +133,8 @@ class MentionStats(commands.Cog):
             channel_id, message_id = settings.last_mass_mention_notice
             formatted = string.Template(settings.mass_mention_notice_template).safe_substitute(days="0 days")
             try:
-                await self.bot.http.edit_message(channel_id, message_id, content=formatted)
+                params = handle_message_parameters(content=formatted)
+                await self.bot.http.edit_message(channel_id, message_id, params=params)
             except discord.NotFound:
                 await self.storage.last_mass_mention_notice(guild).clear_value()
                 self.guild_settings_cache[guild.id] = attr.evolve(settings, last_mass_mention_notice=None)
@@ -164,7 +166,8 @@ class MentionStats(commands.Cog):
             formatted = string.Template(settings.mass_mention_notice_template).safe_substitute(days=days_str)
             try:
                 async with self.sem:
-                    await self.bot.http.edit_message(channel_id, message_id, content=formatted)
+                    params=handle_message_parameters(content=formatted)
+                    await self.bot.http.edit_message(channel_id, message_id, params=params)
                     await asyncio.sleep(1)
             except discord.NotFound:
                 await self.storage.last_mass_mention_notice(guild).clear_value()

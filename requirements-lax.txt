@@ -1,4 +1,4 @@
-discord.py @ https://github.com/unified-moderation-network/discord.py/archive/6265723a352ee77f418ef3004012cc5693ba390f.zip
+discord.py @ https://github.com/unified-moderation-network/discord.py/archive/a14b43f2fda863ed6555374eb872bf014bdd1adf.zip
 msgpack==1.0.2
 numpy
 numba
@@ -9,3 +9,4 @@ toml
 typing-extensions>=3.10.0.0
 hyperscan
 discord-ext-menus @ https://github.com/unified-moderation-network/discord-ext-menus/archive/fbb8803779373357e274e1540b368365fd9d8074.zip
+aiohttp[speedups]

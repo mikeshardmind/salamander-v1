@@ -1,20 +1,38 @@
-From 576af675def6716c6176d75fc400938e7321c794 Mon Sep 17 00:00:00 2001
+From ef6473e45dc5c769040ddd0ac42dc9bb1f271512 Mon Sep 17 00:00:00 2001
 From: Michael H <michael@michaelhall.tech>
-Date: Thu, 29 Oct 2020 21:47:21 -0400
-Subject: [PATCH] lazy-workaround
+Date: Thu, 28 Apr 2022 06:30:21 +0000
+Subject: [PATCH] lazy
 
 ---
- setup.py | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ setup.py | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/setup.py b/setup.py
-index 20ebf74..8882c01 100644
+index dc8de9e..93a79eb 100644
 --- a/setup.py
 +++ b/setup.py
-@@ -529,7 +529,7 @@ class apsw_build(bparent):
+@@ -442,7 +442,7 @@ class fetch(Command):
+ # We allow enable/omit to be specified to build and then pass them to build_ext
+ build_enable = None
+ build_omit = None
+-build_enable_all_extensions = False
++build_enable_all_extensions = True
+
+ bparent = build.build
+
+@@ -459,7 +459,7 @@ class apsw_build(bparent):
          v = bparent.initialize_options(self)
          self.enable = None
          self.omit = None
+-        self.enable_all_extensions = build_enable_all_extensions
++        self.enable_all_extensions = True
+         return v
+
+     def finalize_options(self):
+@@ -503,7 +503,7 @@ class apsw_build_ext(beparent):
+         v = beparent.initialize_options(self)
+         self.enable = build_enable
+         self.omit = build_omit
 -        self.enable_all_extensions = build_enable_all_extensions
 +        self.enable_all_extensions = True
          return v

@@ -104,7 +104,7 @@ class QOTW(commands.Cog):
                     """
                     DELETE FROM member_questions WHERE user_id = ?
                     """,
-                    ids,
+                    [(i,) for i in ids],
                 )
 
         await asyncio.to_thread(_acr, conn, ids)
@@ -120,7 +120,7 @@ class QOTW(commands.Cog):
                     """
                     DELETE FROM guild_settings WHERE guild_id = ?
                     """,
-                    ids,
+                    [(i,) for i in ids],
                 )
 
         await asyncio.to_thread(_acr, conn, ids)
@@ -186,7 +186,7 @@ class QOTW(commands.Cog):
             WHERE current_question IS NOT NULL AND guild_id=?
             """,
             (guild_id,),
-        ).fetchall()
+        ).fetchall()  # type: ignore
 
         if not questions:
             cursor.execute(
@@ -341,14 +341,15 @@ class QOTW(commands.Cog):
 
         cursor = self.conn.cursor()
 
-        row = cursor.execute(
+        cursor.execute(
             """
             SELECT channel_id, last_pinned_message_id
             FROM guild_settings
             WHERE channel_id IS NOT NULL AND guild_id = ?
             """,
             (ctx.guild.id,),
-        ).fetchone()
+        )
+        row=cursor.fetchone()
 
         channel = None
 
@@ -380,7 +381,7 @@ class QOTW(commands.Cog):
             WHERE current_question IS NOT NULL AND guild_id=?
             """,
             (ctx.guild.id,),
-        ).fetchall()
+        ).fetchall()  # type: ignore
 
         if not questions:
             return await ctx.send("No current questions.")
@@ -428,7 +429,7 @@ class QOTW(commands.Cog):
             WHERE current_question IS NOT NULL AND guild_id=?
             """,
             (ctx.guild.id,),
-        ).fetchall()
+        ).fetchall()  # type: ignore
 
         total = 0
         user_has_question = False
@@ -495,12 +496,13 @@ class QOTW(commands.Cog):
 
         cursor = self.conn.cursor()
 
-        row = cursor.execute(
+        cursor.execute(
             """
             SELECT channel_id FROM guild_settings WHERE guild_id = ?
             """,
             (ctx.guild.id,),
-        ).fetchone()
+        )
+        row=cursor.fetchone()
 
         if not row:
             raise commands.CheckFailure()

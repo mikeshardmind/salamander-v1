@@ -71,14 +71,15 @@ class AnnoyanceFilters(commands.Cog):
 
         cursor = self.bot._conn.cursor()
 
-        res = cursor.execute(
+        cursor.execute(
             """
             SELECT mods_immune, admins_immune, remove_apngs, remove_excessive_html_elements
             FROM annoyance_filter_settings
             WHERE guild_id = ?
             """,
             (guild_id,),
-        ).fetchone()
+        )
+        res=cursor.fetchone()
 
         cursor.close()
 
@@ -144,6 +145,10 @@ class AnnoyanceFilters(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+
+        if not isinstance(message.channel, (discord.TextChannel, discord.VoiceChannel, discord.Thread)):
+            return
+
         if not (guild := message.guild):
             return
 
@@ -213,21 +218,21 @@ class AnnoyanceFilters(commands.Cog):
         have attachments which view differently in the browser than they do in discord
         due to discord not animating animated png files
         """
-
+        assert ctx.guild is not None
         self.set_guild_settings(ctx.guild.id, GuildSettings.recommended())
         await ctx.send("Now using the recommended settings.")
 
     @top_level_group.command(name="disable")
     async def disable(self, ctx: SalamanderContext):
         """Disable annoyance filtering for this server."""
-
+        assert ctx.guild is not None
         self.set_guild_settings(ctx.guild.id, GuildSettings())
         await ctx.send("No longer filtering for annoyances.")
 
     @top_level_group.command(name="view")
     async def view_settings(self, ctx: SalamanderContext):
         """Get info about the current settings."""
-
+        assert ctx.guild is not None
         settings = self.get_guild_settings(ctx.guild.id)
 
         if not (settings.remove_apngs or settings.remove_excessive_html_elements):
@@ -265,6 +270,7 @@ class AnnoyanceFilters(commands.Cog):
     @top_level_group.command(name="custom")
     async def interactive(self, ctx: SalamanderContext):
         """Set up filtering with an interactive prompt."""
+        assert ctx.guild is not None
 
         elements = await ctx.yes_or_no(
             "Discord hides portions of messages if they contain "

@@ -50,12 +50,14 @@ class Feedback(commands.Cog):
             )
         cursor = self.bot._conn.cursor()
 
-        (already_exists,) = cursor.execute(
+        cursor.execute(
             """
             SELECT EXISTS(SELECT 1 FROM feedback_types WHERE feedback_type = ?)
             """,
             (name,),
-        ).fetchone()
+        )
+
+        (already_exists,) = cursor.fetchone()  # type: ignore # see query above
 
         if already_exists:
             raise UserFeedbackError(custom_message="That's already a feedback type")
@@ -69,7 +71,7 @@ class Feedback(commands.Cog):
 
         await ctx.send("Feedback type created.")
 
-    @createtype.error
+    @createtype.error  # type: ignore
     async def create_type_error(self, ctx: SalamanderContext, exc: Exception):
         if isinstance(exc, commands.TooManyArguments):
             await ctx.send(
@@ -91,7 +93,7 @@ class Feedback(commands.Cog):
             SELECT EXISTS(SELECT 1 FROM feedback_types WHERE feedback_type = ?)
             """,
             (name,),
-        ).fetchone()
+        ).fetchone()  # type: ignore
 
         if not already_exists:
             raise UserFeedbackError(custom_message="That type doesn't exist.")
@@ -123,7 +125,7 @@ class Feedback(commands.Cog):
             SELECT EXISTS(SELECT 1 FROM feedback_types WHERE feedback_type = ?)
             """,
             (name,),
-        ).fetchone()
+        ).fetchone()  # type: ignore
 
         if not already_exists:
             raise UserFeedbackError(custom_message="That type doesn't exist.")
@@ -147,7 +149,7 @@ class Feedback(commands.Cog):
         typename: str,
         channel: discord.TextChannel,
         *,
-        response: str = None,
+        response: str | None = None,
     ):
         """Create a feedback type, setting the response channel and
         optionally an autoresponse in a single command.
@@ -192,7 +194,7 @@ class Feedback(commands.Cog):
             SELECT EXISTS(SELECT 1 FROM feedback_types WHERE feedback_type = ?)
             """,
             (name,),
-        ).fetchone()
+        ).fetchone()  # type: ignore
 
         if not already_exists:
             raise UserFeedbackError(custom_message="That type doesn't exist.")
@@ -231,7 +233,7 @@ class Feedback(commands.Cog):
             SELECT autoresponse, destination_id FROM feedback_types WHERE feedback_type = ?
             """,
             (name,),
-        ).fetchone()
+        ).fetchone()  # type: ignore
 
         if not row:
             raise IncompleteInputError(
@@ -266,6 +268,7 @@ class Feedback(commands.Cog):
 
         if channel_id:
             if destination := self.bot.get_channel(channel_id):
+                assert isinstance(destination, discord.TextChannel)
                 embed = discord.Embed(description=feedback, color=destination.guild.me.color)
                 embed.set_author(
                     name=f"Feedback from {ctx.author}",

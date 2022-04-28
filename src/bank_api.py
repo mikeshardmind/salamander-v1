@@ -32,12 +32,13 @@ class BalanceIssue(Exception):
 
 def _get_balance(conn: apsw.Connection, guild_id: int, user_id: int) -> int:
     with contextlib.closing(conn.cursor()) as cursor:
-        row = cursor.execute(
+        cursor.execute(
             """
             SELECT balance FROM accounts WHERE guild_id =? AND user_id = ?
             """,
             (guild_id, user_id),
-        ).fetchone()
+        )
+        row = cursor.fetchone()
         return 0 if row is None else row[0]
 
 
@@ -199,4 +200,4 @@ class Bank(metaclass=Singleton):
             )
 
     async def get_balance(self, guild_id: int, user_id: int) -> int:
-        return await asyncio.to_thread(_get_balance, guild_id, user_id)
+        return await asyncio.to_thread(_get_balance, self._conn, guild_id, user_id)

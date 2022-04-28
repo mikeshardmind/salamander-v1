@@ -21,7 +21,7 @@ from datetime import datetime, timedelta, timezone
 import discord
 from discord.ext import commands
 
-from ...bot import SalamanderContext, UserFeedbackError
+from ...bot import Salamander, SalamanderContext, UserFeedbackError
 from ...checks import admin, mod_or_perms
 from ...utils import Waterfall
 from ...utils.parsing import parse_positive_number, parse_snowflake
@@ -43,6 +43,7 @@ class Cleanup(commands.Cog):
         Can be used if handling deletion requests for privacy reasons
         Is intentionally very slow, limited to admins only, and can only run one at a time
         """
+        assert not isinstance(ctx.channel, (discord.DMChannel, discord.PartialMessageable, discord.GroupChannel))
 
         if not await ctx.yes_or_no(
             "Are you sure you want to remove all messages from any user who cannot see this channel? (yes, no)",
@@ -78,6 +79,7 @@ class Cleanup(commands.Cog):
                             await asyncio.sleep(2)
 
                     if mass_deletable:
+                        assert not isinstance(ctx.channel, (discord.DMChannel, discord.PartialMessageable, discord.GroupChannel))
                         await ctx.channel.delete_messages(mass_deletable)
                         await asyncio.sleep(1)
 
@@ -109,8 +111,8 @@ class Cleanup(commands.Cog):
                 allowed_mentions=discord.AllowedMentions(users=[ctx.author]),
             )
 
-    @removegone.error
-    async def concurrency_fail(self, ctx, exc):
+    @removegone.error  # type: ignore
+    async def concurrency_fail(self, ctx: SalamanderContext, exc: commands.CommandError):
         if isinstance(exc, commands.MaxConcurrencyReached):
             await ctx.send("That command is already running for a channel in this server.")
 
