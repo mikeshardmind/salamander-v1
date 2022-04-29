@@ -67,7 +67,7 @@ def parse_positive_number(argument: str, upper_bound: int | float = 184467440737
     if upper_bound < 1:
         raise ValueError("Must provide a positive non-zero upper bound")
 
-    # Decimal module is sloweer but works with arbitrarily large numbers while being faster than len(str(num))
+    # Decimal module is slower but works with arbitrarily large numbers while being faster than len(str(num))
     # Realistically, I can just change the entire thing to the latter form
     # But... this isn't costing anything to keep.
     log = math.log(upper_bound, 10)

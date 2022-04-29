@@ -60,7 +60,7 @@ please discuss (open an issue or discuss in project spaces) prior to opening any
 
 ## Current environemnt
 
-python3.9 (cpython)
+python3.10 (cpython)
 ubuntu server 20.04
 
 This reflects the environment it will be tested on early in development, however

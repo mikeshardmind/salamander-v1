@@ -27,7 +27,7 @@ enable_slash_commands = false
 
 [exts]
 core = [ "annoyancefilters", "cleanup", "feedback", "filter", "knownphish", "meta", "mod", "modnotes", "rolemanagement", ]  # refers to module names in src/extensions
-contrib = [ "dice", "say, "qotw", ]  # refers to module names in src/contrib_extensions
+contrib = [ "dice", "say", "qotw", ]  # refers to module names in src/contrib_extensions
 local = []  # refers to module names in src/local_extensions
 global = []  # refers to discord.py extensions which are installed as modules (ie. `jishaku`)
 
