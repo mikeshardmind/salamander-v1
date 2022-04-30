@@ -170,7 +170,7 @@ class RoboPages(discord.ui.View):
         """go to the first page"""
         await self.show_page(interaction, 0)
 
-    @discord.ui.button(label="Back", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label="<", style=discord.ButtonStyle.blurple)
     async def go_to_previous_page(self, interaction: discord.Interaction, button: discord.ui.Button):
         """go to the previous page"""
         await self.show_checked_page(interaction, self.current_page - 1)
@@ -179,7 +179,7 @@ class RoboPages(discord.ui.View):
     async def go_to_current_page(self, interaction: discord.Interaction, button: discord.ui.Button):
         pass
 
-    @discord.ui.button(label="Next", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label=">", style=discord.ButtonStyle.blurple)
     async def go_to_next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
         """go to the next page"""
         await self.show_checked_page(interaction, self.current_page + 1)
@@ -379,23 +379,29 @@ class FrontPageSource(menus.PageSource):
         return self
 
     def format_page(self, menu: HelpMenu, page: Any):
-        embed = discord.Embed(title="Help", color=menu.ctx.me.color)
-        embed.description = (
-            "This is the help page."
-            "\nYou can use {hc_text} for help with a specific command."
-            "\nYou can use {hc_text} or select an entry from the dropdown menu for help with a category."
-        ).format(hc_text=f'"{menu.ctx.clean_prefix}help command"')
 
-        embed.add_field(
-            name="How to read the help",
-            value="Command usage is shown with a few details. Just don't include the brackets when you use it.",
-        )
-        embed.add_field(name="<arg>", value="This is required", inline=False)
-        embed.add_field(name="[arg]", value="This is optional", inline=False)
-        embed.add_field(name="This | That", value="This or That", inline=False)
-        embed.add_field(name="[arg... ]", value="This can be multiple things", inline=False)
+        if self.index == 0:
 
-        return embed
+            return discord.Embed(title="Help", color=menu.ctx.me.color, description="Take a look around.")
+
+        if self.index == 1:
+            embed = discord.Embed(title="Help", color=menu.ctx.me.color)
+            embed.description = (
+                "This is the help page."
+                "\nYou can use {hc_text} for help with a specific command."
+                "\nYou can use {hc_text} or select an entry from the dropdown menu for help with a category."
+            ).format(hc_text=f'"{menu.ctx.clean_prefix}help command"')
+
+            embed.add_field(
+                name="How to read the help",
+                value="Command usage is shown with a few details. Just don't include the brackets when you use it.",
+            )
+            embed.add_field(name="<arg>", value="This is required", inline=False)
+            embed.add_field(name="[arg]", value="This is optional", inline=False)
+            embed.add_field(name="This | That", value="This or That", inline=False)
+            embed.add_field(name="[arg... ]", value="This can be multiple things", inline=False)
+
+            return embed
 
 
 class HelpMenu(RoboPages):
