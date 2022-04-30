@@ -92,3 +92,23 @@ class Say(commands.Cog):
             raise UserFeedbackError(custom_message="I can only send up to 2000 characters in a single message.")
 
         await message.edit(content=content)
+
+    @mod_or_perms()
+    @commands.command(name="sayeditcopy")
+    async def edit_bot_message_copy(self, ctx: SalamanderContext, message: discord.Message, message_to_copy: discord.Message):
+        """ Edit an existing bot bot message to be have the same content as another message. """
+        assert ctx.guild is not None
+
+        author = message.author
+
+        content = message_to_copy.content
+        if content is None:
+            raise UserFeedbackError(custom_message="That message didn't have any content to copy.")
+
+        if author.id != ctx.guild.me.id:
+            raise UserFeedbackError(custom_message="I can't edit other people's messages.")
+
+        if len(content) > 2000:
+            raise UserFeedbackError(custom_message="I can only send up to 2000 characters in a single message.")
+
+        await message.edit(content=content)
