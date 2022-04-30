@@ -1,0 +1,10 @@
+[tool.black]
+line-length = 120
+target-version = ["py310"]
+include = '\.py$'
+
+[tool.isort]
+profile = "black"
+combine_as_imports = true
+combine_star = true
+line_length = 120
