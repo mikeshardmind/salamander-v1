@@ -31,6 +31,8 @@ class Say(commands.Cog):
     @commands.command(name="sayhere")
     async def say_here(self, ctx: SalamanderContext, *, content: str):
         """Say something in this channel."""
+
+        assert ctx.guild is not None
         if not content:
             await ctx.send_help()
             return
@@ -44,6 +46,8 @@ class Say(commands.Cog):
     @commands.command(name="say")
     async def say_command(self, ctx: SalamanderContext, channel: discord.TextChannel, *, content: str):
         """Say something in a specific channel."""
+
+        assert ctx.guild is not None
         if not content:
             await ctx.send_help()
             return
@@ -61,8 +65,8 @@ class Say(commands.Cog):
     async def say_echo_command(self, ctx: SalamanderContext, channel: discord.TextChannel, message: discord.Message):
         """Copy a message's content into another channel."""
 
+        assert ctx.guild is not None
         content = message.content
-
         if not content:
             raise UserFeedbackError(custom_message="This message does not have content to copy.")
 
@@ -78,6 +82,7 @@ class Say(commands.Cog):
     @commands.command(name="sayedit")
     async def edit_bot_message(self, ctx: SalamanderContext, message: discord.Message, *, content: str):
         """Edit an existing bot message."""
+
         assert ctx.guild is not None
         if not content:
             await ctx.send_help()
@@ -95,12 +100,13 @@ class Say(commands.Cog):
 
     @mod_or_perms()
     @commands.command(name="sayeditcopy")
-    async def edit_bot_message_copy(self, ctx: SalamanderContext, message: discord.Message, message_to_copy: discord.Message):
-        """ Edit an existing bot bot message to be have the same content as another message. """
+    async def edit_bot_message_copy(
+        self, ctx: SalamanderContext, message: discord.Message, message_to_copy: discord.Message
+    ):
+        """Edit an existing bot bot message to be have the same content as another message."""
+
         assert ctx.guild is not None
-
         author = message.author
-
         content = message_to_copy.content
         if content is None:
             raise UserFeedbackError(custom_message="That message didn't have any content to copy.")
