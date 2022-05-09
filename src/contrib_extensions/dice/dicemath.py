@@ -181,7 +181,7 @@ class NumberofDice:
 
         if KD and KDQUANT:
             mod = int(KDQUANT)
-            if mod > QUANT:
+            if mod > self.quant:
                 raise DiceError("You can't keep more dice than you rolled.")
             self._kd_expr = f"{KD}{KDQUANT}"
             if KD == "v":
