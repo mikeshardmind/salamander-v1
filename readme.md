@@ -98,14 +98,6 @@ libgdbm-dev uuid-dev python3-openssl git libhyperscan5 libhyperscan-dev sqlite3
 
 3. run `setup.sh` from the direcotry which you want to run the bot (currently, you should only run one instance, this will be rectified in the near future)
 
-  NB. This creates a binary wheel built against the sqlite3 amalgamation at a specific version, targeting the current architecture,
-  and installs into the current `python3.10`.
-  These steps do not need to be done together, and the wheel step specifically may be slow, while creating a resource which can be reused.
-  This also needs improvement, but if run in the same directory, (or if the wheel is copied to an appropriate location before running again)
-  this won't be regenerated.
-
-  There's a lot to improve here.
-
 4. copy default_config.toml -> config.toml and edit as appropriate
 
 5. run the bot with SALAMANDER_TOKEN=XXX python3.10 runner.py

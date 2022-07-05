@@ -8,23 +8,6 @@ hydra_subscribe_addr = ""  # Leave empty for default
 hydra_remote_recv_addr = ""  # Leave empty for default
 data_dir = ""  # leave empty to store data in working dir. Should be an absolute path, be careful.
 
-# command style options
-# These options are subject to future change in default values.
-# The described behavior of each will not change, but what that encompasses as devlopment progresses might be more or less.
-
-# This will disable some amount of message based commands. Please keep in mind that which ones are disabled
-# may be anywhere from none to all, depending on how many commands have slash command alrernatives already.
-
-disable_replaced_message_commands = false
-
-# This may break your ability to use the bot at this time and exists for testing purposes
-
-disable_all_message_commands = false
-
-# This is required to opt into slash command support. The default may change at a later date when slash commands are better supported
-# Not all commands will have slash command equivalents to begin with.
-enable_slash_commands = false
-
 [exts]
 core = [ "annoyancefilters", "cleanup", "feedback", "filter", "knownphish", "meta", "mod", "modnotes", "rolemanagement", ]  # refers to module names in src/extensions
 contrib = [ "dice", "say", "qotw", ]  # refers to module names in src/contrib_extensions
