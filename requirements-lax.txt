@@ -1,13 +1,13 @@
-discord.py @ git+https://github.com/unified-moderation-network/discord.py.git@10af1ea25523a898d03eb45a0a2bb4cdbcc41bdd
+discord.py @ git+https://github.com/unified-moderation-network/discord.py.git@5de9287902ae3d4c1a9fc16ed6e7b3dcf204d6a0
 msgpack==1.0.2
 numpy
-numba
+numba==0.55.2
 pyzmq
 uvloop; sys.platform == "linux"
 lru-dict
 toml
 typing-extensions>=3.10.0.0
 hyperscan; sys.platform == "linux"
-discord-ext-menus @ git+https://github.com/unified-moderation-network/discord-ext-menus.git@fbb8803779373357e274e1540b368365fd9d8074
+discord-ext-menus @ git+https://github.com/unified-moderation-network/discord-ext-menus.git@8686b5d1bbc1d3c862292eb436ab630d6e9c9b53
 aiohttp[speedups]
 umn-async-utils @ git+https://github.com/unified-moderation-network/umn-async-utils.git@860b2efc2dffd175ef654f97e55b7d9653102b70
