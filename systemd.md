@@ -32,10 +32,10 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-WorkingDirectory=/umw/hydra
+WorkingDirectory=/umw/salamander
 User=umw
 Group=umw
-ExecStart=/umw/hydra/.venv/bin/python -O hydra.py
+ExecStart=/umw/salamander/.venv/bin/python -O hydra.py
 Type=idle
 Restart=always
 RestartSec=10
@@ -54,10 +54,10 @@ After=network-online.target
 After=hydra.service
 Wants=network-online.target
 [Service]
-WorkingDirectory=/umw/basilisk
+WorkingDirectory=/umw/salamander
 User=umw
 Group=umw
-ExecStart=/umw/basilisk/.venv/bin/python -O basilisk.py
+ExecStart=/umw/salamander/.venv/bin/python -O basilisk.py
 Type=idle
 Restart=always
 RestartSec=10

@@ -101,6 +101,7 @@ template/
 
 .mypy_cache/
 *.db
+*.list
 *.db-shm
 *.db-wal
 data/

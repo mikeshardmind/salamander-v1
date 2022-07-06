@@ -18,9 +18,7 @@ from __future__ import annotations
 import asyncio
 import string
 from collections import defaultdict
-from datetime import datetime as dt
-from datetime import timedelta as td
-from datetime import timezone as tz
+from datetime import datetime as dt, timedelta as td, timezone as tz
 from typing import MutableMapping, Optional, Sequence
 
 import attr
