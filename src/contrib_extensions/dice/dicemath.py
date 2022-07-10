@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 from __future__ import annotations
+from functools import cache
 
 """
 Dice parsing.
@@ -79,7 +80,7 @@ class DiceError(Exception):
         super().__init__(msg, *args)
 
 
-@njit("uint32(uint32, uint32)", nogil=True)
+@njit("uint32(uint32, uint32)", nogil=True, cache=True)
 def ncr(n: int, r: int) -> int:
     # With numba, this is significantly better than using scipy.special.comb
     # https://en.wikipedia.org/wiki/Binomial_coefficient#Multiplicative_formula
@@ -119,7 +120,7 @@ def ncr(n: int, r: int) -> int:
 #########################################################################################
 
 
-@njit("float32(uint32, uint32, uint32, uint32)")
+@njit("float32(uint32, uint32, uint32, uint32)", nogil=True, cache=True)
 def _inner_flattened_cdf_math(quant: int, sides: int, i: int, j: int) -> float:
     x = (((sides - j) / sides) ** i) * ((j / sides) ** (quant - i))
     y = (((sides - j + 1) / sides) ** i) * (((j - 1) / sides) ** (quant - i))
@@ -141,7 +142,7 @@ def _ev_roll_dice_keep_best(quant: int, sides: int, keep: int) -> float:
     return outermost_sum
 
 
-@njit("float32(uint32, uint32, uint32)", parallel=_USE_P, nogil=True)
+@njit("float32(uint32, uint32, uint32)", parallel=_USE_P, nogil=True, cache=True)
 def _ev_roll_dice_keep_worst(quant: int, sides: int, keep: int) -> float:
 
     outermost_sum = 0
@@ -156,7 +157,7 @@ def _ev_roll_dice_keep_worst(quant: int, sides: int, keep: int) -> float:
     return outermost_sum
 
 
-@njit("float32(uint32, uint32, uint32, uint32)", nogil=True)
+@njit("float32(uint32, uint32, uint32, uint32)", nogil=True, cache=True)
 def fast_analytic_ev(quant: int, sides: int, low: int, high: int) -> float:
 
     if high < quant:
@@ -167,7 +168,7 @@ def fast_analytic_ev(quant: int, sides: int, low: int, high: int) -> float:
     return quant * (sides + 1) / 2
 
 
-@njit("uint32(uint32, uint32, uint32, uint32)")
+@njit("uint32(uint32, uint32, uint32, uint32)", cache=True, nogil=True)
 def fast_roll(quant: int, sides: int, low: int, high: int) -> int:
     c = np.random.randint(1, sides, (quant,))
     c.sort()
