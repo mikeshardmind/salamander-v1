@@ -823,8 +823,12 @@ class Salamander(commands.AutoShardedBot):
         self.bank: Bank = Bank(apsw.Connection(str(bank_db)))
 
     async def __aenter__(self) -> Salamander:
+        await super().__aenter__()
+
+        # TODO: Figure out which stuff here I want to move to setup_hook (this predates)
 
         for ext in dict.fromkeys(self._behavior_flags.initial_exts):
+            # TODO: make this less hard-coded and have extensions be able to specify requirements for load.
             if ext == "src.extensions.filter" and self._behavior_flags.no_basilisk:
                 continue
             await self.load_extension(ext)
@@ -855,8 +859,7 @@ class Salamander(commands.AutoShardedBot):
             self._zmq_task.cancel()
             self._zmq_task = None
 
-        if not self.is_closed():
-            await self.close()
+        await super().__aexit__(exc_type, exc_value, traceback)
 
     async def is_owner(self, user: discord.User | discord.Member) -> bool:
         # TODO: fix d.py type for this
