@@ -13,7 +13,6 @@
 #   limitations under the License.
 
 from __future__ import annotations
-from functools import cache
 
 """
 Dice parsing.

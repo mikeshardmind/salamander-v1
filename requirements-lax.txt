@@ -1,5 +1,5 @@
 apsw==3.38.5.post1
-discord.py @ git+https://github.com/unified-moderation-network/discord.py.git@5de9287902ae3d4c1a9fc16ed6e7b3dcf204d6a0
+discord.py @ git+https://github.com/unified-moderation-network/discord.py.git@24b619a516e743bdfba09cb47a633a9fcab1302a
 msgpack==1.0.2
 numpy
 numba==0.55.2
