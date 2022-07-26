@@ -16,7 +16,7 @@ jobs:
         name: Install deps
       - run: "black --check ."
         name: Format checking with Black
-      - run: "isort --check runner.py src"
+      - run: "isort --check ."
         name: Import sorting
       - run: >
           ! $(find . ! -path "./.git/*" -not -type d -exec file "{}" ";" |& grep -q " CRLF ")
