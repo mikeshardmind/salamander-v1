@@ -2,7 +2,7 @@ apsw==3.38.5.post1
 discord.py @ git+https://github.com/unified-moderation-network/discord.py.git@24b619a516e743bdfba09cb47a633a9fcab1302a
 msgpack==1.0.2
 numpy
-numba==0.55.2
+numba==0.56.0
 pyzmq
 uvloop; sys.platform == "linux"
 lru-dict
