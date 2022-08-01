@@ -33,7 +33,7 @@ from uuid import uuid4
 import apsw
 import attr
 import discord
-import uvloop  # type: ignore
+
 from discord.ext import commands, menus
 from lru import LRU
 
@@ -41,6 +41,13 @@ from .bank_api import Bank
 from .ipc_layer import ZMQHandler
 from .modlog import ModlogHandler
 from .utils import MainThreadSingletonMeta, format_list, only_once, pagify
+
+
+try:
+    import uvloop
+except ImportError:
+    uvloop = None
+
 
 log = logging.getLogger("salamander")
 
@@ -1036,7 +1043,8 @@ class Salamander(commands.AutoShardedBot):
 
         setup_logging(nofile=no_file_log)
         add_connection_hooks()
-        uvloop.install()
+        if uvloop is not None:
+            uvloop.install()
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
