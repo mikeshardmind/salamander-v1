@@ -461,9 +461,7 @@ class BehaviorFlags:
 
         exts = (
             "src.contrib_extensions.dice",
-            "src.contrib_extensions.mentionstats",
             "src.contrib_extensions.qotw",
-            "src.contrib_extensions.say",
             "src.extensions.annoyancefilters",
             "src.extensions.cleanup",
             "src.extensions.feedback",

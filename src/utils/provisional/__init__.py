@@ -13,4 +13,4 @@
 #   limitations under the License.
 
 #: This number will change on any commit that changes the API of something included in provisional utils.
-magic_number = 0x00000002
+magic_number = 0x00000003
