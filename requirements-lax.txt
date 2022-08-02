@@ -1,4 +1,4 @@
-apsw==3.38.5.post1
+apsw==3.39.2.0
 discord.py @ git+https://github.com/unified-moderation-network/discord.py.git@24b619a516e743bdfba09cb47a633a9fcab1302a
 msgpack==1.0.2
 numpy
