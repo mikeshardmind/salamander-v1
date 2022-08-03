@@ -33,15 +33,12 @@ from uuid import uuid4
 import apsw
 import attr
 import discord
-
 from discord.ext import commands, menus
 from lru import LRU
 
-from .bank_api import Bank
 from .ipc_layer import ZMQHandler
 from .modlog import ModlogHandler
 from .utils import MainThreadSingletonMeta, format_list, only_once, pagify
-
 
 try:
     import uvloop
@@ -814,18 +811,12 @@ class Salamander(commands.AutoShardedBot):
 
         self._zmq = ZMQHandler()
         self._zmq_task: asyncio.Task | None = None
-
         db_path = get_data_path() / "salamander.db"
-        # This is seperate to ensure 3rd party actions cannot lock up the core DB
-        bank_db = get_data_path() / "bank.db"
-
         self._conn = apsw.Connection(str(db_path))
-
         self.modlog: ModlogHandler = ModlogHandler(self._conn)
         self.prefix_manager: PrefixManager = PrefixManager(self)
         self.block_manager: BlockManager = BlockManager(self)
         self.privlevel_manager: PrivHandler = PrivHandler(self)
-        self.bank: Bank = Bank(apsw.Connection(str(bank_db)))
 
     async def __aenter__(self) -> Salamander:
         await super().__aenter__()

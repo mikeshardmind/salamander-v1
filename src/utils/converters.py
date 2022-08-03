@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import re
 from datetime import timedelta
-from typing import Final, NamedTuple, Optional, Sequence
+from typing import Final, NamedTuple, Sequence
 
 import discord
 from discord.ext import commands
@@ -24,7 +24,6 @@ from discord.ext import commands
 from .formatting import humanize_timedelta
 from .parsing import parse_timedelta
 
-_discord_member_converter_instance: Final[commands.MemberConverter] = commands.MemberConverter()
 _id_regex: Final[re.Pattern] = re.compile(r"([0-9]{15,21})$")
 _mention_regex: Final[re.Pattern] = re.compile(r"<@!?([0-9]{15,21})>$")
 _role_mention_regex: Final[re.Pattern] = re.compile(r"^<@&([0-9]{15,21})>$")
@@ -144,7 +143,7 @@ class StrictMemberConverter(NamedTuple):
                 members = await guild.query_members(limit=1, user_ids=[uid])
                 if not members:
                     return cls(argument, None, uid)
-                member = member[0]
+                member = members[0]
                 return cls(argument, member, uid)
 
         elif len(argument) > 5 and argument[-5] == "#":
