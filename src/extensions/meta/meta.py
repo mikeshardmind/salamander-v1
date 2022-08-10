@@ -24,7 +24,6 @@ from discord.ext import commands
 
 from ...bot import Salamander, SalamanderContext, UserFeedbackError
 from ...checks import admin_or_perms, guildowner_or_perms
-from ...help import PaginatedHelpCommand
 
 dpy_version = discord.__version__
 py_version = ".".join(f"{i}" for i in sys.version_info[:3])
@@ -74,8 +73,6 @@ class Meta(commands.Cog):
     def __init__(self, bot: Salamander):
         self.bot: Salamander = bot
         self.cached_info = AppInfoCache(bot)
-        self.bot.help_command = PaginatedHelpCommand()
-        self.bot.help_command.cog = self
 
     @commands.is_owner()
     @commands.command()
@@ -87,8 +84,6 @@ class Meta(commands.Cog):
     @commands.group()
     async def servers(self, ctx: SalamanderContext):
         """List/leave servers"""
-        if ctx.invoked_subcommand is None:
-            await ctx.send_help()
 
     @servers.command(name="list")
     async def s_list(self, ctx: SalamanderContext):
@@ -133,8 +128,6 @@ class Meta(commands.Cog):
     @commands.group()
     async def prefix(self, ctx: SalamanderContext):
         """Commands for managing the bot's prefix in this server."""
-        if ctx.invoked_subcommand is None:
-            await ctx.send_help()
 
     @prefix.command(name="list")
     async def prefix_list(self, ctx: SalamanderContext):

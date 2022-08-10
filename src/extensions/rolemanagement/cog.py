@@ -123,8 +123,6 @@ class RoleManagement(commands.Cog):
         """
         Commands for mass role management
         """
-        if ctx.invoked_subcommand is None:
-            await ctx.send_help()
 
     @admin_or_perms(manage_roles=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
@@ -837,8 +835,6 @@ class RoleManagement(commands.Cog):
         """
         Settings for role requirements.
         """
-        if ctx.invoked_subcommand is None:
-            await ctx.send_help()
 
     @commands.bot_has_guild_permissions(manage_roles=True)
     @admin_or_perms(manage_guild=True, manage_roles=True)
@@ -861,7 +857,7 @@ class RoleManagement(commands.Cog):
         """
 
         if not roles:
-            return await ctx.send_help()
+            return
 
         if not await self.all_are_valid_roles(ctx, *roles, detailed=True):
             return
@@ -1039,8 +1035,6 @@ class RoleManagement(commands.Cog):
         """
         Self assignable role commands.
         """
-        if ctx.invoked_subcommand is None:
-            await ctx.send_help()
 
     @commands.guild_only()
     @srole.command(name="list")

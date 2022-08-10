@@ -206,9 +206,6 @@ class AnnoyanceFilters(commands.Cog):
     async def top_level_group(self, ctx: SalamanderContext):
         """Configuration for various annoyances."""
 
-        if ctx.invoked_subcommand is None:
-            await ctx.send_help()
-
     @top_level_group.command(name="enablerecommended")
     async def enable_recommended(self, ctx: SalamanderContext):
         """Quickly enable the recommended filter settings:

@@ -138,8 +138,6 @@ class Filter(commands.Cog):
     @commands.group(name="filterset")
     async def filterset(self, ctx: SalamanderContext):
         """Commands for managing the network filter"""
-        if ctx.invoked_subcommand is None:
-            await ctx.send_help()
 
     @admin_or_perms(manage_guild=True)
     @filterset.command()

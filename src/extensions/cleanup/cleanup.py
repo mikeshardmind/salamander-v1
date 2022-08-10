@@ -124,9 +124,6 @@ class Cleanup(commands.Cog):
     async def cleanup(self, ctx: SalamanderContext):
         """Message cleanup tools"""
 
-        if ctx.invoked_subcommand is None:
-            await ctx.send_help()
-
     @cleanup.command(name="number")
     async def cleanup_number(self, ctx: SalamanderContext, number):
         """Cleanup some number of messages within the last 10 days."""

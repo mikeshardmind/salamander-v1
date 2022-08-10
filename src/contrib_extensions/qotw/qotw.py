@@ -274,8 +274,6 @@ class QOTW(commands.Cog):
     @commands.group(name="qotwset")
     async def qotw_set(self, ctx: SalamanderContext):
         """Commands to manage QOTW"""
-        if ctx.invoked_subcommand is None:
-            await ctx.send_help()
 
     @admin_or_perms(manage_messages=True)
     @commands.guild_only()

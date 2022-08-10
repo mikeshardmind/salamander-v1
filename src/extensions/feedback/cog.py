@@ -35,9 +35,6 @@ class Feedback(commands.Cog):
     async def feedbackset(self, ctx: SalamanderContext):
         """Settings commands for configuring accepted feedback"""
 
-        if ctx.invoked_subcommand is None:
-            await ctx.send_help()
-
     @commands.is_owner()
     @feedbackset.command(ignore_extra=False)
     async def createtype(self, ctx: SalamanderContext, name: str):
@@ -229,9 +226,6 @@ class Feedback(commands.Cog):
     @commands.group()
     async def feedback(self, ctx: SalamanderContext):
         """Commands for sending feedback"""
-
-        if ctx.invoked_subcommand is None:
-            await ctx.send_help()
 
     @commands.cooldown(5, 40, commands.BucketType.user)
     @feedback.command()

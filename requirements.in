@@ -9,6 +9,5 @@ lru-dict
 toml
 typing-extensions>=3.10.0.0
 hyperscan==0.3.2
-discord-ext-menus @ git+https://github.com/unified-moderation-network/discord-ext-menus.git@8686b5d1bbc1d3c862292eb436ab630d6e9c9b53
 aiohttp[speedups]
 umn-async-utils @ git+https://github.com/unified-moderation-network/umn-async-utils.git@860b2efc2dffd175ef654f97e55b7d9653102b70

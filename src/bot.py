@@ -33,7 +33,7 @@ from uuid import uuid4
 import apsw
 import attr
 import discord
-from discord.ext import commands, menus
+from discord.ext import commands
 from lru import LRU
 
 from .ipc_layer import ZMQHandler
@@ -260,14 +260,6 @@ NON_TEXT_RESPONSE_ERROR_STR = "There doesn't appear to be any text in your respo
 INVALID_OPTION_ERROR_FMT = "That wasn't a valid option, please try this command again.\n(Valid options are: {})"
 
 
-class PreFormattedListSource(menus.ListPageSource):
-    def __init__(self, data):
-        super().__init__(data, per_page=1)
-
-    async def format_page(self, menu, page):
-        return page
-
-
 class SalamanderContext(commands.Context["Salamander"]):
 
     bot: Salamander
@@ -279,14 +271,6 @@ class SalamanderContext(commands.Context["Salamander"]):
         assert self.prefix is not None, "typechecking madness"
         return pattern.sub(repl, self.prefix)
 
-    async def send_help(self, command=None):
-        """
-        An opinionated choice that ctx.send_help()
-        should default to help based on the current command
-        """
-        command = command or self.command
-        await super().send_help(command)
-
     async def list_menu(
         self,
         pages: list[discord.Embed | str],
@@ -294,20 +278,13 @@ class SalamanderContext(commands.Context["Salamander"]):
         timeout: float = 180,
         alt_destination: discord.abc.Messageable | None = None,
         wait: bool = False,
-    ) -> menus.Menu:
+    ):
         """
         Returns the started menu,
         a List source is made for you from strings/embeds
         provided assuming them as being already prepared.
         """
-        menu = menus.MenuPages(
-            source=PreFormattedListSource(pages),
-            check_embeds=True,
-            clear_reactions_after=True,
-            timeout=timeout,
-        )
-        await menu.start(self, channel=alt_destination or self.channel, wait=wait)
-        return menu
+        #: TODO
 
     async def yes_or_no(
         self,
@@ -319,74 +296,7 @@ class SalamanderContext(commands.Context["Salamander"]):
         """
         Wrapper around .prompt for yes/no questions.
         """
-        r = await self.prompt(
-            prompt,
-            options=("yes", "no"),
-            timeout=timeout,
-            reset_cooldown_on_failure=reset_cooldown_on_failure,
-            delete_on_return=delete_on_return,
-        )
-        return r == "yes"
-
-    async def prompt(
-        self,
-        prompt: str,
-        *,
-        options: Sequence[_PT],
-        timeout: float,
-        case_sensitive: bool = False,
-        reset_cooldown_on_failure: bool = False,
-        delete_on_return: bool = False,
-    ) -> _PT:
-        """
-        Prompt for a choice, raising an error if not matching
-        """
-
-        def check(m: discord.Message) -> bool:
-            return m.author.id == self.author.id and m.channel.id == self.channel.id
-
-        #  bot.wait_for adds to internal listeners, returning an awaitable
-        #  This ordering is desirable as we can ensure we are listening
-        #  before asking, but have the timeout apply after we've sent
-        #  (avoiding a (user perspective) inconsistent timeout)
-        fut = self.bot.wait_for("message", check=check, timeout=timeout)
-        sent = await self.send(prompt)
-        try:
-            response = await fut
-        except asyncio.TimeoutError:
-            raise IncompleteInputError(
-                custom_message=UNTIMELY_RESPONSE_ERROR_STR,
-                reset_cooldown=reset_cooldown_on_failure,
-            )
-
-        if response.content is None:
-            # did they upload an image as a response?
-            raise IncompleteInputError(
-                custom_message=NON_TEXT_RESPONSE_ERROR_STR,
-                reset_cooldown=reset_cooldown_on_failure,
-            )
-
-        content = response.content if case_sensitive else response.content.casefold()
-
-        if content not in options:
-            raise IncompleteInputError(
-                custom_message=INVALID_OPTION_ERROR_FMT.format(format_list(options)),
-                reset_cooldown=reset_cooldown_on_failure,
-            )
-
-        try:
-            return content
-        finally:
-            if delete_on_return:
-                try:
-                    await sent.delete()
-                    await response.delete()
-                except Exception as exc:
-                    if __debug__:
-                        log.exception(
-                            "Could not delete messages as intended in prompt",
-                            exc_info=exc,
-                        )
+        # TODO
 
     async def send_paged(
         self,
@@ -869,7 +779,7 @@ class Salamander(commands.AutoShardedBot):
         if isinstance(exc, commands.CommandNotFound):
             return
         elif isinstance(exc, commands.MissingRequiredArgument):
-            await ctx.send_help()
+            pass
         elif isinstance(exc, commands.NoPrivateMessage):
             await ctx.author.send("This command cannot be used in private messages.")
         elif isinstance(exc, commands.UserInputError):

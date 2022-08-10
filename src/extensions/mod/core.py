@@ -163,8 +163,6 @@ class Mod(commands.Cog):
         """
         Configuration settings for AntiMentionSpam
         """
-        if ctx.invoked_subcommand is None:
-            await ctx.send_help()
 
     @admin_or_perms(manage_guild=True)
     @antimentionspam.command(name="max")
@@ -867,8 +865,7 @@ class Mod(commands.Cog):
                 "\nDo you want to use this role anyway? (yes/no)"
             )
 
-            response = await ctx.prompt(prompt, options=("yes", "no"), timeout=30)
-            if response == "no":
+            if not await ctx.yes_or_no(prompt):
                 await ctx.send("Okay, not setting the role.")
                 return
 

@@ -321,9 +321,6 @@ charset-normalizer==2.1.0 \
     --hash=sha256:5189b6f22b01957427f35b6a08d9a0bc45b46d3788ef5a92e978433c7a35f8a5 \
     --hash=sha256:575e708016ff3a5e3681541cb9d79312c416835686d054a23accb873b254f413
     # via aiohttp
-discord-ext-menus @ https://github.com/unified-moderation-network/discord-ext-menus/archive/8686b5d1bbc1d3c862292eb436ab630d6e9c9b53.zip \
-    --hash=sha256:3fcfe9b92bab394b0e2e061a4ccb41f49ef33a0485942334bd92d6b276444d21
-    # via -r requirements.in
 discord.py @ https://github.com/unified-moderation-network/discord.py/archive/24b619a516e743bdfba09cb47a633a9fcab1302a.zip \
     --hash=sha256:8d66673f1d666fed2a61eee378c0088d75441244d02d6a8255af1696f2af3015
     # via
