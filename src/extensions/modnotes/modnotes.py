@@ -38,6 +38,7 @@ class Note(NamedTuple):
             timestamp=datetime.fromisoformat(self.created_at),
             color=ctx.me.color,
         )
+        assert ctx.guild is not None
         author = ctx.guild.get_member(self.mod_id)
         subject = ctx.guild.get_member(self.target_id)
         a_str = f"{author} ({self.mod_id})" if author else f"Unknown Author ({self.mod_id})"
@@ -149,6 +150,8 @@ class ModNotes(commands.Cog):
     async def makemodnote(self, ctx: SalamanderContext, who: StrictMemberConverter, *, note: str):
         """Make a note about a user"""
 
+        assert ctx.guild is not None
+
         if not who.id:
             raise UserFeedbackError(custom_message="That didn't look like a user or ID")
 
@@ -169,6 +172,8 @@ class ModNotes(commands.Cog):
     @getmodnotes.command()
     async def about(self, ctx: SalamanderContext, who: StrictMemberConverter):
         """Get notes about a user"""
+
+        assert ctx.guild is not None
 
         if not who.id:
             raise UserFeedbackError(custom_message="That didn't look like a user or ID")

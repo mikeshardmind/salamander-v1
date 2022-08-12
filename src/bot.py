@@ -282,6 +282,73 @@ class YesNoView(discord.ui.View):
         self.stop()
 
 
+_LT = TypeVar("_LT", discord.Embed, str, covariant=True)
+
+
+class ListMenuView(discord.ui.View):
+    def __init__(self, user_id: int, listmenu: list[_LT], *, timeout: float = 180):
+        super().__init__(timeout=timeout)
+        self.user_id = user_id
+        self.listmenu = listmenu
+        self.index = 0
+
+    def setup_by_current_index(self) -> discord.Embed | str:
+        ln = len(self.listmenu)
+        self.index %= ln
+        self.previous.disabled = self.jump_first.disabled = bool(self.index == 0)
+        self.nxt.disabled = self.jump_last.disabled = bool(self.index == ln - 1)
+        return self.listmenu[self.index]
+
+    async def start(self, destination: discord.abc.Messageable):
+        element = self.setup_by_current_index()
+
+        if isinstance(element, discord.Embed):
+            await destination.send(embed=element, view=self)
+        else:
+            await destination.send(element, view=self)
+
+    def interaction_check(self, interaction: discord.Interaction) -> bool:
+        return interaction.user.id == self.user_id
+
+    async def edit_to_current_index(self, interaction: discord.Interaction):
+        element = self.setup_by_current_index()
+
+        message = interaction.message
+
+        if message is None:
+            log.error("What the fuck, interaction without a message??")
+            raise
+
+        if isinstance(element, discord.Embed):
+            await message.edit(embed=element, view=self)
+        else:
+            await message.edit(content=element, view=self)
+
+    @discord.ui.button(label="<<", style=discord.ButtonStyle.gray)
+    async def jump_first(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.index = 0
+        await self.edit_to_current_index(interaction)
+
+    @discord.ui.button(label="<", style=discord.ButtonStyle.gray)
+    async def previous(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.index -= 1
+        await self.edit_to_current_index(interaction)
+
+    @discord.ui.button(label=">", style=discord.ButtonStyle.gray)
+    async def nxt(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.index += 1
+        await self.edit_to_current_index(interaction)
+
+    @discord.ui.button(label=">>", style=discord.ButtonStyle.gray)
+    async def jump_last(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.index = -1
+        await self.edit_to_current_index(interaction)
+
+
 class SalamanderContext(commands.Context["Salamander"]):
 
     bot: Salamander
@@ -295,18 +362,16 @@ class SalamanderContext(commands.Context["Salamander"]):
 
     async def list_menu(
         self,
-        pages: list[discord.Embed | str],
+        pages: list[_LT],
         *,
         timeout: float = 180,
         alt_destination: discord.abc.Messageable | None = None,
         wait: bool = False,
     ):
-        """
-        Returns the started menu,
-        a List source is made for you from strings/embeds
-        provided assuming them as being already prepared.
-        """
-        #: TODO
+        view = ListMenuView(self.author.id, pages, timeout=timeout)
+        await view.start(alt_destination or self)
+        if wait:
+            await view.wait()
 
     async def yes_or_no(
         self,
