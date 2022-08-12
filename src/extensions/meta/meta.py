@@ -81,6 +81,12 @@ class Meta(commands.Cog):
         await self.bot.close()
 
     @commands.is_owner()
+    @commands.command()
+    async def slashsync(self, ctx: SalamanderContext):
+        if await ctx.yes_or_no("Are you sure you want to sync slash commands? (1hr delay), ratelimited?"):
+            await self.bot.tree.sync()
+
+    @commands.is_owner()
     @commands.group()
     async def servers(self, ctx: SalamanderContext):
         """List/leave servers"""

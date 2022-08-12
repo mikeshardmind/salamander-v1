@@ -15,7 +15,10 @@
 
 from __future__ import annotations
 
+import discord
+from discord.app_commands import Group
 from discord.ext import commands
+
 
 from ...bot import SalamanderContext
 from .dicemath import DiceError, Expression
@@ -26,65 +29,44 @@ class Dice(commands.Cog):
     Some tabletop dice.
     """
 
-    @commands.max_concurrency(1, commands.BucketType.channel, wait=True)
-    @commands.command(name="roll")
-    async def roll(self, ctx: SalamanderContext, *, expression: str):
+    group = Group(name="dice", description="commands for working with dice rolls")
+
+    @group.command(name="roll", description="Roll some dice")
+    async def roll(self, interaction: discord.Interaction, expression: str):
         """Roll some dice"""
 
         if len(expression) > 500:
-            return await ctx.send("I'm not even going to try and parse that one")
+            return await interaction.response.send_message("I'm not even going to try and parse that one")
 
         try:
             ex = Expression.from_str(expression)
             msg = ex.verbose_roll2()
         except ZeroDivisionError:
-            return await ctx.send("Oops, too many dice. I dropped them")
+            return await interaction.response.send_message("Oops, too many dice. I dropped them")
         except DiceError as err:
-            return await ctx.send(f"{ctx.author.mention}: {err}", delete_after=15)
+            return await interaction.response.send_message(str(err))
 
-        prepend = f"{ctx.author.mention} Results for {ex} \N{GAME DIE}"
-        await ctx.send_paged(msg, box=True, prepend=prepend)
+        await interaction.response.send_message(f"```\n{msg}\n```")
 
-    @commands.max_concurrency(1, commands.BucketType.channel, wait=True)
-    @commands.command(name="multiroll")
-    async def multiroll(self, ctx: SalamanderContext, times: int, *, expression: str):
+    @group.command(name="secretroll", description="Roll some dice that only you can see")
+    async def secretroll(self, interaction: discord.Interaction, expression: str):
         """Roll some dice"""
 
         if len(expression) > 500:
-            return await ctx.send("I'm not even going to try and parse that one")
-
-        if times < 1:
-            return await ctx.send("Try providing a positive quantity")
-
-        elif times > 20:
-            return await ctx.send(
-                "If you really need to repeat this that many times, you need to use minion/swarm/mob rules."
-            )
+            return await interaction.response.send_message("I'm not even going to try and parse that one", ephemeral=True)
 
         try:
             ex = Expression.from_str(expression)
+            msg = ex.verbose_roll2()
+        except ZeroDivisionError:
+            return await interaction.response.send_message("Oops, too many dice. I dropped them", ephemeral=True)
         except DiceError as err:
-            return await ctx.send(f"{ctx.author.mention}: {err}", delete_after=15)
+            return await interaction.response.send_message(str(err), ephemeral=True)
 
-        parts: list[str] = []
+        await interaction.response.send_message(f"```\n{msg}\n```", ephemeral=True)
 
-        for i in range(1, times + 1):
-            try:
-                msg = ex.verbose_roll2()
-            except ZeroDivisionError:
-                return await ctx.send("Oops, too many dice. I dropped them")
-            except DiceError as err:
-                return await ctx.send(f"{ctx.author.mention}: {err}", delete_after=15)
-
-            parts.append(f"{i}.\n{msg}")
-
-        prepend = f"{ctx.author.mention} Results for  {times}x {ex} \N{GAME DIE}"
-        await ctx.send_paged("\n---\n".join(parts), box=True, prepend=prepend)
-
-    @commands.cooldown(3, 30, commands.BucketType.member)
-    @commands.max_concurrency(1, commands.BucketType.channel, wait=True)
-    @commands.command(name="diceinfo")
-    async def rverb(self, ctx, *, expression: str):
+    @group.command(name="ev", description="Get some info about the expected value of a dice expression ")
+    async def rverb(self, interaction: discord.Interaction, expression: str):
         """
         Get info about an expression
         """
@@ -93,8 +75,8 @@ class Dice(commands.Cog):
             ex = Expression.from_str(expression)
             low, high, ev = ex.get_min(), ex.get_max(), ex.get_ev()
         except ZeroDivisionError:
-            return await ctx.send("Oops, too many dice. I dropped them")
+            return await interaction.response.send_message("Oops, too many dice. I dropped them")
         except DiceError as err:
-            return await ctx.send(f"{ctx.author.mention}: {err}", delete_after=15)
+            return await interaction.response.send_message(str(err))
 
-        await ctx.send(f"Information about dice Expression: {ex}:\nLow: {low}\nHigh: {high}\nEV: {ev:.7g}")
+        await interaction.response.send_message(f"Information about dice Expression: {ex}:\nLow: {low}\nHigh: {high}\nEV: {ev:.7g}")
