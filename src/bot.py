@@ -260,6 +260,28 @@ NON_TEXT_RESPONSE_ERROR_STR = "There doesn't appear to be any text in your respo
 INVALID_OPTION_ERROR_FMT = "That wasn't a valid option, please try this command again.\n(Valid options are: {})"
 
 
+class YesNoView(discord.ui.View):
+    def __init__(self, user_id: int):
+        super().__init__()
+        self.value: bool | None = None
+        self.user_id = user_id
+
+    def interaction_check(self, interaction: discord.Interaction) -> bool:
+        return interaction.user.id == self.user_id
+
+    @discord.ui.button(label="Yes", style=discord.ButtonStyle.green)
+    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.value = True
+        self.stop()
+
+    @discord.ui.button(label="No", style=discord.ButtonStyle.red)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.value = False
+        self.stop()
+
+
 class SalamanderContext(commands.Context["Salamander"]):
 
     bot: Salamander
@@ -293,10 +315,23 @@ class SalamanderContext(commands.Context["Salamander"]):
         reset_cooldown_on_failure: bool = False,
         delete_on_return: bool = False,
     ) -> bool:
-        """
-        Wrapper around .prompt for yes/no questions.
-        """
-        # TODO
+
+        view = YesNoView(self.author.id)
+        sent = await self.send(prompt, view=view)
+        await asyncio.wait({view.wait()}, timeout=timeout)
+        view.stop()
+
+        if view.value is None:
+            raise IncompleteInputError(
+                custom_message=UNTIMELY_RESPONSE_ERROR_STR,
+                reset_cooldown=reset_cooldown_on_failure,
+            )
+
+        try:
+            return view.value
+        finally:
+            if delete_on_return:
+                await sent.delete()
 
     async def send_paged(
         self,
@@ -766,13 +801,6 @@ class Salamander(commands.AutoShardedBot):
             self._zmq_task = None
 
         await super().__aexit__(exc_type, exc_value, traceback)
-
-    async def is_owner(self, user: discord.User | discord.Member) -> bool:
-        # TODO: fix d.py type for this
-        if TYPE_CHECKING:
-            # Escape hatch, sure, but this is a nonesencial assert.
-            assert isinstance(user, discord.User)
-        return await super().is_owner(user)
 
     async def on_command_error(self, ctx: SalamanderContext, exc: Exception):
 

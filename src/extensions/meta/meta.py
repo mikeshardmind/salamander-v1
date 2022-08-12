@@ -242,7 +242,8 @@ class Meta(commands.Cog):
 
         if isinstance(who, discord.Member):
             self.bot.privlevel_manager.remove_mod(ctx.guild.id, who.id)
-        else:
+        else:  # According to pyright, a Union can't be narrowed like this...
+            assert isinstance(who, int)
             self.bot.privlevel_manager.remove_mod(ctx.guild.id, who)
 
         await ctx.send("If they were a mod, they aren't anymore.")
@@ -272,7 +273,8 @@ class Meta(commands.Cog):
 
         if isinstance(who, discord.Member):
             self.bot.privlevel_manager.remove_admin(ctx.guild.id, who.id)
-        else:
+        else:  # According to pyright, a Union can't be narrowed like this....
+            assert isinstance(who, int)
             self.bot.privlevel_manager.remove_admin(ctx.guild.id, who)
 
         await ctx.send("If they were an admin, they aren't anymore.")
