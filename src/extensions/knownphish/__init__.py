@@ -29,4 +29,5 @@ extension_info = ExtensionManifest(
 
 
 async def setup(bot):
-    await bot.add_cog(KnownPhish(bot))
+    if KnownPhish.hyperscan_available():
+        await bot.add_cog(KnownPhish(bot))

@@ -17,7 +17,11 @@ from __future__ import annotations
 from pathlib import Path
 
 import discord
-import hyperscan
+try:
+    import hyperscan
+except Exception:
+    hyperscan = None
+
 from discord.ext import commands
 
 
@@ -25,6 +29,10 @@ class KnownPhish(commands.Cog):
     """
     Removes URLs Known to be in frequent use in phishing campaigns targetting discord users.
     """
+
+    @classmethod
+    def hyperscan_available(cls):
+        return bool(hyperscan is not None)
 
     def __init__(self, bot):
         self.bot = bot

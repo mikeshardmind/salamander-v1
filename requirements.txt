@@ -389,7 +389,7 @@ frozenlist==1.3.0 \
     # via
     #   aiohttp
     #   aiosignal
-hyperscan==0.3.2 \
+hyperscan==0.3.2 ; sys.platform == "linux" \
     --hash=sha256:1863df991196a883472132e7945425f165bac3dd3ea05f45d98bdf44508fe55f \
     --hash=sha256:18b964bc277458eb2a915f1f02b5e326e1a3b48dbb790a7dd952a220ed7fec29 \
     --hash=sha256:866d635698f2767c1bccf78d8a5ebec415085a65d74fa1d6c1017d134504a13f \

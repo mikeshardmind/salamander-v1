@@ -106,3 +106,4 @@ template/
 *.db-wal
 data/
 config.toml
+*.env

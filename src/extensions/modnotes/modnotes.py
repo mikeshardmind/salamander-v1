@@ -79,7 +79,7 @@ class ModNotes(commands.Cog):
             cursor.executemany(
                 """
                 INSERT INTO member_settings (guild_id, user_id) VALUES (?,?)
-                ON CONFLICT (guil_id, user_id) DO NOTHING
+                ON CONFLICT (guild_id, user_id) DO NOTHING
                 """,
                 ((guild_id, target_id), (guild_id, mod_id)),
             )
@@ -113,7 +113,7 @@ class ModNotes(commands.Cog):
             SELECT guild_id, mod_id, target_id, note, created_at
             FROM mod_notes_on_members
             WHERE mod_id=? AND guild_id=?
-            ORDER BY created
+            ORDER BY created_at
             """,
             (mod_id, guild_id),
         ):
@@ -126,7 +126,7 @@ class ModNotes(commands.Cog):
             SELECT guild_id, mod_id, target_id, note, created_at
             FROM mod_notes_on_members
             WHERE target_id=? AND guild_id=?
-            ORDER BY created
+            ORDER BY created_at
             """,
             (member_id, guild_id),
         ):
@@ -139,7 +139,7 @@ class ModNotes(commands.Cog):
             SELECT guild_id, mod_id, target_id, note, created_at
             FROM mod_notes_on_members
             WHERE guild_id=?
-            ORDER BY created
+            ORDER BY created_at
             """,
             (guild_id,),
         ):

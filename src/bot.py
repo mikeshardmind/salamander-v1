@@ -266,7 +266,7 @@ class YesNoView(discord.ui.View):
         self.value: bool | None = None
         self.user_id = user_id
 
-    def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return interaction.user.id == self.user_id
 
     @discord.ui.button(label="Yes", style=discord.ButtonStyle.green)
@@ -307,7 +307,7 @@ class ListMenuView(discord.ui.View):
         else:
             await destination.send(element, view=self)
 
-    def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return interaction.user.id == self.user_id
 
     async def edit_to_current_index(self, interaction: discord.Interaction):
@@ -1041,8 +1041,11 @@ class Salamander(commands.AutoShardedBot):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        loop.add_signal_handler(signal.SIGINT, lambda: loop.stop())
-        loop.add_signal_handler(signal.SIGTERM, lambda: loop.stop())
+        try:
+            loop.add_signal_handler(signal.SIGINT, lambda: loop.stop())
+            loop.add_signal_handler(signal.SIGTERM, lambda: loop.stop())
+        except NotImplementedError:
+            pass
 
         async def runner():
 
