@@ -291,6 +291,7 @@ class ListMenuView(discord.ui.View):
         self.user_id = user_id
         self.listmenu = listmenu
         self.index = 0
+        self.message: discord.Message | None = None
 
     def setup_by_current_index(self) -> discord.Embed | str:
         ln = len(self.listmenu)
@@ -303,9 +304,9 @@ class ListMenuView(discord.ui.View):
         element = self.setup_by_current_index()
 
         if isinstance(element, discord.Embed):
-            await destination.send(embed=element, view=self)
+            self.message = await destination.send(embed=element, view=self)
         else:
-            await destination.send(element, view=self)
+            self.message = await destination.send(element, view=self)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return interaction.user.id == self.user_id
@@ -366,12 +367,16 @@ class SalamanderContext(commands.Context["Salamander"]):
         *,
         timeout: float = 180,
         alt_destination: discord.abc.Messageable | None = None,
-        wait: bool = False,
+        delete_on_return: bool = False,
     ):
         view = ListMenuView(self.author.id, pages, timeout=timeout)
         await view.start(alt_destination or self)
-        if wait:
-            await view.wait()
+        await view.wait()
+        if message := view.message:
+            if delete_on_return:
+                await message.delete()
+            else:
+                await message.edit(view=None)
 
     async def yes_or_no(
         self,
@@ -397,6 +402,8 @@ class SalamanderContext(commands.Context["Salamander"]):
         finally:
             if delete_on_return:
                 await sent.delete()
+            else:
+                await sent.edit(view=None)
 
     async def send_paged(
         self,
