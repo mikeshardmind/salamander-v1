@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import enum
 import re
 from datetime import timedelta
 from typing import Final, NamedTuple, Sequence
@@ -21,12 +22,23 @@ from typing import Final, NamedTuple, Sequence
 import discord
 from discord.ext import commands
 
+
 from .formatting import humanize_timedelta
 from .parsing import parse_timedelta
 
 _id_regex: Final[re.Pattern] = re.compile(r"([0-9]{15,21})$")
 _mention_regex: Final[re.Pattern] = re.compile(r"<@!?([0-9]{15,21})>$")
 _role_mention_regex: Final[re.Pattern] = re.compile(r"^<@&([0-9]{15,21})>$")
+
+
+class WeekdayChoices(enum.Enum):
+    Monday = 0
+    Tuesday = 1
+    Wednesday = 2
+    Thursday = 3
+    Friday = 4
+    Saturday = 5
+    Sunday = 6
 
 
 class Weekday:

@@ -285,6 +285,61 @@ class YesNoView(discord.ui.View):
 _LT = TypeVar("_LT", discord.Embed, str, covariant=True)
 
 
+class InteractionListMenuView(discord.ui.View):
+    def __init__(self, user_id: int, listmenu: list[_LT], *, timeout: float = 180, ephemeral: bool = False):
+        super().__init__(timeout=timeout)
+        self.user_id = user_id
+        self.listmenu = listmenu
+        self.index: int = 0
+        self.ephemeral: bool = ephemeral
+
+    def setup_by_current_index(self) -> discord.Embed | str:
+        ln = len(self.listmenu)
+        self.index %= ln
+        self.previous.disabled = self.jump_first.disabled = bool(self.index == 0)
+        self.nxt.disabled = self.jump_last.disabled = bool(self.index == ln - 1)
+        return self.listmenu[self.index]
+
+    async def start(self, hook: discord.InteractionResponse):
+        element = self.setup_by_current_index()
+
+        if isinstance(element, discord.Embed):
+            self.message = await hook.send_message(embed=element, view=self, ephemeral=self.ephemeral)
+        else:
+            self.message = await hook.send_message(element, view=self, ephemeral=self.ephemeral)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        return interaction.user.id == self.user_id
+
+    async def edit_to_current_index(self, interaction: discord.Interaction):
+        element = self.setup_by_current_index()
+
+        if isinstance(element, discord.Embed):
+            await interaction.response.edit_message(embed=element, view=self)
+        else:
+            await interaction.response.edit_message(content=element, view=self)
+
+    @discord.ui.button(label="<<", style=discord.ButtonStyle.gray)
+    async def jump_first(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.index = 0
+        await self.edit_to_current_index(interaction)
+
+    @discord.ui.button(label="<", style=discord.ButtonStyle.gray)
+    async def previous(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.index -= 1
+        await self.edit_to_current_index(interaction)
+
+    @discord.ui.button(label=">", style=discord.ButtonStyle.gray)
+    async def nxt(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.index += 1
+        await self.edit_to_current_index(interaction)
+
+    @discord.ui.button(label=">>", style=discord.ButtonStyle.gray)
+    async def jump_last(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.index = -1
+        await self.edit_to_current_index(interaction)
+
+
 class ListMenuView(discord.ui.View):
     def __init__(self, user_id: int, listmenu: list[_LT], *, timeout: float = 180):
         super().__init__(timeout=timeout)
@@ -314,38 +369,28 @@ class ListMenuView(discord.ui.View):
     async def edit_to_current_index(self, interaction: discord.Interaction):
         element = self.setup_by_current_index()
 
-        message = interaction.message
-
-        if message is None:
-            log.error("What the fuck, interaction without a message??")
-            raise
-
         if isinstance(element, discord.Embed):
-            await message.edit(embed=element, view=self)
+            await interaction.response.edit_message(embed=element, view=self)
         else:
-            await message.edit(content=element, view=self)
+            await interaction.response.edit_message(content=element, view=self)
 
     @discord.ui.button(label="<<", style=discord.ButtonStyle.gray)
     async def jump_first(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
         self.index = 0
         await self.edit_to_current_index(interaction)
 
     @discord.ui.button(label="<", style=discord.ButtonStyle.gray)
     async def previous(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
         self.index -= 1
         await self.edit_to_current_index(interaction)
 
     @discord.ui.button(label=">", style=discord.ButtonStyle.gray)
     async def nxt(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
         self.index += 1
         await self.edit_to_current_index(interaction)
 
     @discord.ui.button(label=">>", style=discord.ButtonStyle.gray)
     async def jump_last(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
         self.index = -1
         await self.edit_to_current_index(interaction)
 

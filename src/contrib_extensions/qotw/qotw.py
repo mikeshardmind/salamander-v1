@@ -22,15 +22,17 @@ import logging
 import random
 from datetime import datetime, timezone
 from fractions import Fraction
-from typing import Iterable, Optional, Sequence, TypeVar
+from turtle import title
+from typing import Iterable, Sequence, TypeVar
 
 import apsw
 import discord
 from discord.ext import commands
+from discord.app_commands import Group, choices
 
-from ...bot import Salamander, SalamanderContext, UserFeedbackError, get_contrib_data_path
+from ...bot import Salamander, SalamanderContext, get_contrib_data_path, InteractionListMenuView
 from ...checks import admin_or_perms
-from ...utils.converters import Weekday
+from ...utils.converters import WeekdayChoices
 from ...utils.embed_generators import embed_from_member
 
 log = logging.getLogger("salamander.contrib_exts.qotw")
@@ -73,6 +75,35 @@ def resevoir_sample(iterable: Iterable[T]) -> T:
         if random.randrange(n) == 0:
             pick = x
     return pick
+
+
+class QuestionModal(discord.ui.Modal, title="Ask something!"):
+
+    def __init__(self, cursor: apsw.Cursor, guild_id: int, user_id):
+        super().__init__()
+        self.guild_id = guild_id
+        self.user_id = user_id
+        self.cursor = cursor
+
+    question = discord.ui.TextInput(
+        label="What would you like to ask?",
+        style=discord.TextStyle.long,
+        required=True,
+        max_length=1500,
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.send_message("Question submitted.", ephemeral=True)
+
+        self.cursor.execute(
+            """
+            INSERT INTO member_questions (guild_id, user_id, current_question)
+            VALUES (?,?,?)
+            ON CONFLICT (guild_id, user_id)
+            DO UPDATE SET current_question=excluded.current_question
+            """,
+            (self.guild_id, self.user_id, self.question.value),
+        )
 
 
 class QOTW(commands.Cog):
@@ -269,18 +300,15 @@ class QOTW(commands.Cog):
                 dict(pin=last_pin, guild_id=guild_id),
             )
 
-    @admin_or_perms(manage_messages=True)
-    @commands.guild_only()
-    @commands.group(name="qotwset")
-    async def qotw_set(self, ctx: SalamanderContext):
-        """Commands to manage QOTW"""
 
-    @admin_or_perms(manage_messages=True)
-    @commands.guild_only()
+    qotw_set = Group(name="qotwset", guild_only=True, default_permissions=discord.Permissions(manage_messages=True))
+
     @qotw_set.command(name="channel")
-    async def qotw_set_channel(self, ctx: SalamanderContext, *, channel: discord.TextChannel):
+    async def qotw_set_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
         """Sets the channel for QOTW"""
-        assert ctx.guild is not None
+
+        guild_id = interaction.guild_id
+        channel_id = interaction.channel_id
 
         cursor = self.conn.cursor()
 
@@ -291,19 +319,18 @@ class QOTW(commands.Cog):
             ON CONFLICT (guild_id)
             DO UPDATE SET channel_id=excluded.channel_id
             """,
-            (ctx.guild.id, channel.id),
+            (guild_id, channel_id),
         )
 
-        await ctx.send("Channel set")
+        await interaction.response.send_message("Channel set", ephemeral=True)
 
     @qotw_set.command(name="clearchannel")
-    async def qotw_set_clearchan(self, ctx: SalamanderContext):
+    async def qotw_set_clearchan(self, interaction: discord.Interaction):
         """
         Clears the qotw channel if set.
 
         This will effectively disable QOTW in this server.
         """
-        assert ctx.guild is not None
 
         cursor = self.conn.cursor()
         cursor.execute(
@@ -312,14 +339,14 @@ class QOTW(commands.Cog):
             SET channel_id = NULL
             WHERE guild_id=?
             """,
-            (ctx.guild.id,),
+            (interaction.guild_id,),
         )
-        await ctx.send("Channel cleared.")
+        await interaction.response.send_message("Channel cleared.", ephemeral=True)
 
+    @choices()
     @qotw_set.command(name="day")
-    async def qotw_set_day(self, ctx: SalamanderContext, *, day: Weekday):
+    async def qotw_set_day(self, interaction: discord.Interaction, day: WeekdayChoices):
         """Sets the day of the week QOTW should be held on"""
-        assert ctx.guild is not None
 
         cursor = self.conn.cursor()
         cursor.execute(
@@ -329,15 +356,13 @@ class QOTW(commands.Cog):
             ON CONFLICT (guild_id)
             DO UPDATE SET qotw_day=excluded.qotw_day
             """,
-            (ctx.guild.id, day.number),
+            (interaction.guild_id, day.value),
         )
-        await ctx.send(f"QOTW will be selected on {day}")
+        await interaction.response.send_message(f"QOTW will be selected on {day}", ephemeral=True)
 
-    @commands.guild_only()
     @qotw_set.command(name="force")
-    async def force_qotw(self, ctx: SalamanderContext):
+    async def force_qotw(self, interaction: discord.Interaction):
         """Force a new question to be asked"""
-        assert ctx.guild is not None
 
         cursor = self.conn.cursor()
 
@@ -347,30 +372,33 @@ class QOTW(commands.Cog):
             FROM guild_settings
             WHERE channel_id IS NOT NULL AND guild_id = ?
             """,
-            (ctx.guild.id,),
+            (interaction.guild_id,),
         )
         row = cursor.fetchone()
 
         channel = None
 
+        guild = interaction.guild
+        if guild is None:
+            return await interaction.response.send_message("something whent wrong here.", ephemeral=True)
+
         if row:
             channel_id, last_pinned_message_id = row
-            channel = ctx.guild.get_channel(channel_id)
+            channel = guild.get_channel(channel_id)
 
             if not channel:
-                raise UserFeedbackError(custom_message="No QOTW channel has been set")
+                await interaction.response.send_message("No QOTW channel has been set", ephemeral=True)
 
-            await self.handle_qotw(ctx.guild.id, channel_id, last_pinned_message_id)
+            await interaction.response.send_message("Going ahead with it.", ephemeral=True)
+            await self.handle_qotw(guild.id, channel_id, last_pinned_message_id)
 
         else:
-            raise UserFeedbackError(custom_message="No QOTW channel has been set")
+            await interaction.response.send_message("No QOTW channel has been set", ephemeral=True)
 
-    @admin_or_perms(manage_messages=True)
-    @commands.guild_only()
     @qotw_set.command(name="view")
-    async def view_pending(self, ctx: SalamanderContext):
+    async def view_pending(self, interaction: discord.Interaction):
         """View the currently pending questions"""
-        assert ctx.guild is not None
+
 
         cursor = self.conn.cursor()
 
@@ -380,26 +408,29 @@ class QOTW(commands.Cog):
             FROM member_questions
             WHERE current_question IS NOT NULL AND guild_id=?
             """,
-            (ctx.guild.id,),
+            (interaction.guild_id,),
         )
 
         questions = cursor.fetchall()
 
         if not questions:
-            return await ctx.send("No current questions.")
+            return await interaction.response.send_message("No current questions.", ephemeral=True)
 
         total = 0
 
         filtered_questions = []
 
+        guild = interaction.guild
+        assert guild is not None
+
         for user_id, question, weight in questions:
 
-            if m := ctx.guild.get_member(user_id):
+            if m := guild.get_member(user_id):  # type: ignore
                 filtered_questions.append((m, question, weight))
-                total += weight
+                total += weight  # type: ignore
 
         if not filtered_questions:
-            return await ctx.send("No current questions")
+            return await interaction.response.send_message("No current questions", ephemeral=True)
 
         embeds = []
 
@@ -412,15 +443,19 @@ class QOTW(commands.Cog):
 
             embeds.append(em)
 
-        await ctx.list_menu(embeds)
+        view = InteractionListMenuView(interaction.user.id ,embeds, ephemeral=True)
+        await view.start(interaction.response)
+        await asyncio.wait({view.wait()}, timeout=180)
+        view.stop()
+        await interaction.delete_original_response()
 
-    @commands.guild_only()
-    @commands.command()
-    async def qotwodds(self, ctx: SalamanderContext):
+    qotw = Group(name="qotw", description="Question of the week", guild_only=True)
+
+    @qotw.command(name="odds", description="Get the current odds your question will be selected.")
+    async def qotwodds(self, interaction: discord.Interaction):
         """
         Get the current odds that your question is selected next.
         """
-        assert ctx.guild is not None
 
         cursor = self.conn.cursor()
 
@@ -430,7 +465,7 @@ class QOTW(commands.Cog):
             FROM member_questions
             WHERE current_question IS NOT NULL AND guild_id=?
             """,
-            (ctx.guild.id,),
+            (interaction.guild_id,),
         )
 
         questions = cursor.fetchall()
@@ -441,62 +476,39 @@ class QOTW(commands.Cog):
 
         filtered_questions = []
 
+        guild = interaction.guild
+        assert guild is not None
+
         for user_id, question, weight in questions:
 
-            if m := ctx.guild.get_member(user_id):
+            if m := guild.get_member(user_id):  # type: ignore
                 filtered_questions.append((m, question, weight))
-                total += weight
-                if ctx.author.id == user_id:
+                total += weight  # type: ignore
+                if ctx.author.id == user_id:  # type: ignore
                     user_has_question = True
                     user_question_weight = weight
 
         if not filtered_questions:
-            return await ctx.send("There are no questions currently queued up, feel free to ask one.")
+            return await interaction.response.send_message("There are no questions currently queued up, feel free to ask one.", ephemeral=True)
         elif user_has_question:
-            return await ctx.send(
+            return await interaction.response.send_message(
                 f"There are currently {len(filtered_questions)} questions.\n"
-                f"Your question currently has a {Fraction(user_question_weight, total)} chance of being selected."
+                f"Your question currently has a {Fraction(user_question_weight, total)} chance of being selected.",  # type: ignore
+                ephemeral=True,
             )
         else:
-            return await ctx.send(
+            return await interaction.response.send_message(
                 f"There are currently {len(filtered_questions)} questions.\n"
-                "You do not have a question submitted, but feel free to ask one."
+                "You do not have a question submitted, but feel free to ask one.",
+                ephemeral=True,
             )
 
-    @commands.guild_only()
-    @commands.command()
-    async def qotwask(self, ctx: SalamanderContext, *, question: str):
+    @qotw.command(name="ask")
+    async def qotwask(self, interaction: discord.Interaction):
         """Ask a question."""
 
-        assert ctx.guild is not None
-
-        if len(question) > 1500:
-            return await ctx.send("Please ask a shorter question (max 1500 characters).")
-
-        cursor = self.conn.cursor()
-
-        with self.conn:
-            params = (ctx.guild.id, ctx.author.id, question)
-            cursor.execute(
-                """
-                INSERT INTO member_questions (guild_id, user_id, current_question)
-                VALUES (?,?,?)
-                ON CONFLICT (guild_id, user_id)
-                DO UPDATE SET current_question=excluded.current_question
-                """,
-                params,
-            )
-
-        await ctx.send("Your submitted question for the next QOTW has been set.", delete_after=15)
-        await asyncio.sleep(10)
-        try:
-            await ctx.message.delete()
-        except Exception as exc:
-            log.exception("Couldn't delete", exc_info=exc)
-
-    @qotwask.before_invoke
-    async def ask_before_invoke(self, ctx: SalamanderContext):
-        assert ctx.guild is not None
+        guild_id = interaction.guild_id
+        assert guild_id is not None
 
         cursor = self.conn.cursor()
 
@@ -504,13 +516,14 @@ class QOTW(commands.Cog):
             """
             SELECT channel_id FROM guild_settings WHERE guild_id = ?
             """,
-            (ctx.guild.id,),
+            (guild_id,),
         )
         row = cursor.fetchone()
 
-        if not row:
-            raise commands.CheckFailure()
+        if row is None:
+            return await interaction.response.send_message("This server does not currently have QOTW enabled.", ephemeral=True)
 
-        (channel_id,) = row
-        if channel_id != ctx.channel.id:
-            raise commands.CheckFailure()
+        modal = QuestionModal(cursor, guild_id, interaction.user.id)
+
+        await interaction.response.send_modal(modal)
+
