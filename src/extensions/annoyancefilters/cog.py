@@ -19,6 +19,7 @@ from typing import NamedTuple
 
 import discord
 from discord.ext import commands
+from discord.app_commands import Group
 from lru import LRU
 
 from ...bot import Salamander, SalamanderContext
@@ -179,7 +180,9 @@ class AnnoyanceFilters(commands.Cog):
             return
 
         try:
-            guild = channel.guild
+            guild = channel.guild  # type: ignore
+            assert guild is not None
+            assert isinstance(channel, (discord.abc.GuildChannel, discord.Thread))
         except AttributeError:
             return
 
@@ -193,7 +196,7 @@ class AnnoyanceFilters(commands.Cog):
                 member_id = raw_payload.data.get("member", {}).get("id", None)
                 member = guild.get_member(member_id) if member_id else None
                 if not member:
-                    await self.bot.http.delete_message(channel.id, raw_payload.message_id)
+                    return await self.bot.http.delete_message(channel.id, raw_payload.message_id)
 
                 if not (
                     (settings.mods_immune and self.bot.privlevel_manager.member_is_mod(member))
@@ -201,116 +204,21 @@ class AnnoyanceFilters(commands.Cog):
                 ):
                     await self.bot.http.delete_message(channel.id, raw_payload.message_id)
 
-    @admin_or_perms(manage_messages=True, manage_guild=True)
-    @commands.group(name="annoyancefilter")
-    async def top_level_group(self, ctx: SalamanderContext):
-        """Configuration for various annoyances."""
 
-    @top_level_group.command(name="enablerecommended")
-    async def enable_recommended(self, ctx: SalamanderContext):
-        """Quickly enable the recommended filter settings:
+    grp = Group(name="annoyancefilter", guild_only=True)
 
-        The recommended settings are to filter out messages from non-admins (mods not exempt)
-        that contain too many markdown elements for discord to display properly or that
-        have attachments which view differently in the browser than they do in discord
-        due to discord not animating animated png files
-        """
-        assert ctx.guild is not None
-        self.set_guild_settings(ctx.guild.id, GuildSettings.recommended())
-        await ctx.send("Now using the recommended settings.")
+    @grp.command(name="enable")
+    async def enable_rec(self, interaction: discord.Interaction):
+        """Enables annoyance filtering."""
+        assert interaction.guild_id is not None
+        self.set_guild_settings(interaction.guild_id, GuildSettings.recommended())
+        await interaction.response.send_message("Annoyance filtering has been enabled for this server.")
 
-    @top_level_group.command(name="disable")
-    async def disable(self, ctx: SalamanderContext):
+    @grp.command(name="disable")
+    async def disable(self, interaction: discord.Interaction):
         """Disable annoyance filtering for this server."""
-        assert ctx.guild is not None
-        self.set_guild_settings(ctx.guild.id, GuildSettings())
-        await ctx.send("No longer filtering for annoyances.")
+        assert interaction.guild_id is not None
+        self.set_guild_settings(interaction.guild_id, GuildSettings())
+        await interaction.response.send_message("No longer filtering for annoyances.")
 
-    @top_level_group.command(name="view")
-    async def view_settings(self, ctx: SalamanderContext):
-        """Get info about the current settings."""
-        assert ctx.guild is not None
-        settings = self.get_guild_settings(ctx.guild.id)
-
-        if not (settings.remove_apngs or settings.remove_excessive_html_elements):
-            await ctx.send("Filtering for discord specific issues with content is not enabled in this server.")
-            return
-
-        parts = []
-        if settings.remove_apngs and settings.remove_excessive_html_elements:
-            parts.append(
-                "Currently filtering messages that may contain hidden content due "
-                "to a long time discord bug and messages which may have attachemnts "
-                "that view differently in browser and in discord due to discord not animating apng files."
-            )
-
-        elif settings.remove_apngs:
-            parts.append("Currently filtering messages that may contain hidden content due to a long time discord bug.")
-
-        elif settings.remove_excessive_html_elements:
-            parts.append(
-                "Currently filtering messages which may have attachemnts "
-                "that view differently in browser and in discord due to discord not animating apng files."
-            )
-
-        if settings.mods_immune and settings.admins_immune:
-            parts.append("Mods and admins are exempt from this filtering behavior.")
-        elif settings.admins_immune:
-            parts.append("Admins are exempt from this filtering behavior.")
-        elif settings.mods_immune:  # We probably shouldn't ever hit this branch
-            parts.append("Mods are exempt from this filtering behavior.")
-        else:
-            parts.append("Mods and admins are not exempt from this filtering behavior.")
-
-        await ctx.send(" ".join(parts))
-
-    @top_level_group.command(name="custom")
-    async def interactive(self, ctx: SalamanderContext):
-        """Set up filtering with an interactive prompt."""
-        assert ctx.guild is not None
-
-        elements = await ctx.yes_or_no(
-            "Discord hides portions of messages if they contain "
-            "too many formatting characters or too many emojis. "
-            "This can allow pings to be hidden from moderators in "
-            "messages or just be at a threshold where the client may lag for some users. "
-            "\n\nWould you like to enable automatic removal of messages like this? "
-            "(Options are yes/no)"
-        )
-
-        apng = await ctx.yes_or_no(
-            "When animated pngs are uploaded to Discord, discord only shows the first frame. "
-            "When these images are opened in the browser or downloaded, "
-            "the png will play to the last frame and either loop or stop depending on the image. "
-            "Some users have used this in ways that can range from annoying to malicious, "
-            "but there are also legitimate uses for apng files."
-            "\n\nWould you like to enable detection and removal of messages with apngs attached? "
-            "(options are yes/no)"
-        )
-
-        if not (elements or apng):
-
-            self.set_guild_settings(ctx.guild.id, GuildSettings())
-            await ctx.send("Ok, that's all of the available annoyance filters at this time.")
-            return
-
-        admins = await ctx.yes_or_no("Would you like admins to be exempt from these filters? (options are yes/no)")
-
-        if admins:
-
-            mods = await ctx.yes_or_no("Would you like mods to also be exempt? (options are yes/no)")
-
-        else:
-            mods = False
-
-        self.set_guild_settings(
-            ctx.guild.id,
-            GuildSettings(
-                remove_excessive_html_elements=elements,
-                remove_apngs=apng,
-                admins_immune=admins,
-                mods_immune=mods,
-            ),
-        )
-
-        await ctx.send("Filtering has been set up.")
+    # TODO: interactive menu instead for individual settings.
