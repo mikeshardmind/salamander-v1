@@ -343,7 +343,6 @@ class QOTW(commands.Cog):
         )
         await interaction.response.send_message("Channel cleared.", ephemeral=True)
 
-    @choices()
     @qotw_set.command(name="day")
     async def qotw_set_day(self, interaction: discord.Interaction, day: WeekdayChoices):
         """Sets the day of the week QOTW should be held on"""

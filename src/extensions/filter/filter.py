@@ -134,12 +134,12 @@ class Filter(commands.Cog):
                         await msg.delete()
                         return
 
-    @admin_or_perms(manage_guild=True)
+    @commands.is_owner()
     @commands.group(name="filterset")
     async def filterset(self, ctx: SalamanderContext):
         """Commands for managing the network filter"""
 
-    @admin_or_perms(manage_guild=True)
+    @commands.is_owner()
     @filterset.command()
     async def enable(self, ctx: SalamanderContext):
         """Enable the network wide filter in this server"""
@@ -147,7 +147,7 @@ class Filter(commands.Cog):
         self.enable_in_guild(ctx.guild.id)
         await ctx.send("Filtering enabled.")
 
-    @admin_or_perms(manage_guild=True)
+    @commands.is_owner()
     @filterset.command()
     async def disable(self, ctx: SalamanderContext):
         """Disable the network wide filter in this server"""

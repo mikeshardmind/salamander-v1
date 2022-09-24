@@ -205,7 +205,7 @@ class AnnoyanceFilters(commands.Cog):
                     await self.bot.http.delete_message(channel.id, raw_payload.message_id)
 
 
-    grp = Group(name="annoyancefilter", guild_only=True)
+    grp = Group(name="annoyancefilter", guild_only=True, default_permissions=discord.Permissions(manage_guild=True))
 
     @grp.command(name="enable")
     async def enable_rec(self, interaction: discord.Interaction):
