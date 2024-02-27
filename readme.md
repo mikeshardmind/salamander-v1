@@ -1,4 +1,8 @@
-# Project Salamander
+# Project Salamander (discontinued)
+
+## Discontinuation
+
+Below is retained for any inhteresting historical context. Use of this is not supported.
 
 ### Easy to use correctly, intutive
 
